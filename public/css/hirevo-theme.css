@@ -1,0 +1,122 @@
+/**
+ * Hirevo theme
+ * Primary: Deep Navy #0B1F3B
+ * Secondary: Emerald Green #10B981
+ * Accent: Light Grey #F3F4F6
+ */
+
+:root {
+    --hirevo-primary: #0B1F3B;
+    --hirevo-secondary: #10B981;
+    --hirevo-accent: #F3F4F6;
+    --bs-primary: #0B1F3B;
+    --bs-primary-rgb: 11, 31, 59;
+    --bs-secondary: #10B981;
+    --bs-secondary-rgb: 16, 185, 129;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--hirevo-primary) !important;
+    border-color: var(--hirevo-primary) !important;
+    color: #fff !important;
+}
+
+.btn-soft-primary {
+    color: var(--hirevo-primary);
+    background-color: rgba(11, 31, 59, 0.1);
+    border-color: transparent;
+}
+.btn-soft-primary:hover {
+    color: #fff;
+    background-color: var(--hirevo-primary);
+    border-color: var(--hirevo-primary);
+}
+
+/* Links and text primary */
+.text-primary,
+.nav-link.text-primary,
+a.text-primary {
+    color: var(--hirevo-primary) !important;
+}
+
+.navbar .navbar-nav .nav-link:hover,
+.navbar .navbar-nav .nav-link.active {
+    color: var(--hirevo-primary) !important;
+}
+
+/* Secondary / success accents */
+.btn-success,
+.bg-success-subtle,
+.text-success {
+    color: var(--hirevo-secondary) !important;
+}
+.bg-success-subtle {
+    background-color: rgba(16, 185, 129, 0.15);
+}
+
+/* Light sections */
+.bg-light,
+.section.bg-light {
+    background-color: var(--hirevo-accent) !important;
+}
+
+/* Top bar and navbar background tint */
+.top-bar {
+    background-color: var(--hirevo-accent) !important;
+}
+
+/* Auth section */
+.bg-auth .auth-content,
+.bg-auth .btn-white.btn-hover {
+    background-color: var(--hirevo-primary) !important;
+    border-color: var(--hirevo-primary);
+}
+.bg-auth .btn-white.btn-hover:hover {
+    background-color: #061428 !important;
+    color: #fff !important;
+}
+
+/* Page title box (inner page header) */
+.page-title-box {
+    background: linear-gradient(135deg, var(--hirevo-primary) 0%, #162d4d 100%) !important;
+}
+
+/* Footer */
+.bg-footer {
+    background-color: var(--hirevo-primary) !important;
+}
+
+/* Subscribe section */
+.bg-subscribe {
+    background: linear-gradient(135deg, var(--hirevo-primary) 0%, var(--hirevo-secondary) 100%) !important;
+}
+
+/* Footer alt */
+.footer-alt {
+    background-color: #061428 !important;
+}
+
+/* Badges */
+.badge.bg-primary {
+    background-color: var(--hirevo-primary) !important;
+}
+
+/* Form focus */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--hirevo-primary);
+    box-shadow: 0 0 0 0.2rem rgba(11, 31, 59, 0.25);
+}
+
+/* Back to top */
+#back-to-top {
+    background-color: var(--hirevo-primary) !important;
+    color: #fff !important;
+}
+#back-to-top:hover {
+    background-color: var(--hirevo-secondary) !important;
+}

@@ -1,0 +1,37 @@
+# Laravel
+/vendor/
+/node_modules/
+/public/storage
+/storage/*.key
+/storage/app/public
+/bootstrap/cache/*.php
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# Logs
+/storage/logs/*.log
+
+# IDE files
+/.idea
+/.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Composer
+composer.lock
+
+# NPM
+package-lock.json
+yarn.lock
+
+
+
