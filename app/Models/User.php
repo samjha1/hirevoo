@@ -47,6 +47,16 @@ class User extends Authenticatable
         return $this->hasOne(EdtechProfile::class);
     }
 
+    public function resumes()
+    {
+        return $this->hasMany(Resume::class);
+    }
+
+    public function jobApplications()
+    {
+        return $this->hasMany(JobApplication::class);
+    }
+
     public function isCandidate(): bool
     {
         return $this->role === 'candidate';

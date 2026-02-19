@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <base href="{{ rtrim(config('app.asset_url') ?? config('app.url'), '/') }}/">
     <title>@yield('title', 'Home') | Hirevo - AI Career Intelligence</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Hirevo - AI Career Intelligence + Referral Network + Skill Monetization">
@@ -120,8 +121,8 @@
                     <ul class="header-menu list-inline d-flex align-items-center mb-0">
                         @guest
                         <li class="list-inline-item align-items-center d-flex me-2">
-                            <span class="text-muted fs-13 me-2 d-none d-lg-inline">Student</span>
-                            <a href="{{ route('login') }}" class="nav-link text-primary fw-medium p-0 me-2">Sign in</a>
+                            <span class="text-muted fs-13 me-2 d-none d-lg-inline">Candidate</span>
+                            <a href="{{ route('login') }}" class="nav-link text-primary fw-medium p-0 me-2">Log in</a>
                             <a href="{{ route('register', ['role' => 'candidate']) }}" class="btn btn-primary btn-sm rounded-pill px-3">Sign up</a>
                         </li>
                         <li class="list-inline-item border-start border-2 border-secondary ms-2 ps-3 me-2" style="height: 24px;"></li>

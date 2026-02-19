@@ -23,6 +23,10 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            $redirect = $request->query('redirect');
+            if ($redirect && \Illuminate\Support\Str::startsWith($redirect, '/') && ! \Illuminate\Support\Str::startsWith($redirect, '//')) {
+                return redirect()->to($redirect);
+            }
             return redirect()->intended(route('home'));
         }
 

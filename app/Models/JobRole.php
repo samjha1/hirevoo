@@ -13,4 +13,9 @@ class JobRole extends Model
     {
         return $this->hasMany(JobRequiredSkill::class);
     }
+
+    public function applications(): HasMany
+    {
+        return $this->hasMany(JobApplication::class);
+    }
 }

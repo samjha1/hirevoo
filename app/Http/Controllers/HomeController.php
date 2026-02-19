@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CandidateProfile;
+use App\Models\JobApplication;
 use App\Models\JobRole;
 use Illuminate\View\View;
 
@@ -17,7 +18,10 @@ class HomeController extends Controller
     public function jobList(): View
     {
         $jobRoles = JobRole::where('is_active', true)->orderBy('title')->get();
-        return view('hirevo.job-list', compact('jobRoles'));
+        $appliedJobIds = auth()->check()
+            ? \App\Models\JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all()
+            : [];
+        return view('hirevo.job-list', compact('jobRoles', 'appliedJobIds'));
     }
 
     public function skillMatch(JobRole $jobRole): View
@@ -48,6 +52,10 @@ class HomeController extends Controller
             }
         }
 
+        $hasApplied = auth()->check()
+            ? JobApplication::where('user_id', auth()->id())->where('job_role_id', $jobRole->id)->exists()
+            : false;
+
         return view('hirevo.skill-match', [
             'jobRole' => $jobRole,
             'requiredSkills' => $jobRole->requiredSkills,
@@ -56,6 +64,7 @@ class HomeController extends Controller
             'missingSkills' => $missingSkills,
             'candidateSkills' => $candidateSkills,
             'hasProfile' => auth()->check() && auth()->user()->candidateProfile,
+            'hasApplied' => $hasApplied,
         ]);
     }
 

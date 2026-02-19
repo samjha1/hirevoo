@@ -81,7 +81,7 @@
                 </div>
             </div>
             <div class="row">
-                @forelse($jobRoles ?? [] as $role)
+                @forelse(($jobRoles ?? []) as $role)
                 <div class="col-lg-3 col-md-6 mt-4 pt-2">
                     <div class="popu-category-box rounded text-center">
                         <div class="popu-category-icon icons-md">
@@ -135,6 +135,36 @@
         </div>
     </section>
     <!-- END CATEGORY -->
+
+    <!-- START UPLOAD RESUME CTA -->
+    <section class="section bg-light">
+        <div class="container">
+            <div class="row justify-content-center align-items-center">
+                <div class="col-lg-4 col-md-5 d-none d-md-block text-center">
+                    <img src="{{ asset('images/career-cta.svg') }}" alt="Career" class="img-fluid" style="max-height: 220px;">
+                </div>
+                <div class="col-lg-8 col-md-7">
+                    <div class="card border-0 shadow rounded-3 overflow-hidden bg-primary bg-opacity-10">
+                        <div class="card-body p-4 p-lg-5 text-center">
+                            <h3 class="mb-3">Get your resume scored and discover matching job goals</h3>
+                            <p class="text-muted mb-4">Upload your CV and we'll show your ATS score and recommend job goals that match your skills.</p>
+                            @auth
+                                @if(auth()->user()->isCandidate())
+                                    <a href="{{ route('resume.upload') }}" class="btn btn-primary btn-hover px-4"><i class="uil uil-file-upload me-1"></i> Upload resume</a>
+                                @else
+                                    <a href="{{ route('resume.upload') }}" class="btn btn-primary btn-hover px-4"><i class="uil uil-file-upload me-1"></i> Submit CV</a>
+                                @endif
+                            @else
+                                <a href="{{ route('login', ['redirect' => '/resume/upload']) }}" class="btn btn-primary btn-hover px-4"><i class="uil uil-file-upload me-1"></i> Submit CV</a>
+                                <p class="text-muted small mt-3 mb-0">Sign in or sign up as a candidate to upload your resume.</p>
+                            @endauth
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- END UPLOAD RESUME CTA -->
 
     <!-- START JOB-LIST -->
     <section class="section bg-light">

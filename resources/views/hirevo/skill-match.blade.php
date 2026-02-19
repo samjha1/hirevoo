@@ -36,15 +36,36 @@
 
     <section class="section">
         <div class="container">
+            @if(session('success'))
+                <div class="alert alert-success mb-4">{{ session('success') }}</div>
+            @endif
+            @if(session('info'))
+                <div class="alert alert-info mb-4">{{ session('info') }}</div>
+            @endif
             <div class="row">
                 <div class="col-lg-8 mx-auto">
                     <!-- Job role header -->
                     <div class="card border shadow-none rounded-3 mb-4">
                         <div class="card-body p-4">
-                            <h4 class="mb-2">{{ $jobRole->title }}</h4>
-                            @if($jobRole->description)
-                                <p class="text-muted mb-0">{{ $jobRole->description }}</p>
-                            @endif
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                <div>
+                                    <h4 class="mb-2">{{ $jobRole->title }}</h4>
+                                    @if($jobRole->description)
+                                        <p class="text-muted mb-0">{{ $jobRole->description }}</p>
+                                    @endif
+                                </div>
+                                <div class="flex-shrink-0">
+                                    @auth
+                                        @if($hasApplied ?? false)
+                                            <span class="badge bg-success fs-14 px-3 py-2"><i class="uil uil-check me-1"></i> Applied</span>
+                                        @else
+                                            <a href="{{ route('job-goal.apply', $jobRole) }}" class="btn btn-primary"><i class="uil uil-import me-1"></i> Apply now</a>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('login', ['redirect' => route('job-goal.apply', $jobRole)]) }}" class="btn btn-primary"><i class="uil uil-import me-1"></i> Apply now</a>
+                                    @endauth
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -149,7 +170,14 @@
                     @endif
                     @endauth
 
-                    <div class="text-center mt-4">
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+                        @auth
+                            @if(!($hasApplied ?? false))
+                                <a href="{{ route('job-goal.apply', $jobRole) }}" class="btn btn-primary"><i class="uil uil-import me-1"></i> Apply now</a>
+                            @endif
+                        @else
+                            <a href="{{ route('login', ['redirect' => route('job-goal.apply', $jobRole)]) }}" class="btn btn-primary"><i class="uil uil-import me-1"></i> Apply now</a>
+                        @endauth
                         <a href="{{ route('job-list') }}" class="btn btn-soft-primary"><i class="uil uil-arrow-left me-1"></i> Back to Job Goals</a>
                     </div>
                 </div>

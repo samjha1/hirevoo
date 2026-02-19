@@ -38,23 +38,35 @@
     <!-- START JOB-LIST -->
     <section class="section">
         <div class="container">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="section-title text-center mb-4 pb-2">
+            <div class="row align-items-center mb-4">
+                <div class="col-md-5 col-lg-4 text-center d-none d-md-block">
+                    <img src="{{ asset('images/job-goals.svg') }}" alt="Job goals" class="img-fluid" style="max-height: 180px;">
+                </div>
+                <div class="col-md-7 col-lg-8">
+                    <div class="section-title text-center text-md-start mb-0">
                         <h4 class="title">Select your target role</h4>
-                        <p class="text-muted mb-1">Choose a job goal to see skill match and missing skills. AI will analyse and suggest learning path.</p>
+                        <p class="text-muted mb-0">Choose a job goal to see skill match and missing skills. AI will analyse and suggest learning path.</p>
                     </div>
                 </div>
             </div>
             <div class="row">
-                @forelse($jobRoles ?? [] as $role)
+                @forelse(($jobRoles ?? []) as $role)
                 <div class="col-lg-4 col-md-6 mt-4 pt-2">
-                    <div class="card border shadow-none rounded-3 mb-3 job-card">
-                        <div class="card-body p-4">
+                    <div class="card border shadow-none rounded-3 mb-3 job-card h-100">
+                        <div class="card-body p-4 d-flex flex-column">
                             <h5 class="mb-2"><a href="{{ route('job-goal.show', $role) }}" class="text-dark">{{ $role->title }}</a></h5>
-                            <p class="text-muted mb-0 fs-14">{{ Str::limit($role->description, 80) }}</p>
-                            <div class="mt-3">
+                            <p class="text-muted mb-0 fs-14 flex-grow-1">{{ Str::limit($role->description, 80) }}</p>
+                            <div class="mt-3 d-flex flex-wrap gap-2">
                                 <a href="{{ route('job-goal.show', $role) }}" class="btn btn-soft-primary btn-sm">View skill match</a>
+                                @auth
+                                    @if(in_array($role->id, $appliedJobIds ?? []))
+                                        <span class="badge bg-success align-self-center">Applied</span>
+                                    @else
+                                        <a href="{{ route('job-goal.apply', $role) }}" class="btn btn-primary btn-sm"><i class="uil uil-import me-1"></i> Apply</a>
+                                    @endif
+                                @else
+                                    <a href="{{ route('login', ['redirect' => route('job-goal.apply', $role)]) }}" class="btn btn-primary btn-sm"><i class="uil uil-import me-1"></i> Apply</a>
+                                @endauth
                             </div>
                         </div>
                     </div>
