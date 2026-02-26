@@ -148,6 +148,95 @@ class GptService
     }
 
     /**
+     * Extract profile fields from resume text for auto-filling candidate profile.
+     * Returns: headline, education, experience_years, skills (comma-separated string), location, expected_salary, phone.
+     */
+    public function extractProfileFromResume(string $text): ?array
+    {
+        $truncated = mb_substr($text, 0, 6000);
+        $system = 'You are a resume parser. Output ONLY a valid JSON object. No markdown, no code fences. '
+            . 'Extract from the resume the following. Use null for any field not found. '
+            . 'Keys: "headline" (string, one short professional title e.g. "Data Analyst" or "Full Stack Developer"), '
+            . '"education" (string, highest degree and institution in one short phrase, e.g. "B.Tech Computer Science, XYZ University"), '
+            . '"experience_years" (integer, total years of experience if stated, else null), '
+            . '"skills" (string, comma-separated list of 8-20 skills: technologies, tools, soft skills; e.g. "Python, SQL, Excel, Data Analysis, Communication"), '
+            . '"location" (string, city/state/country if stated, e.g. "Mumbai, India"), '
+            . '"expected_salary" (string, only if explicitly mentioned e.g. "8 LPA" or "₹10-12 L", else null), '
+            . '"phone" (string, phone number if present, else null). '
+            . 'Be concise; no extra text.';
+        $user = "Extract profile fields from this resume. Return ONLY a JSON object with keys: headline, education, experience_years, skills, location, expected_salary, phone.\n\nResume text:\n---\n" . $truncated;
+
+        $response = $this->chat([
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user', 'content' => $user],
+        ]);
+
+        if (! $response) {
+            return null;
+        }
+
+        $decoded = $this->parseJsonObject($response);
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $out = [
+            'headline' => isset($decoded['headline']) && $decoded['headline'] !== null ? trim((string) $decoded['headline']) : null,
+            'education' => isset($decoded['education']) && $decoded['education'] !== null ? trim((string) $decoded['education']) : null,
+            'experience_years' => isset($decoded['experience_years']) && is_numeric($decoded['experience_years']) ? (int) $decoded['experience_years'] : null,
+            'skills' => isset($decoded['skills']) && $decoded['skills'] !== null ? trim((string) $decoded['skills']) : null,
+            'location' => isset($decoded['location']) && $decoded['location'] !== null ? trim((string) $decoded['location']) : null,
+            'expected_salary' => isset($decoded['expected_salary']) && $decoded['expected_salary'] !== null ? trim((string) $decoded['expected_salary']) : null,
+            'phone' => isset($decoded['phone']) && $decoded['phone'] !== null ? trim((string) $decoded['phone']) : null,
+        ];
+
+        return $out;
+    }
+
+    /**
+     * Get resume-to-job match score (0-100) and explanation for employer view.
+     * Input: resume text, job title, job description, required skills.
+     */
+    public function getResumeJobMatchScore(string $resumeText, string $jobTitle, string $jobDescription, array $requiredSkills): ?array
+    {
+        $resumeTruncated = mb_substr($resumeText, 0, 4000);
+        $jobDescTruncated = mb_substr($jobDescription, 0, 1500);
+        $skillsList = implode(', ', array_slice($requiredSkills, 0, 25));
+
+        $system = 'You are an HR analyst evaluating how well a candidate resume matches a job role. '
+            . 'Output ONLY a valid JSON object. No markdown, no code fences. '
+            . 'Keys: "score" (integer 0-100) and "explanation" (string, 2-4 sentences). '
+            . 'Score: 0-100 where 70+ = strong match, 50-69 = partial, below 50 = weak. '
+            . 'Explanation should be professional and suitable to show to employer: briefly state match strength, key aligned skills, and 1-2 gaps if any.';
+
+        $user = "Resume (excerpt):\n---\n{$resumeTruncated}\n---\n\n"
+            . "Job title: {$jobTitle}\n\nJob description (excerpt):\n{$jobDescTruncated}\n\n"
+            . "Required skills: {$skillsList}\n\n"
+            . 'Give a match score 0-100 and a short explanation for the employer. Output ONLY: {"score": <0-100>, "explanation": "<2-4 sentences>"}';
+
+        $response = $this->chat([
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user', 'content' => $user],
+        ]);
+
+        if (! $response) {
+            return null;
+        }
+
+        $decoded = $this->parseJsonObject($response);
+        if ($decoded !== null && isset($decoded['score'])) {
+            $score = (int) $decoded['score'];
+            $score = max(0, min(100, $score));
+            return [
+                'score' => $score,
+                'explanation' => isset($decoded['explanation']) ? (string) $decoded['explanation'] : 'Match assessed by AI.',
+            ];
+        }
+
+        return null;
+    }
+
+    /**
      * Extract a JSON object from response (strips markdown code blocks if present).
      */
     protected function parseJsonObject(string $raw): ?array

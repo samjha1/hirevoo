@@ -17,6 +17,123 @@
     --bs-secondary-rgb: 16, 185, 129;
 }
 
+/* ========== New generation / Home hero ========== */
+.min-vh-50 { min-height: 50vh; }
+.hirevo-hero {
+    background: linear-gradient(160deg, #f0f9ff 0%, #f8fafc 35%, #fff 100%);
+    background-color: #fff;
+}
+.hirevo-hero-img { max-width: 100%; height: auto; }
+.nav-link-resume { color: var(--hirevo-secondary) !important; }
+.nav-link-resume:hover, .navbar .nav-link.nav-link-resume.active { color: var(--hirevo-primary) !important; }
+
+/* ========== Navbar (clean, modern) ========== */
+.hirevo-navbar {
+    background: #fff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    min-height: 64px;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+.hirevo-navbar .hirevo-nav-brand {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+.hirevo-navbar .navbar-brand .hirevo-logo {
+    height: 40px !important;
+    max-width: 140px !important;
+}
+@media (min-width: 768px) {
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 44px !important; max-width: 160px !important; }
+}
+@media (min-width: 992px) {
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 48px !important; max-width: 180px !important; }
+}
+.hirevo-nav-links .nav-link {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #334155 !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 8px;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+.hirevo-nav-links .nav-link:hover {
+    color: var(--hirevo-primary) !important;
+    background: rgba(11, 31, 59, 0.04);
+}
+.hirevo-nav-links .nav-link.active {
+    color: var(--hirevo-primary) !important;
+    font-weight: 600;
+}
+.hirevo-nav-login {
+    font-weight: 500 !important;
+    color: #475569 !important;
+    padding: 0.4rem 0.75rem !important;
+}
+.hirevo-nav-login:hover { color: var(--hirevo-primary) !important; }
+.hirevo-nav-employers {
+    font-weight: 500 !important;
+    color: #475569 !important;
+    padding: 0.4rem 0.75rem !important;
+}
+.hirevo-nav-employers:hover { color: var(--hirevo-primary) !important; }
+.hirevo-btn-signup {
+    background: var(--hirevo-primary) !important;
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.45rem 1.1rem;
+    border-radius: 10px;
+    border: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hirevo-btn-signup:hover {
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(11, 31, 59, 0.25);
+}
+.hirevo-nav-icon {
+    color: #64748b !important;
+    padding: 0.5rem !important;
+}
+.hirevo-nav-icon:hover { color: var(--hirevo-primary) !important; }
+.hirevo-nav-user {
+    color: inherit !important;
+    padding: 0.35rem 0.5rem !important;
+    border-radius: 10px;
+}
+.hirevo-nav-user:hover { background: rgba(0, 0, 0, 0.04) !important; }
+.hirevo-nav-toggler { padding: 0.5rem; color: var(--hirevo-primary) !important; }
+.hirevo-navbar .dropdown-menu { margin-top: 0.35rem; }
+.hirevo-navbar .dropdown-item { padding: 0.5rem 1rem; }
+/* Mobile: stacked nav actions and link spacing */
+@media (max-width: 991.98px) {
+    .hirevo-navbar .navbar-collapse {
+        padding: 1rem 0;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        margin-top: 0.5rem;
+    }
+    .hirevo-nav-links .nav-item { border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
+    .hirevo-nav-links .nav-link { padding: 0.65rem 0.75rem !important; }
+    .hirevo-nav-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        margin-top: 0.5rem;
+    }
+    .hirevo-nav-actions .nav-item.ms-2 { margin-left: 0 !important; }
+    .hirevo-btn-signup { width: 100%; justify-content: center; }
+}
+/* Style switcher: hide by default for cleaner look */
+#style-switcher { display: none !important; }
+.btn-success, .btn-success:hover, .btn-success:focus {
+    background-color: var(--hirevo-secondary) !important;
+    border-color: var(--hirevo-secondary) !important;
+    color: #fff !important;
+}
+
 /* Typography – SN Pro across the full website */
 html,
 body,
@@ -67,9 +184,9 @@ textarea,
     .bg-auth .hirevo-logo { height: 82px !important; max-width: 300px; }
 }
 
-/* Prevent navbar overlapping content (fixed top-bar + navbar) */
+/* Prevent navbar overlapping content (fixed navbar only; top-bar removed) */
 body .main-content {
-    padding-top: 170px !important;
+    padding-top: 88px !important;
 }
 body .page-content {
     padding-top: 0 !important;
@@ -81,12 +198,12 @@ section.bg-auth {
 }
 @media (max-width: 991.98px) {
     body .main-content {
-        padding-top: 140px !important;
+        padding-top: 85px !important;
     }
 }
 @media (max-width: 575.98px) {
     body .main-content {
-        padding-top: 120px !important;
+        padding-top: 75px !important;
     }
     section.bg-auth {
         padding-top: 1rem !important;
@@ -401,4 +518,22 @@ img, video, iframe { max-width: 100%; height: auto; }
     .bg-auth .auth-content.card-body.p-5 {
         padding: 1.5rem !important;
     }
+}
+
+
+.resume-btn {
+    background-color: #000000;
+    color: #ffffff !important;
+    border: 2px solid #000000;
+    transition: all 0.3s ease;
+}
+
+.resume-btn:hover {
+    background-color: #ffffff;
+    color: #000000 !important;
+    border: 2px solid #000000;
+}
+
+.resume-btn i {
+    transition: color 0.3s ease;
 }

@@ -35,97 +35,25 @@
     </div>
 
     <div>
-        <!-- START TOP-BAR -->
-        <div class="top-bar">
-            <div class="container-fluid custom-container">
-                <div class="row g-0 align-items-center">
-                    <div class="col-md-7">
-                        <ul class="list-inline mb-0 text-center text-md-start">
-                            <li class="list-inline-item">
-                                <p class="fs-13 mb-0"> <i class="mdi mdi-map-marker"></i> Your Location: <a href="javascript:void(0)" class="text-dark">India</a></p>
-                            </li>
-                            <li class="list-inline-item">
-                                <ul class="topbar-social-menu list-inline mb-0">
-                                    <li class="list-inline-item"><a href="javascript:void(0)" class="social-link"><i class="uil uil-whatsapp"></i></a></li>
-                                    <li class="list-inline-item"><a href="javascript:void(0)" class="social-link"><i class="uil uil-facebook-messenger-alt"></i></a></li>
-                                    <li class="list-inline-item"><a href="javascript:void(0)" class="social-link"><i class="uil uil-instagram"></i></a></li>
-                                    <li class="list-inline-item"><a href="javascript:void(0)" class="social-link"><i class="uil uil-envelope"></i></a></li>
-                                    <li class="list-inline-item"><a href="javascript:void(0)" class="social-link"><i class="uil uil-twitter-alt"></i></a></li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="col-md-5">
-                        <ul class="list-inline mb-0 text-center text-md-end">
-                            @guest
-                            <li class="list-inline-item py-2 me-2 align-middle">
-                                <a href="{{ route('login') }}" class="text-dark fw-medium fs-13"><i class="uil uil-sign-in-alt"></i> Sign In</a>
-                            </li>
-                            <li class="list-inline-item py-2 me-2 align-middle">
-                                <a href="{{ route('register') }}" class="text-dark fw-medium fs-13"><i class="uil uil-lock"></i> Sign Up</a>
-                            </li>
-                            @endguest
-                            @auth
-                            <li class="list-inline-item py-2 me-2 align-middle">
-                                <a href="{{ route('profile') }}" class="text-dark fw-medium fs-13"><i class="uil uil-user"></i> Profile</a>
-                            </li>
-                            <li class="list-inline-item align-middle">
-                                <form method="POST" action="{{ route('logout') }}" class="d-inline">@csrf<button type="submit" class="btn btn-link text-dark fw-medium fs-13 p-0 border-0"><i class="uil uil-sign-out-alt"></i> Sign Out</button></form>
-                            </li>
-                            @endauth
-                            <li class="list-inline-item align-middle">
-                                <div class="dropdown d-inline-block language-switch">
-                                    <button type="button" class="btn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <img id="header-lang-img" src="{{ asset($theme.'/assets/images/flags/us.jpg') }}" alt="Header Language" height="16">
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-end">
-                                        <a href="javascript:void(0);" class="dropdown-item notify-item language" data-lang="eng"><img src="{{ asset($theme.'/assets/images/flags/us.jpg') }}" alt="user-image" class="me-1" height="12"> <span class="align-middle">English</span></a>
-                                        <a href="javascript:void(0);" class="dropdown-item notify-item language" data-lang="sp"><img src="{{ asset($theme.'/assets/images/flags/spain.jpg') }}" alt="user-image" class="me-1" height="12"> <span class="align-middle">Spanish</span></a>
-                                        <a href="javascript:void(0);" class="dropdown-item notify-item language" data-lang="gr"><img src="{{ asset($theme.'/assets/images/flags/germany.jpg') }}" alt="user-image" class="me-1" height="12"> <span class="align-middle">German</span></a>
-                                        <a href="javascript:void(0);" class="dropdown-item notify-item language" data-lang="it"><img src="{{ asset($theme.'/assets/images/flags/italy.jpg') }}" alt="user-image" class="me-1" height="12"> <span class="align-middle">Italian</span></a>
-                                        <a href="javascript:void(0);" class="dropdown-item notify-item language" data-lang="ru"><img src="{{ asset($theme.'/assets/images/flags/russia.jpg') }}" alt="user-image" class="me-1" height="12"> <span class="align-middle">Russian</span></a>
-                                    </div>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- END TOP-BAR -->
-
         <!-- Navbar Start -->
-        <nav class="navbar navbar-expand-lg fixed-top sticky" id="navbar">
+        <nav class="navbar navbar-expand-lg fixed-top sticky hirevo-navbar" id="navbar">
             <div class="container-fluid custom-container">
-                <a class="navbar-brand text-dark fw-bold me-auto d-flex align-items-center" href="{{ route('home') }}">
+                <a class="navbar-brand hirevo-nav-brand d-flex align-items-center" href="{{ route('home') }}">
                     <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo logo-dark">
                     <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo logo-light">
                 </a>
-                <div>
-                    <button class="navbar-toggler me-3" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-label="Toggle navigation">
-                        <i class="mdi mdi-menu"></i>
-                    </button>
-                </div>
+                <button class="navbar-toggler hirevo-nav-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-label="Toggle navigation">
+                    <i class="mdi mdi-menu fs-28"></i>
+                </button>
                 <div class="collapse navbar-collapse" id="navbarCollapse">
-                    <ul class="navbar-nav mx-auto navbar-center">
+                    <ul class="navbar-nav mx-auto navbar-center hirevo-nav-links">
                         @auth
                         @if(auth()->user()->isReferrer())
-                            {{-- Employer dashboard navigation --}}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('home') }}">Home</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('employer.dashboard') ? 'active' : '' }}" href="{{ route('employer.dashboard') }}">Dashboard</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('employer.jobs.*') ? 'active' : '' }}" href="{{ route('employer.jobs.index') }}">My Jobs</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('employer.jobs.create') ? 'active' : '' }}" href="{{ route('employer.jobs.create') }}">Post Job</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('employer.profile') ? 'active' : '' }}" href="{{ route('employer.profile') }}">Company Profile</a>
-                            </li>
+                            <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Home</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('employer.dashboard') ? 'active' : '' }}" href="{{ route('employer.dashboard') }}">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('employer.jobs.*') ? 'active' : '' }}" href="{{ route('employer.jobs.index') }}">My Jobs</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('employer.jobs.create') ? 'active' : '' }}" href="{{ route('employer.jobs.create') }}">Post Job</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('employer.profile') ? 'active' : '' }}" href="{{ route('employer.profile') }}">Company Profile</a></li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">More</a>
                                 <ul class="dropdown-menu dropdown-menu-end">
@@ -146,58 +74,63 @@
                         @guest
                             <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Home</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('job-list') }}">Job Goals</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ route('job-openings') }}">Job openings</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ route('job-openings') }}">Jobs</a></li>
+                            <li class="nav-item"><a class="nav-link nav-link-resume {{ request()->routeIs('resume.*') ? 'active' : '' }}" href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => url('/resume/upload')]) }}">Resume Score</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('pricing') }}">Pricing</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('about') }}">About</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">Contact</a></li>
                         @endguest
                         @auth
                         @if(!auth()->user()->isReferrer() && !auth()->user()->isAdmin())
-                            {{-- Candidate / default logged-in nav --}}
                             <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Home</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('job-list') }}">Job Goals</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ route('job-openings') }}">Job openings</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ route('job-openings') }}">Jobs</a></li>
+                            <li class="nav-item"><a class="nav-link nav-link-resume {{ request()->routeIs('resume.*') ? 'active' : '' }}" href="{{ route('resume.upload') }}">Resume Score</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('pricing') }}">Pricing</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('about') }}">About</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">Contact</a></li>
                         @endif
                         @endauth
                     </ul>
-                    <ul class="header-menu list-inline d-flex align-items-center mb-0">
+                    <ul class="navbar-nav align-items-center hirevo-nav-actions">
                         @guest
-                        <li class="list-inline-item align-items-center d-flex me-2">
-                            <span class="text-muted fs-13 me-2 d-none d-lg-inline">Candidate</span>
-                            <a href="{{ route('login') }}" class="nav-link text-primary fw-medium p-0 me-2">Log in</a>
-                            <a href="{{ route('register', ['role' => 'candidate']) }}" class="btn btn-primary btn-sm rounded-pill px-3">Sign up</a>
+                        <li class="nav-item">
+                            <a href="{{ route('login') }}" class="nav-link hirevo-nav-login">Log in</a>
                         </li>
-                        <li class="list-inline-item border-start border-2 border-secondary ms-2 ps-3 me-2" style="height: 24px;"></li>
-                        <li class="list-inline-item align-items-center d-flex">
-                            <span class="text-muted fs-13 me-2 d-none d-lg-inline">Employer</span>
-                            <a href="{{ route('login', ['role' => 'referrer']) }}" class="nav-link text-primary fw-medium p-0 me-2">Log in</a>
-                            <a href="{{ route('register', ['role' => 'referrer']) }}" class="btn btn-primary btn-sm rounded-pill px-3">Sign up</a>
+                            <li class="nav-item ms-2">
+                                <a href="{{ route('register', ['role' => 'candidate']) }}" class="btn hirevo-btn-signup">Sign up</a>
+                            </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link hirevo-nav-employers dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">For Employers</a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 py-2">
+                                <li><a class="dropdown-item rounded-2 mx-1" href="{{ route('login', ['role' => 'referrer']) }}">Log in as employer</a></li>
+                                <li><a class="dropdown-item rounded-2 mx-1" href="{{ route('register', ['role' => 'referrer']) }}">Sign up as employer</a></li>
+                            </ul>
                         </li>
+
                         @else
-                        <li class="list-inline-item dropdown me-4">
-                            <a href="javascript:void(0)" class="header-item noti-icon position-relative" id="notification" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="mdi mdi-bell fs-22"></i>
-                                <div class="count position-absolute">0</div>
+                        <li class="nav-item">
+                            <a href="javascript:void(0)" class="nav-link hirevo-nav-icon position-relative" id="notification" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="mdi mdi-bell fs-20"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">0</span>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-end p-0" aria-labelledby="notification">
-                                <div class="notification-header border-bottom bg-light">
-                                    <h6 class="mb-1">Notification</h6>
-                                    <p class="text-muted fs-13 mb-0">You have 0 unread notifications</p>
+                            <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 p-0" aria-labelledby="notification">
+                                <div class="px-3 py-3 border-bottom bg-light">
+                                    <h6 class="mb-0">Notifications</h6>
+                                    <p class="text-muted small mb-0">You have 0 unread</p>
                                 </div>
-                                <div class="notification-footer border-top text-center">
-                                    <a class="primary-link fs-13" href="javascript:void(0)">View More..</a>
+                                <div class="p-2 text-center">
+                                    <a class="dropdown-item small text-primary" href="javascript:void(0)">View all</a>
                                 </div>
                             </div>
                         </li>
-                        <li class="list-inline-item dropdown">
-                            <a href="javascript:void(0)" class="header-item" id="userdropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="{{ asset($theme.'/assets/images/profile.jpg') }}" alt="mdo" width="35" height="35" class="rounded-circle me-1">
-                                <span class="d-none d-md-inline-block fw-medium">Hi, {{ auth()->user()->name }}</span>
+                        <li class="nav-item dropdown ms-2">
+                            <a href="javascript:void(0)" class="nav-link hirevo-nav-user d-flex align-items-center" id="userdropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="{{ asset($theme.'/assets/images/profile.jpg') }}" alt="" width="32" height="32" class="rounded-circle me-2 object-fit-cover">
+                                <span class="d-none d-md-inline-block fw-medium text-dark">{{ auth()->user()->name }}</span>
+                                <i class="uil uil-angle-down ms-1 d-none d-md-inline-block small"></i>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userdropdown">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 py-2" aria-labelledby="userdropdown">
                                 @if(auth()->user()->isReferrer())
                                     <li><a class="dropdown-item" href="{{ route('employer.dashboard') }}">Employer Dashboard</a></li>
                                     <li><a class="dropdown-item" href="{{ route('employer.profile') }}">Company Profile</a></li>
@@ -316,6 +249,8 @@
                                 <p class="fs-16 text-white mb-4">For Jobs</p>
                                 <ul class="list-unstyled footer-list mb-0">
                                     <li><a href="{{ route('job-list') }}"><i class="mdi mdi-chevron-right"></i> Job Goals</a></li>
+                                    <li><a href="{{ route('job-openings') }}"><i class="mdi mdi-chevron-right"></i> Job Openings</a></li>
+                                    <li><a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => url('/resume/upload')]) }}"><i class="mdi mdi-chevron-right"></i> Resume Score</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -350,7 +285,7 @@
                     <div class="row">
                         <div class="col-lg-12">
                             <p class="text-white-50 text-center mb-0">
-                                <script>document.write(new Date().getFullYear())</script> &copy; Hirevo - AI Career Intelligence. Template by <a href="https://themeforest.net/search/themesdesign" target="_blank" class="text-reset text-decoration-underline">Themesdesign</a>
+                                <script>document.write(new Date().getFullYear())</script> &copy; Hirevo - AI Career Intelligence.<a href="" target="_blank" class="text-reset text-decoration-underline"></a>
                             </p>
                         </div>
                     </div>

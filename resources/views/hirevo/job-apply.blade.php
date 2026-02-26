@@ -69,12 +69,12 @@
                                         <select name="resume_id" id="resume_id" class="form-select">
                                             <option value="">No resume</option>
                                             @foreach($resumes as $r)
-                                                <option value="{{ $r->id }}" {{ old('resume_id') == $r->id ? 'selected' : '' }}>
+                                                <option value="{{ $r->id }}" {{ (old('resume_id', $primaryResumeId ?? '') == $r->id) ? 'selected' : '' }}>
                                                     {{ $r->file_name ?? 'Resume #' . $r->id }} {{ $r->ai_score ? '(' . $r->ai_score . '% ATS)' : '' }}
                                                 </option>
                                             @endforeach
                                         </select>
-                                        <p class="small text-muted mt-1 mb-0">We'll use this resume when reviewing your application.</p>
+                                        <p class="small text-muted mt-1 mb-0">We'll use this resume when reviewing your application. Match score (for employer) is calculated on submit.</p>
                                     </div>
                                 @endif
                                 <div class="mb-4">
@@ -87,6 +87,59 @@
                                     <a href="{{ route('job-goal.show', $jobRole) }}" class="btn btn-outline-secondary">Cancel</a>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    @if($resumes->count() > 0)
+                    <div id="match-score-card" class="card border-0 shadow-sm rounded-4 mt-4 border-primary" style="{{ ($matchResult ?? null) ? '' : 'display:none;' }}">
+                        <div class="card-body p-4">
+                            <h6 class="mb-2"><i class="uil uil-analysis me-1"></i> Match score for selected resume</h6>
+                            <div class="d-flex align-items-center mt-3">
+                                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px;">
+                                    <span class="fw-bold text-primary" id="match-score-value">{{ $matchResult['score'] ?? '–' }}%</span>
+                                </div>
+                                <div id="match-score-explanation" class="small text-muted">{{ $matchResult['explanation'] ?? 'Select a resume above to see your match score.' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <script>
+                    (function() {
+                        var sel = document.getElementById('resume_id');
+                        var card = document.getElementById('match-score-card');
+                        var scoreEl = document.getElementById('match-score-value');
+                        var explEl = document.getElementById('match-score-explanation');
+                        var url = '{{ route("job-goal.match-score", $jobRole) }}';
+                        if (!sel || !card) return;
+                        function updateScore() {
+                            var rid = sel.value;
+                            if (!rid) {
+                                card.style.display = 'none';
+                                return;
+                            }
+                            card.style.display = '';
+                            scoreEl.textContent = '…';
+                            explEl.textContent = 'Loading…';
+                            fetch(url + '?resume_id=' + encodeURIComponent(rid), { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                                .then(function(r) { return r.json(); })
+                                .then(function(d) {
+                                    scoreEl.textContent = (d.score != null ? d.score : '–') + '%';
+                                    explEl.textContent = d.explanation || '';
+                                })
+                                .catch(function() {
+                                    scoreEl.textContent = '–%';
+                                    explEl.textContent = 'Could not load score.';
+                                });
+                        }
+                        sel.addEventListener('change', updateScore);
+                    })();
+                    </script>
+                    @endif
+
+                    <div class="card border-0 shadow-sm rounded-4 mt-4 border-success">
+                        <div class="card-body p-4">
+                            <h6 class="mb-2"><i class="uil uil-user-plus me-1"></i> After you apply</h6>
+                            <p class="text-muted small mb-2">Get a referral to increase your chance of selection. Premium members can request referrals from verified employees.</p>
+                            <a href="{{ route('pricing') }}" class="btn btn-success btn-sm">Get Referral – View Premium</a>
                         </div>
                     </div>
                 </div>

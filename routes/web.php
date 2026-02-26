@@ -11,6 +11,7 @@ use App\Http\Controllers\Employer\JobController as EmployerJobController;
 use App\Http\Controllers\Employer\ProfileController as EmployerProfileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobApplicationController;
+use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResumeController;
 use Illuminate\Support\Facades\Route;
@@ -30,10 +31,12 @@ Route::get('/auth/microsoft/callback', [SocialAuthController::class, 'handleMicr
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/fill-from-resume', [ProfileController::class, 'fillFromResume'])->name('profile.fill-from-resume');
     Route::get('/resume/upload', [ResumeController::class, 'showUploadForm'])->name('resume.upload');
     Route::post('/resume/upload', [ResumeController::class, 'upload']);
     Route::get('/resume/{resume}/results', [ResumeController::class, 'results'])->name('resume.results');
     Route::post('/resume/lead', [ResumeController::class, 'createLead'])->name('resume.lead');
+    Route::post('/leads/upskill-contact', [LeadController::class, 'storeUpskillContact'])->name('leads.upskill-contact');
 
     // Employer routes (role: referrer)
     Route::middleware('role:referrer')->prefix('employer')->name('employer.')->group(function () {
@@ -67,6 +70,7 @@ Route::get('/job-openings/{job}/apply', [HomeController::class, 'showEmployerJob
 Route::post('/job-openings/{job}/apply', [HomeController::class, 'storeEmployerJobApply'])->middleware('auth')->name('job-openings.apply.store');
 Route::get('/job-goals/{jobRole}', [HomeController::class, 'skillMatch'])->name('job-goal.show');
 Route::get('/job-goals/{jobRole}/apply', [JobApplicationController::class, 'showApplyForm'])->name('job-goal.apply');
+Route::get('/job-goals/{jobRole}/match-score', [JobApplicationController::class, 'matchScore'])->middleware('auth')->name('job-goal.match-score');
 Route::post('/job-goals/{jobRole}/apply', [JobApplicationController::class, 'store'])->middleware('auth')->name('job-goal.apply.store');
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
 Route::get('/about', fn () => view('hirevo.about'))->name('about');

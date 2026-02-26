@@ -8,6 +8,8 @@ use App\Models\EmployerJobApplication;
 use App\Models\JobApplication;
 use App\Models\JobRole;
 use App\Models\Resume;
+use App\Models\UpskillOpportunity;
+use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,16 +22,29 @@ class HomeController extends Controller
         return view('hirevo.index', compact('jobRoles'));
     }
 
-    public function jobList(): View
+    public function jobList(Request $request): View
     {
-        $jobRoles = JobRole::where('is_active', true)->orderBy('title')->get();
+        $query = JobRole::where('is_active', true);
+
+        if ($request->filled('q')) {
+            $q = $request->get('q');
+            $query->where(function ($qry) use ($q) {
+                $qry->where('title', 'like', '%' . $q . '%')
+                    ->orWhere('description', 'like', '%' . $q . '%');
+            });
+        }
+
+        $jobRoles = $query->orderBy('title')->get();
         $appliedJobIds = auth()->check()
             ? \App\Models\JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all()
             : [];
-        return view('hirevo.job-list', compact('jobRoles', 'appliedJobIds'));
+        $searchQuery = $request->get('q', '');
+        $searchLocation = $request->get('location', '');
+
+        return view('hirevo.job-list', compact('jobRoles', 'appliedJobIds', 'searchQuery', 'searchLocation'));
     }
 
-    public function skillMatch(JobRole $jobRole): View
+    public function skillMatch(JobRole $jobRole, ResumeAnalysisService $resumeAnalysis): View
     {
         $jobRole->load('requiredSkills');
         $requiredSkills = $jobRole->requiredSkills->pluck('skill_name')->map(fn ($s) => strtolower(trim($s)))->unique()->values()->all();
@@ -39,7 +54,21 @@ class HomeController extends Controller
         $missingSkills = $requiredSkills;
         $candidateSkills = [];
 
+        $primaryResume = null;
+        $matchingJobGoals = [];
+        $upskillOpportunities = [];
+        $appliedJobIds = [];
+        $userSkillsForUpskill = [];
+
         if (auth()->check() && auth()->user()->isCandidate()) {
+            $appliedJobIds = JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all();
+            $primaryResume = auth()->user()->resumes()->where('is_primary', true)->first()
+                ?? auth()->user()->resumes()->orderByDesc('created_at')->first();
+            if ($primaryResume) {
+                $matchingJobGoals = $resumeAnalysis->getMatchingJobGoalsForResume($primaryResume, 20);
+                $upskillOpportunities = UpskillOpportunity::active()->orderBy('sort_order')->get();
+                $userSkillsForUpskill = array_map('strtolower', $primaryResume->getExtractedSkillsList());
+            }
             $profile = auth()->user()->candidateProfile;
             if ($profile && ! empty($profile->skills)) {
                 $candidateSkills = array_map(function ($s) {
@@ -70,6 +99,11 @@ class HomeController extends Controller
             'candidateSkills' => $candidateSkills,
             'hasProfile' => auth()->check() && auth()->user()->candidateProfile,
             'hasApplied' => $hasApplied,
+            'primaryResume' => $primaryResume,
+            'matchingJobGoals' => $matchingJobGoals,
+            'upskillOpportunities' => $upskillOpportunities,
+            'appliedJobIds' => $appliedJobIds,
+            'userSkillsForUpskill' => $userSkillsForUpskill,
         ]);
     }
 
@@ -78,16 +112,57 @@ class HomeController extends Controller
         return view('hirevo.pricing');
     }
 
-    public function jobOpenings(): View
+    public function jobOpenings(Request $request): View
     {
-        $jobs = EmployerJob::where('status', 'active')
-            ->with(['user.referrerProfile'])
-            ->orderByDesc('created_at')
-            ->paginate(12);
+        $query = EmployerJob::where('status', 'active')->with(['user.referrerProfile']);
+
+        if ($request->filled('q')) {
+            $q = $request->get('q');
+            $query->where(function ($qry) use ($q) {
+                $qry->where('title', 'like', '%' . $q . '%')
+                    ->orWhere('description', 'like', '%' . $q . '%')
+                    ->orWhereHas('user.referrerProfile', function ($uq) use ($q) {
+                        $uq->where('company_name', 'like', '%' . $q . '%');
+                    });
+            });
+        }
+
+        if ($request->filled('location')) {
+            $query->where('location', 'like', '%' . $request->get('location') . '%');
+        }
+
+        $validJobTypes = ['full_time', 'part_time', 'contract', 'internship', 'temporary', 'volunteer', 'other'];
+        if ($request->filled('job_type') && in_array($request->get('job_type'), $validJobTypes, true)) {
+            $query->where('job_type', $request->get('job_type'));
+        }
+
+        $validWorkTypes = ['office', 'remote', 'hybrid'];
+        if ($request->filled('work_location_type') && in_array($request->get('work_location_type'), $validWorkTypes, true)) {
+            $query->where('work_location_type', $request->get('work_location_type'));
+        }
+
+        $jobs = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
         $appliedIds = auth()->check()
             ? EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all()
             : [];
-        return view('hirevo.job-openings', compact('jobs', 'appliedIds'));
+        $searchQuery = $request->get('q', '');
+        $searchLocation = $request->get('location', '');
+        $filterJobType = $request->get('job_type', '');
+        $filterWorkType = $request->get('work_location_type', '');
+
+        $locationOptions = EmployerJob::where('status', 'active')
+            ->whereNotNull('location')
+            ->where('location', '!=', '')
+            ->distinct()
+            ->pluck('location')
+            ->sort()
+            ->values()
+            ->all();
+
+        return view('hirevo.job-openings', compact(
+            'jobs', 'appliedIds', 'searchQuery', 'searchLocation',
+            'filterJobType', 'filterWorkType', 'locationOptions'
+        ));
     }
 
     public function showEmployerJobApply(EmployerJob $job): View|RedirectResponse

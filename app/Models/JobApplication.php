@@ -13,6 +13,8 @@ class JobApplication extends Model
         'resume_id',
         'cover_message',
         'status',
+        'match_score',
+        'match_score_explanation',
     ];
 
     public function user(): BelongsTo

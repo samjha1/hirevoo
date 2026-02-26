@@ -20,6 +20,10 @@ class ApplicationController extends Controller
         if (! $user->isReferrer() || $job->user_id !== $user->id) {
             return redirect()->route('employer.dashboard');
         }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to view applications.');
+        }
 
         $applications = $job->applications()
             ->with(['user.candidateProfile', 'resume'])
@@ -38,6 +42,10 @@ class ApplicationController extends Controller
         if (! $user->isReferrer() || $application->employerJob->user_id !== $user->id) {
             abort(403);
         }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage applications.');
+        }
         $valid = $request->validate(['status' => 'required|in:' . implode(',', array_keys(EmployerJobApplication::statusOptions()))]);
         $application->update(['status' => $valid['status']]);
         return redirect()->back()->with('success', 'Application status updated.');
@@ -48,6 +56,10 @@ class ApplicationController extends Controller
         $user = auth()->user();
         if (! $user->isReferrer() || $application->employerJob->user_id !== $user->id) {
             abort(403);
+        }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to view applications.');
         }
         if (! $application->resume_id || ! $application->resume) {
             return redirect()->back()->with('error', 'No resume attached.');
@@ -69,6 +81,10 @@ class ApplicationController extends Controller
         $user = auth()->user();
         if (! $user->isReferrer() || $application->employerJob->user_id !== $user->id) {
             abort(403);
+        }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to view applications.');
         }
         if (! $application->resume_id || ! $application->resume) {
             return redirect()->back()->with('error', 'No resume attached.');

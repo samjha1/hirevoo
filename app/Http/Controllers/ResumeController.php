@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmployerJob;
+use App\Models\EmployerJobApplication;
 use App\Models\JobApplication;
 use App\Models\JobRole;
 use App\Models\Lead;
 use App\Models\Resume;
 use App\Models\SkillAnalysis;
+use App\Models\UpskillOpportunity;
+use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +19,8 @@ use Illuminate\View\View;
 class ResumeController extends Controller
 {
     public function __construct(
-        protected ResumeAnalysisService $resumeAnalysis
+        protected ResumeAnalysisService $resumeAnalysis,
+        protected GptService $gptService
     ) {}
 
     public function showUploadForm(): View|RedirectResponse
@@ -61,7 +66,8 @@ class ResumeController extends Controller
 
         $this->resumeAnalysis->analyzeResume($resume);
 
-        return redirect()->route('resume.results', $resume);
+        return redirect()->route('resume.results', $resume)
+            ->with('success', 'Resume analyzed successfully. View your ATS score and recommended jobs below.');
     }
 
     public function results(Resume $resume): View|RedirectResponse
@@ -70,13 +76,21 @@ class ResumeController extends Controller
             abort(403);
         }
 
-        $recommended = $this->getRecommendedJobGoals($resume);
+        $recommendedJobGoals = $this->getRecommendedJobGoals($resume);
+        $recommendedEmployerJobs = $this->getRecommendedEmployerJobs($resume);
         $appliedJobIds = JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all();
+        $appliedEmployerJobIds = EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all();
+        $upskillOpportunities = UpskillOpportunity::active()->orderBy('sort_order')->get();
+        $userSkillsForUpskill = array_map('strtolower', $resume->getExtractedSkillsList());
 
         return view('hirevo.resume-results', [
             'resume' => $resume,
-            'recommendedJobGoals' => $recommended,
+            'recommendedJobGoals' => $recommendedJobGoals,
+            'recommendedEmployerJobs' => $recommendedEmployerJobs,
             'appliedJobIds' => $appliedJobIds,
+            'appliedEmployerJobIds' => $appliedEmployerJobIds,
+            'upskillOpportunities' => $upskillOpportunities,
+            'userSkillsForUpskill' => $userSkillsForUpskill,
         ]);
     }
 
@@ -153,5 +167,57 @@ class ResumeController extends Controller
         }
         usort($scored, fn ($a, $b) => $b['match_percentage'] <=> $a['match_percentage']);
         return array_slice($scored, 0, 8);
+    }
+
+    /**
+     * Get recommended posted jobs (EmployerJob) based on resume skills and summary.
+     */
+    protected function getRecommendedEmployerJobs(Resume $resume): array
+    {
+        $jobs = EmployerJob::where('status', 'active')
+            ->with('user.referrerProfile')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $skills = $resume->getExtractedSkillsList();
+        $summaryWords = [];
+        if (! empty($resume->ai_summary)) {
+            $summaryWords = array_filter(
+                preg_split('/[\s,;.\-\/]+/', strip_tags($resume->ai_summary), -1, PREG_SPLIT_NO_EMPTY),
+                fn ($w) => strlen($w) > 2
+            );
+            $summaryWords = array_map('strtolower', array_unique(array_slice($summaryWords, 0, 50)));
+        }
+
+        $scored = [];
+        foreach ($jobs as $job) {
+            $jobText = strtolower(($job->title ?? '') . ' ' . strip_tags($job->description ?? ''));
+            $skillsMatched = 0;
+            $totalSkills = count(array_filter($skills, fn ($s) => strlen($s) >= 2));
+            foreach ($skills as $skill) {
+                if (strlen($skill) >= 2 && str_contains($jobText, $skill)) {
+                    $skillsMatched++;
+                }
+            }
+            $matchPercentage = $totalSkills > 0
+                ? (int) round(($skillsMatched / $totalSkills) * 100)
+                : 0;
+            if ($matchPercentage === 0 && ! empty($summaryWords)) {
+                $summaryMatches = 0;
+                foreach (array_slice($summaryWords, 0, 20) as $word) {
+                    if (str_contains($jobText, $word)) {
+                        $summaryMatches++;
+                    }
+                }
+                $matchPercentage = (int) round(min(100, (count(array_slice($summaryWords, 0, 20)) > 0 ? ($summaryMatches / 20) * 100 : 0)));
+            }
+            $scored[] = [
+                'job' => $job,
+                'match_percentage' => min(100, $matchPercentage),
+            ];
+        }
+
+        usort($scored, fn ($a, $b) => $b['match_percentage'] <=> $a['match_percentage']);
+        return array_slice($scored, 0, 12);
     }
 }

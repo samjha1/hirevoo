@@ -18,6 +18,10 @@ class JobController extends Controller
         if (! $user->isReferrer()) {
             return redirect()->route('home')->with('info', 'Access for employers only.');
         }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved before you can view or post jobs.');
+        }
 
         $query = $user->employerJobs()->withCount('applications')->orderByDesc('created_at');
         if ($request->filled('status') && in_array($request->status, ['active', 'draft', 'closed'], true)) {
@@ -44,9 +48,12 @@ class JobController extends Controller
         if (! $user->isReferrer()) {
             return redirect()->route('home')->with('info', 'Access for employers only.');
         }
-
         $profile = $user->referrerProfile;
-        $companyName = $profile ? $profile->company_name : '';
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved before you can post jobs.');
+        }
+
+        $companyName = $profile->company_name ?? '';
 
         return view('hirevo.employer.jobs.create', ['companyName' => $companyName]);
     }
@@ -57,9 +64,11 @@ class JobController extends Controller
         if (! $user->isReferrer()) {
             return redirect()->route('home');
         }
-
         $profile = $user->referrerProfile;
-        if (! $profile || $profile->credits < 1) {
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('error', 'Your account must be approved before you can post jobs.');
+        }
+        if ($profile->credits < 1) {
             return redirect()
                 ->route('employer.jobs.create')
                 ->with('error', 'You need at least 1 credit to post a job. Buy credits to continue.');
@@ -102,6 +111,10 @@ class JobController extends Controller
         if (! $user->isReferrer() || $job->user_id !== $user->id) {
             return redirect()->route('employer.dashboard');
         }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage jobs.');
+        }
 
         return view('hirevo.employer.jobs.edit', ['job' => $job]);
     }
@@ -111,6 +124,10 @@ class JobController extends Controller
         $user = auth()->user();
         if (! $user->isReferrer() || $job->user_id !== $user->id) {
             return redirect()->route('employer.dashboard');
+        }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage jobs.');
         }
 
         $validated = $request->validate([
@@ -148,6 +165,10 @@ class JobController extends Controller
         if (! $user->isReferrer() || $job->user_id !== $user->id) {
             return redirect()->route('employer.dashboard');
         }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage jobs.');
+        }
 
         $job->delete();
         return redirect()->route('employer.jobs.index')->with('success', 'Job removed.');
@@ -159,8 +180,11 @@ class JobController extends Controller
         if (! $user->isReferrer() || $job->user_id !== $user->id) {
             return redirect()->route('employer.dashboard');
         }
-
         $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage jobs.');
+        }
+
         $user->employerJobs()->create([
             'company_name'         => $profile->company_name ?? $job->company_name,
             'title'               => $job->title . ' (Copy)',
@@ -184,9 +208,11 @@ class JobController extends Controller
         if (! $user->isReferrer() || $job->user_id !== $user->id) {
             return redirect()->route('employer.dashboard');
         }
-
         $profile = $user->referrerProfile;
-        if (! $profile || $profile->credits < 1) {
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('error', 'Your account must be approved to repost jobs.');
+        }
+        if ($profile->credits < 1) {
             return redirect()
                 ->route('employer.jobs.index')
                 ->with('error', 'You need at least 1 credit to repost. Buy credits to continue.');
@@ -215,6 +241,10 @@ class JobController extends Controller
         $user = auth()->user();
         if (! $user->isReferrer()) {
             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return response()->json(['error' => 'Your account must be approved to use this feature.'], 403);
         }
 
         $title = $request->input('title', '');

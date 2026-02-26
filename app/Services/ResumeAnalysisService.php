@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\CandidateProfile;
+use App\Models\JobRole;
 use App\Models\JobRequiredSkill;
 use App\Models\Resume;
 use Smalot\PdfParser\Parser as PdfParser;
@@ -215,7 +217,99 @@ class ResumeAnalysisService
             'extracted_skills' => $skills,
         ]);
 
+        $resume->refresh();
+
+        if ($this->gptService->isAvailable()) {
+            $this->fillProfileFromResumeText($resume->user_id, $text);
+        } else {
+            $this->fillProfileFromResumeFallback($resume);
+        }
+
         return $resume;
+    }
+
+    /**
+     * Fill candidate profile from resume text using GPT. Called after analyzeResume when GPT is available.
+     */
+    public function fillProfileFromResumeText(int $userId, string $text): void
+    {
+        $user = \App\Models\User::find($userId);
+        if (! $user || ! $user->isCandidate()) {
+            return;
+        }
+
+        $data = $this->gptService->extractProfileFromResume($text);
+        if (! $data) {
+            $this->fillProfileFromResumeFallback(\App\Models\Resume::where('user_id', $userId)->orderByDesc('created_at')->first());
+            return;
+        }
+
+        if (! empty($data['phone'])) {
+            $user->update(['phone' => $data['phone']]);
+        }
+
+        $profile = $user->candidateProfile ?? new CandidateProfile(['user_id' => $user->id]);
+        if (! empty($data['headline'])) {
+            $profile->headline = $data['headline'];
+        }
+        if (! empty($data['education'])) {
+            $profile->education = $data['education'];
+        }
+        if (isset($data['experience_years']) && $data['experience_years'] !== null) {
+            $profile->experience_years = $data['experience_years'];
+        }
+        if (! empty($data['skills'])) {
+            $profile->skills = $data['skills'];
+        }
+        if (! empty($data['location'])) {
+            $profile->location = $data['location'];
+        }
+        if (! empty($data['expected_salary'])) {
+            $profile->expected_salary = $data['expected_salary'];
+        }
+        $profile->save();
+    }
+
+    /**
+     * Fill profile from resume stored data (no GPT): skills from extracted_skills, headline from ai_summary.
+     * Ensures profile columns get data even when OpenAI is not configured.
+     */
+    public function fillProfileFromResumeFallback(Resume $resume): void
+    {
+        if (! $resume) {
+            return;
+        }
+        $user = $resume->user;
+        if (! $user || ! $user->isCandidate()) {
+            return;
+        }
+
+        $profile = $user->candidateProfile ?? new CandidateProfile(['user_id' => $user->id]);
+        $changed = false;
+
+        $skills = $resume->extracted_skills;
+        if (is_array($skills) && count($skills) > 0) {
+            $skillStr = implode(', ', array_map(fn ($s) => is_string($s) ? trim($s) : '', $skills));
+            $skillStr = trim(preg_replace('/,\s*,/', ',', $skillStr));
+            if ($skillStr !== '') {
+                $profile->skills = $skillStr;
+                $changed = true;
+            }
+        }
+
+        $summary = $resume->ai_summary;
+        if (is_string($summary) && trim($summary) !== '') {
+            $firstLine = trim(explode("\n", $summary)[0]);
+            $headline = mb_strlen($firstLine) > 120 ? mb_substr($firstLine, 0, 117) . '...' : $firstLine;
+            if ($headline !== '') {
+                $profile->headline = $headline;
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $profile->save();
+        }
     }
 
     protected function fallbackSummary(string $text): string
@@ -225,6 +319,74 @@ class ResumeAnalysisService
             return $trimmed;
         }
         return mb_substr($trimmed, 0, 497) . '...';
+    }
+
+    /**
+     * Rule-based resume-to-job-role match score (0-100) and explanation.
+     * Used when GPT is not available. Employer-facing explanation.
+     */
+    public function getResumeJobRoleMatch(Resume $resume, JobRole $jobRole): array
+    {
+        $extracted = $resume->getExtractedSkillsList();
+        $jobRole->loadMissing('requiredSkills');
+        $required = $jobRole->requiredSkills->pluck('skill_name')->map(fn ($s) => strtolower(trim($s)))->unique()->values()->all();
+
+        if (count($required) === 0) {
+            return [
+                'score' => 50,
+                'explanation' => 'No specific skills defined for this role. Your resume has been submitted for review.',
+            ];
+        }
+
+        $matched = array_values(array_intersect($required, $extracted));
+        $missing = array_values(array_diff($required, $extracted));
+        $score = (int) round((count($matched) / count($required)) * 100);
+        $score = min(100, max(0, $score));
+
+        $explanation = sprintf(
+            'Candidate has %d of %d required skills (%.0f%% match). Matched: %s.',
+            count($matched),
+            count($required),
+            (count($matched) / count($required)) * 100,
+            count($matched) > 0 ? implode(', ', array_slice($matched, 0, 5)) . (count($matched) > 5 ? '...' : '') : 'none'
+        );
+        if (count($missing) > 0) {
+            $explanation .= ' Gaps: ' . implode(', ', array_slice($missing, 0, 5)) . (count($missing) > 5 ? '...' : '') . '.';
+        }
+
+        return [
+            'score' => $score,
+            'explanation' => $explanation,
+        ];
+    }
+
+    /**
+     * Get job roles sorted by resume match % for the job-goals resume view.
+     *
+     * @return array<int, array{job_role: JobRole, match_percentage: int, missing_skills: array<string>}>
+     */
+    public function getMatchingJobGoalsForResume(Resume $resume, int $limit = 20): array
+    {
+        $extracted = $resume->getExtractedSkillsList();
+        $roles = JobRole::where('is_active', true)->with('requiredSkills')->get();
+        $scored = [];
+        foreach ($roles as $role) {
+            $required = $role->requiredSkills->pluck('skill_name')->map(fn ($s) => strtolower(trim($s)))->unique()->values()->all();
+            if (count($required) === 0) {
+                $scored[] = ['job_role' => $role, 'match_percentage' => 0, 'missing_skills' => []];
+                continue;
+            }
+            $matched = array_values(array_intersect($required, $extracted));
+            $missing = array_values(array_diff($required, $extracted));
+            $matchPercentage = (int) round((count($matched) / count($required)) * 100);
+            $scored[] = [
+                'job_role' => $role,
+                'match_percentage' => $matchPercentage,
+                'missing_skills' => $missing,
+            ];
+        }
+        usort($scored, fn ($a, $b) => $b['match_percentage'] <=> $a['match_percentage']);
+        return array_slice($scored, 0, $limit);
     }
 
     /**

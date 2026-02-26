@@ -74,12 +74,14 @@
                 <a class="nav-link {{ request()->routeIs('employer.dashboard') ? 'active' : '' }}" href="{{ route('employer.dashboard') }}">
                     <i class="mdi mdi-view-dashboard-outline"></i> Dashboard
                 </a>
+                @if(auth()->user()->referrerProfile?->is_approved)
                 <a class="nav-link {{ request()->routeIs('employer.jobs.*') && !request()->routeIs('employer.jobs.create') ? 'active' : '' }}" href="{{ route('employer.jobs.index') }}">
                     <i class="mdi mdi-briefcase-outline"></i> Jobs
                 </a>
                 <a class="nav-link {{ request()->routeIs('employer.jobs.create') ? 'active' : '' }}" href="{{ route('employer.jobs.create') }}">
                     <i class="mdi mdi-plus-circle-outline"></i> Post Job
                 </a>
+                @endif
                 <a class="nav-link {{ request()->routeIs('employer.profile') ? 'active' : '' }}" href="{{ route('employer.profile') }}">
                     <i class="mdi mdi-domain"></i> Company Profile
                 </a>
