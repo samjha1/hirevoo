@@ -27,8 +27,8 @@
                                         <h5>Welcome Back!</h5>
                                         <p class="text-white-70">Sign in to continue to Hirevo.</p>
                                     </div>
-                                    @if($errors->has('email'))
-                                        <div class="alert alert-danger py-2 mb-3">{{ $errors->first('email') }}</div>
+                                    @if($errors->any())
+                                        <div class="alert alert-danger py-2 mb-3">{{ $errors->first() }}</div>
                                     @endif
                                     @if(request('role') !== 'referrer')
                                     <div class="d-grid gap-2 mb-3">
@@ -42,8 +42,8 @@
                                         </a>
                                     </div>
                                     <div class="position-relative mb-3">
-                                        <hr class="text-white-50">
-                                        <span class="position-absolute top-50 start-50 translate-middle bg-auth px-2 text-white-50 small">or</span>
+                                        <hr class="auth-divider">
+                                        <span class="position-absolute top-50 start-50 translate-middle auth-or-badge px-2 text-white-50 small">or</span>
                                     </div>
                                     @endif
                                     <form method="POST" action="{{ route('login') }}" class="auth-form">
@@ -53,9 +53,9 @@
                                             <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="Enter your email" required autofocus>
                                             @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
-                                        <div class="mb-3">
+                                        <div class="mb-3 auth-password-wrap">
                                             <label for="password" class="form-label">Password</label>
-                                            <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="Enter your password" required>
+                                            <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
                                             @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="mb-4">
@@ -65,7 +65,7 @@
                                             </div>
                                         </div>
                                         <div class="text-center">
-                                            <button type="submit" class="btn btn-white btn-hover w-100">Sign In</button>
+                                            <button type="submit" class="btn btn-signin-submit w-100">Sign In</button>
                                         </div>
                                     </form>
                                     <div class="mt-4 text-center">

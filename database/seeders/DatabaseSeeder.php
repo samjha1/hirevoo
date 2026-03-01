@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             JobRoleSeeder::class,
             UpskillOpportunitySeeder::class,
+            EmployerJobSeeder::class,
         ]);
     }
 }

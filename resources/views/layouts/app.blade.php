@@ -46,7 +46,7 @@
                     <i class="mdi mdi-menu fs-28"></i>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarCollapse">
-                    <ul class="navbar-nav mx-auto navbar-center hirevo-nav-links">
+                    <ul class="navbar-nav me-auto hirevo-nav-links">
                         @auth
                         @if(auth()->user()->isReferrer())
                             <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Home</a></li>

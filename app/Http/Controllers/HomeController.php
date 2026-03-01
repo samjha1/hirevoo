@@ -90,6 +90,27 @@ class HomeController extends Controller
             ? JobApplication::where('user_id', auth()->id())->where('job_role_id', $jobRole->id)->exists()
             : false;
 
+        // Related employer job openings: match by job role title and required skills keywords
+        $keywords = array_merge(
+            array_filter(explode(' ', preg_replace('/[^a-z0-9\s]/i', ' ', $jobRole->title))),
+            $jobRole->requiredSkills->pluck('skill_name')->take(5)->map(fn ($s) => trim($s))->all()
+        );
+        $keywords = array_values(array_unique(array_filter(array_map('strtolower', $keywords), fn ($kw) => strlen($kw) >= 2)));
+        $relatedJobs = collect();
+        if (count($keywords) > 0) {
+            $query = EmployerJob::where('status', 'active')->with('user');
+            $query->where(function ($q) use ($keywords) {
+                foreach ($keywords as $kw) {
+                    $q->orWhere('title', 'like', '%' . $kw . '%')
+                        ->orWhere('description', 'like', '%' . $kw . '%');
+                }
+            });
+            $relatedJobs = $query->orderByDesc('created_at')->limit(10)->get();
+        }
+        $appliedEmployerJobIds = auth()->check()
+            ? EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all()
+            : [];
+
         return view('hirevo.skill-match', [
             'jobRole' => $jobRole,
             'requiredSkills' => $jobRole->requiredSkills,
@@ -104,6 +125,8 @@ class HomeController extends Controller
             'upskillOpportunities' => $upskillOpportunities,
             'appliedJobIds' => $appliedJobIds,
             'userSkillsForUpskill' => $userSkillsForUpskill,
+            'relatedJobs' => $relatedJobs,
+            'appliedEmployerJobIds' => $appliedEmployerJobIds,
         ]);
     }
 

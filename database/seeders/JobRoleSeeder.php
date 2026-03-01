@@ -66,6 +66,12 @@ class JobRoleSeeder extends Seeder
                 'skills' => ['JavaScript', 'React Native', 'Flutter', 'Git', 'REST API', 'Problem Solving'],
             ],
             [
+                'title' => 'Flutter Developer',
+                'slug' => 'flutter-developer',
+                'description' => 'Build cross-platform mobile and desktop apps with Flutter and Dart.',
+                'skills' => ['Flutter', 'Dart', 'REST API', 'Git', 'State Management', 'Firebase', 'Problem Solving'],
+            ],
+            [
                 'title' => 'QA Engineer',
                 'slug' => 'qa-engineer',
                 'description' => 'Ensure quality through testing, automation, and process improvement.',

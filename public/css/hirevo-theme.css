@@ -27,17 +27,22 @@
 .nav-link-resume { color: var(--hirevo-secondary) !important; }
 .nav-link-resume:hover, .navbar .nav-link.nav-link-resume.active { color: var(--hirevo-primary) !important; }
 
-/* ========== Navbar (clean, modern) ========== */
+/* ========== Navbar (Thicker Modern Version) ========== */
 .hirevo-navbar {
     background: #fff !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    min-height: 64px;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    min-height: 88px;              /* Increased height */
+    padding-top: 0.75rem;          /* More vertical space */
+    padding-bottom: 0.75rem;
+    transition: all 0.3s ease;
 }
 .hirevo-navbar .hirevo-nav-brand {
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
+    margin-right: 4rem;
+}
+.hirevo-navbar .hirevo-nav-links {
+    margin-left: 0;
 }
 .hirevo-navbar .navbar-brand .hirevo-logo {
     height: 40px !important;
@@ -106,12 +111,41 @@
 .hirevo-nav-toggler { padding: 0.5rem; color: var(--hirevo-primary) !important; }
 .hirevo-navbar .dropdown-menu { margin-top: 0.35rem; }
 .hirevo-navbar .dropdown-item { padding: 0.5rem 1rem; }
-/* Mobile: stacked nav actions and link spacing */
+/* Mobile: stacked nav actions and link spacing + ensure text is visible */
 @media (max-width: 991.98px) {
     .hirevo-navbar .navbar-collapse {
         padding: 1rem 0;
         border-top: 1px solid rgba(0, 0, 0, 0.06);
         margin-top: 0.5rem;
+        background: #fff;
+    }
+    /* Force visible text in collapsed nav (overrides any light theme) */
+    .hirevo-navbar .navbar-collapse .nav-link,
+    .hirevo-navbar .navbar-collapse .hirevo-nav-links .nav-link,
+    .hirevo-navbar .navbar-collapse .hirevo-nav-login,
+    .hirevo-navbar .navbar-collapse .hirevo-nav-employers,
+    .hirevo-navbar .navbar-collapse .dropdown-toggle {
+        color: #334155 !important;
+    }
+    .hirevo-navbar .navbar-collapse .nav-link:hover,
+    .hirevo-navbar .navbar-collapse .hirevo-nav-login:hover,
+    .hirevo-navbar .navbar-collapse .hirevo-nav-employers:hover {
+        color: var(--hirevo-primary) !important;
+    }
+    .hirevo-navbar .navbar-collapse .dropdown-menu {
+        background: #fff !important;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .hirevo-navbar .navbar-collapse .dropdown-menu .dropdown-item {
+        color: #334155 !important;
+    }
+    .hirevo-navbar .navbar-collapse .hirevo-nav-user,
+    .hirevo-navbar .navbar-collapse .hirevo-nav-user .fw-medium,
+    .hirevo-navbar .navbar-collapse .hirevo-nav-user span {
+        color: #334155 !important;
+    }
+    .hirevo-navbar .navbar-collapse .hirevo-nav-icon {
+        color: #64748b !important;
     }
     .hirevo-nav-links .nav-item { border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
     .hirevo-nav-links .nav-link { padding: 0.65rem 0.75rem !important; }
@@ -184,29 +218,29 @@ textarea,
     .bg-auth .hirevo-logo { height: 82px !important; max-width: 300px; }
 }
 
-/* Prevent navbar overlapping content (fixed navbar only; top-bar removed) */
+/* Prevent navbar overlapping content (fixed navbar only; minimal gap below nav) */
 body .main-content {
-    padding-top: 88px !important;
+    padding-top: 66px !important;
 }
 body .page-content {
     padding-top: 0 !important;
 }
-/* Auth pages: extra top spacing so form is fully below navbar */
+/* Auth pages: minimal top spacing below navbar */
 section.bg-auth {
-    padding-top: 2rem !important;
+    padding-top: 0.5rem !important;
     padding-bottom: 4rem !important;
 }
 @media (max-width: 991.98px) {
     body .main-content {
-        padding-top: 85px !important;
+        padding-top: 66px !important;
     }
 }
 @media (max-width: 575.98px) {
     body .main-content {
-        padding-top: 75px !important;
+        padding-top: 66px !important;
     }
     section.bg-auth {
-        padding-top: 1rem !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 2rem !important;
     }
 }
@@ -285,9 +319,63 @@ a.text-primary {
     color: #fff !important;
 }
 
-/* Page title box (inner page header) */
+/* Sign-in: remove dark line under password, improve button and divider */
+.bg-auth .auth-divider {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    margin: 0;
+}
+.bg-auth .auth-or-badge {
+    background-color: var(--hirevo-primary) !important;
+}
+.bg-auth .auth-password-wrap progress,
+.bg-auth .auth-password-wrap meter,
+.bg-auth .auth-password-wrap [role="progressbar"] {
+    display: none !important;
+}
+.bg-auth .auth-form .form-control {
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: none !important;
+}
+.bg-auth .auth-form .form-control:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.15) !important;
+}
+.bg-auth .btn-signin-submit {
+    background-color: #fff !important;
+    color: var(--hirevo-primary) !important;
+    border: 2px solid #fff !important;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+.bg-auth .btn-signin-submit:hover {
+    background-color: #f0f4f8 !important;
+    color: var(--hirevo-primary) !important;
+    border-color: #f0f4f8 !important;
+    transform: translateY(-1px);
+}
+.bg-auth .auth-form .invalid-feedback {
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: transparent !important;
+    border: none !important;
+}
+.bg-auth .d-grid .btn-light {
+    background-color: #fff !important;
+    color: #334155 !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+.bg-auth .d-grid .btn-light:hover {
+    background-color: #f8fafc !important;
+    color: var(--hirevo-primary) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Page title box (inner page header) – compact padding, no extra blue space */
 .page-title-box {
     background: linear-gradient(135deg, var(--hirevo-primary) 0%, #162d4d 100%) !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
 }
 
 /* Footer */
@@ -359,6 +447,39 @@ a.text-primary {
 }
 #back-to-top:hover {
     background-color: var(--hirevo-secondary) !important;
+}
+
+/* ========== No space above navbar ========== */
+html {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-top: 0 !important;
+}
+/* Preloader overlays page so it doesn't push content / create gap above nav */
+#preloader {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+/* Navbar flush to top of viewport */
+.hirevo-navbar.navbar.fixed-top,
+#navbar.hirevo-navbar {
+    top: 0 !important;
+    margin-top: 0 !important;
+}
+/* Wrapper div (sibling of preloader) has no top gap */
+body > div:not(#preloader) {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
 
 /* ========== Responsive / Mobile ========== */

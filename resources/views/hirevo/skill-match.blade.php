@@ -90,6 +90,35 @@
                                 </div>
                             </div>
                         @endif
+                        @if(isset($relatedJobs) && $relatedJobs->isNotEmpty())
+                        <div class="card border shadow-none rounded-3 mt-4">
+                            <div class="card-body p-4">
+                                <h5 class="mb-3"><i class="uil uil-briefcase-alt text-primary me-2"></i>Open positions for {{ $jobRole->title }}</h5>
+                                <p class="text-muted small mb-3">Apply to these job openings from employers.</p>
+                                @foreach($relatedJobs as $job)
+                                    <div class="card border-0 shadow-sm rounded-3 mb-2">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                                <div class="flex-grow-1 min-w-0">
+                                                    <h6 class="mb-1"><a href="{{ route('job-openings.apply', $job) }}" class="text-dark text-decoration-none">{{ $job->title }}</a></h6>
+                                                    <p class="text-muted small mb-0">{{ $job->company_name ?? $job->user->referrerProfile?->company_name ?? 'Company' }}</p>
+                                                    @if($job->location)<span class="small text-muted"><i class="uil uil-map-marker me-1"></i>{{ $job->location }}</span>@endif
+                                                </div>
+                                                <div class="flex-shrink-0">
+                                                    @if(in_array($job->id, $appliedEmployerJobIds ?? []))
+                                                        <span class="badge bg-success">Applied</span>
+                                                    @else
+                                                        <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm">Apply</a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <a href="{{ route('job-openings') }}?q={{ urlencode($jobRole->title) }}" class="btn btn-soft-primary btn-sm mt-2">View all jobs</a>
+                            </div>
+                        </div>
+                        @endif
                         <div class="mt-3">
                             <a href="{{ route('job-list') }}" class="btn btn-soft-primary btn-sm"><i class="uil uil-arrow-left me-1"></i> Back to Job Goals</a>
                         </div>
@@ -259,6 +288,38 @@
                                 @endif
                             </div>
                         </div>
+
+                        @if(isset($relatedJobs) && $relatedJobs->isNotEmpty())
+                        <div class="card border shadow-none rounded-3 mb-4">
+                            <div class="card-body p-4">
+                                <h5 class="mb-3"><i class="uil uil-briefcase-alt text-primary me-2"></i>Open positions for {{ $jobRole->title }}</h5>
+                                <p class="text-muted small mb-3">Apply to these job openings from employers.</p>
+                                <div class="list-group list-group-flush">
+                                    @foreach($relatedJobs as $job)
+                                        <div class="card border-0 shadow-sm rounded-3 mb-2">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                                    <div class="flex-grow-1 min-w-0">
+                                                        <h6 class="mb-1"><a href="{{ route('job-openings.apply', $job) }}" class="text-dark text-decoration-none">{{ $job->title }}</a></h6>
+                                                        <p class="text-muted small mb-0">{{ $job->company_name ?? $job->user->referrerProfile?->company_name ?? 'Company' }}</p>
+                                                        @if($job->location)<span class="small text-muted"><i class="uil uil-map-marker me-1"></i>{{ $job->location }}</span>@endif
+                                                    </div>
+                                                    <div class="flex-shrink-0">
+                                                        @if(in_array($job->id, $appliedEmployerJobIds ?? []))
+                                                            <span class="badge bg-success">Applied</span>
+                                                        @else
+                                                            <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm">Apply</a>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <a href="{{ route('job-openings') }}?q={{ urlencode($jobRole->title) }}" class="btn btn-soft-primary btn-sm mt-2">View all jobs</a>
+                            </div>
+                        </div>
+                        @endif
 
                         @auth
                         @if($hasApplied ?? false)
