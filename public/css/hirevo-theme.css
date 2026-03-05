@@ -162,9 +162,38 @@
 }
 /* Style switcher: hide by default for cleaner look */
 #style-switcher { display: none !important; }
-.btn-success, .btn-success:hover, .btn-success:focus {
+.btn-success,
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active,
+.btn.btn-success {
     background-color: var(--hirevo-secondary) !important;
     border-color: var(--hirevo-secondary) !important;
+    color: #fff !important;
+}
+.btn-success i,
+.btn-success .mdi,
+a.btn-success,
+a.btn-success:hover,
+a.btn-success:focus,
+.employer-topbar .btn-success,
+.employer-topbar .btn-success i,
+.employer-topbar .btn-success:hover,
+.employer-topbar .btn-success:focus {
+    color: #fff !important;
+}
+
+/* Employer "Post a new job" button – force visible white text */
+body.employer-body .employer-btn-post-job,
+body.employer-body .employer-btn-post-job i,
+body.employer-body .employer-btn-post-job .mdi,
+body.employer-body .employer-btn-post-job:hover,
+body.employer-body .employer-btn-post-job:focus,
+.employer-btn-post-job,
+.employer-btn-post-job i,
+.employer-btn-post-job .mdi,
+.employer-btn-post-job:hover,
+.employer-btn-post-job:focus {
     color: #fff !important;
 }
 
@@ -278,8 +307,7 @@ a.text-primary {
     color: var(--hirevo-primary) !important;
 }
 
-/* Secondary / success accents */
-.btn-success,
+/* Secondary / success accents (exclude .btn-success so its text stays white) */
 .bg-success-subtle,
 .text-success {
     color: var(--hirevo-secondary) !important;
@@ -378,7 +406,118 @@ a.text-primary {
     padding-bottom: 1.5rem !important;
 }
 
-/* Footer */
+/* Footer – attractive Hirevo footer */
+.hirevo-footer {
+    background: linear-gradient(180deg, #0B1F3B 0%, #061428 100%);
+    color: #fff;
+    font-size: 0.9375rem;
+}
+
+.hirevo-footer__main {
+    padding: 3.5rem 0 3rem;
+}
+
+.hirevo-footer__brand {
+    max-width: 320px;
+}
+
+.hirevo-footer__logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 0.75rem;
+}
+
+.hirevo-footer__tagline {
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+}
+
+.hirevo-footer__follow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.75rem;
+}
+
+.hirevo-footer__social {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.hirevo-footer__social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.hirevo-footer__social a:hover {
+    background: var(--hirevo-secondary);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.hirevo-footer__col {
+    margin-bottom: 0.5rem;
+}
+
+.hirevo-footer__heading {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 1rem;
+}
+
+.hirevo-footer__links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.hirevo-footer__links li {
+    margin-bottom: 0.5rem;
+}
+
+.hirevo-footer__links a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    transition: color 0.2s ease, padding-left 0.2s ease;
+    display: inline-block;
+}
+
+.hirevo-footer__links a:hover {
+    color: var(--hirevo-secondary);
+    padding-left: 4px;
+}
+
+.hirevo-footer__bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1rem 0;
+}
+
+.hirevo-footer__copyright {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+/* Legacy class support if used elsewhere */
 .bg-footer {
     background-color: var(--hirevo-primary) !important;
 }
@@ -388,7 +527,7 @@ a.text-primary {
     background: linear-gradient(135deg, var(--hirevo-primary) 0%, var(--hirevo-secondary) 100%) !important;
 }
 
-/* Footer alt */
+/* Footer alt – kept for any other templates */
 .footer-alt {
     background-color: #061428 !important;
 }

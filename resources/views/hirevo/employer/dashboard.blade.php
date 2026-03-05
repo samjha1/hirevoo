@@ -6,7 +6,7 @@
 
 @section('header_actions')
     @if($isApproved)
-        <a href="{{ route('employer.jobs.create') }}" class="btn btn-success"><i class="mdi mdi-plus me-1"></i>Post a new job</a>
+        <a href="{{ route('employer.jobs.create') }}" class="btn btn-success employer-btn-post-job" style="color: #fff !important;"><i class="mdi mdi-plus me-1" style="color: #fff !important;"></i><span style="color: #fff !important;">Post a new job</span></a>
     @endif
 @endsection
 

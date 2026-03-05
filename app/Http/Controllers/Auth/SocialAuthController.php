@@ -79,6 +79,17 @@ class SocialAuthController extends Controller
         $user = User::where('email', $email)->first();
 
         if ($user) {
+            $intendedRole = session('oauth_intended_role', 'candidate');
+            if ($intendedRole === 'referrer' && ! $user->isReferrer()) {
+                $this->clearOAuthSession();
+                return redirect()->route('login', ['role' => 'referrer'])
+                    ->withErrors(['email' => 'This account is not an employer account. Please use the regular Sign In.']);
+            }
+            if ($intendedRole !== 'referrer' && $user->isReferrer()) {
+                $this->clearOAuthSession();
+                return redirect()->route('login')
+                    ->withErrors(['email' => 'This is an employer account. Please use For Employers → Log in as employer.']);
+            }
             Auth::login($user, true);
             return $this->redirectAfterLogin();
         }

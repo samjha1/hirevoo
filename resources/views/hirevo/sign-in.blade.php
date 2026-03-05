@@ -48,6 +48,9 @@
                                     @endif
                                     <form method="POST" action="{{ route('login') }}" class="auth-form">
                                         @csrf
+                                        @if(request('role') === 'referrer')
+                                            <input type="hidden" name="role" value="referrer">
+                                        @endif
                                         <div class="mb-3">
                                             <label for="email" class="form-label">Email</label>
                                             <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="Enter your email" required autofocus>

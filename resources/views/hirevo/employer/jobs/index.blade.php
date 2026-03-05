@@ -5,7 +5,7 @@
 @section('header_title', 'All Jobs (' . $counts['all'] . ')')
 
 @section('header_actions')
-    <a href="{{ route('employer.jobs.create') }}" class="btn btn-success"><i class="mdi mdi-plus me-1"></i>Post a new job</a>
+    <a href="{{ route('employer.jobs.create') }}" class="btn btn-success employer-btn-post-job"><i class="mdi mdi-plus me-1"></i>Post a new job</a>
 @endsection
 
 @section('content')

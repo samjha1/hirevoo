@@ -218,79 +218,75 @@
             <!-- END SUBSCRIBE -->
 
             <!-- START FOOTER -->
-            <section class="bg-footer">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-lg-4">
-                            <div class="footer-item mt-4 mt-lg-0 me-lg-5">
-                                <h4 class="text-white mb-4">Hirevo</h4>
-                                <p class="text-white-50">AI Career Intelligence + Referral Network + Skill Monetization Engine. Find your dream role with skill-gap analysis and verified referrals.</p>
-                                <p class="text-white mt-3">Follow Us on:</p>
-                                <ul class="footer-social-menu list-inline mb-0">
-                                    <li class="list-inline-item"><a href="#"><i class="uil uil-facebook-f"></i></a></li>
-                                    <li class="list-inline-item"><a href="#"><i class="uil uil-linkedin-alt"></i></a></li>
-                                    <li class="list-inline-item"><a href="#"><i class="uil uil-google"></i></a></li>
-                                    <li class="list-inline-item"><a href="#"><i class="uil uil-twitter"></i></a></li>
-                                </ul>
+            <footer class="hirevo-footer">
+                <div class="hirevo-footer__main">
+                    <div class="container">
+                        <div class="row align-items-start">
+                            <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
+                                <div class="hirevo-footer__brand">
+                                    <h4 class="hirevo-footer__logo">Hirevo</h4>
+                                    <p class="hirevo-footer__tagline">AI Career Intelligence + Referral Network + Skill Monetization. Find your dream role with skill-gap analysis and verified referrals.</p>
+                                    <p class="hirevo-footer__follow">Follow us</p>
+                                    <ul class="hirevo-footer__social">
+                                        <li><a href="#" aria-label="Facebook"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a></li>
+                                        <li><a href="#" aria-label="LinkedIn"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a></li>
+                                        <li><a href="#" aria-label="Twitter"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a></li>
+                                    </ul>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-lg-2 col-6">
-                            <div class="footer-item mt-4 mt-lg-0">
-                                <p class="fs-16 text-white mb-4">Company</p>
-                                <ul class="list-unstyled footer-list mb-0">
-                                    <li><a href="{{ route('about') }}"><i class="mdi mdi-chevron-right"></i> About Us</a></li>
-                                    <li><a href="{{ route('contact') }}"><i class="mdi mdi-chevron-right"></i> Contact Us</a></li>
-                                    <li><a href="{{ route('pricing') }}"><i class="mdi mdi-chevron-right"></i> Pricing</a></li>
-                                </ul>
+                            <div class="col-lg-2 col-6">
+                                <div class="hirevo-footer__col">
+                                    <h5 class="hirevo-footer__heading">Company</h5>
+                                    <ul class="hirevo-footer__links">
+                                        <li><a href="{{ route('about') }}">About Us</a></li>
+                                        <li><a href="{{ route('contact') }}">Contact Us</a></li>
+                                        <li><a href="{{ route('pricing') }}">Pricing</a></li>
+                                    </ul>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-lg-2 col-6">
-                            <div class="footer-item mt-4 mt-lg-0">
-                                <p class="fs-16 text-white mb-4">For Jobs</p>
-                                <ul class="list-unstyled footer-list mb-0">
-                                    <li><a href="{{ route('job-list') }}"><i class="mdi mdi-chevron-right"></i> Job Goals</a></li>
-                                    <li><a href="{{ route('job-openings') }}"><i class="mdi mdi-chevron-right"></i> Job Openings</a></li>
-                                    <li><a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => url('/resume/upload')]) }}"><i class="mdi mdi-chevron-right"></i> Resume Score</a></li>
-                                </ul>
+                            <div class="col-lg-2 col-6">
+                                <div class="hirevo-footer__col">
+                                    <h5 class="hirevo-footer__heading">For Jobs</h5>
+                                    <ul class="hirevo-footer__links">
+                                        <li><a href="{{ route('job-list') }}">Job Goals</a></li>
+                                        <li><a href="{{ route('job-openings') }}">Job Openings</a></li>
+                                        <li><a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => url('/resume/upload')]) }}">Resume Score</a></li>
+                                    </ul>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-lg-2 col-6">
-                            <div class="footer-item mt-4 mt-lg-0">
-                                <p class="text-white fs-16 mb-4">Account</p>
-                                <ul class="list-unstyled footer-list mb-0">
-                                    @auth
-                                    <li><a href="{{ route('profile') }}"><i class="mdi mdi-chevron-right"></i> My Profile</a></li>
-                                    @else
-                                    <li><a href="{{ route('login') }}"><i class="mdi mdi-chevron-right"></i> Sign In</a></li>
-                                    <li><a href="{{ route('register') }}"><i class="mdi mdi-chevron-right"></i> Sign Up</a></li>
-                                    @endauth
-                                </ul>
+                            <div class="col-lg-2 col-6">
+                                <div class="hirevo-footer__col">
+                                    <h5 class="hirevo-footer__heading">Account</h5>
+                                    <ul class="hirevo-footer__links">
+                                        @auth
+                                        <li><a href="{{ route('profile') }}">My Profile</a></li>
+                                        @else
+                                        <li><a href="{{ route('login') }}">Sign In</a></li>
+                                        <li><a href="{{ route('register') }}">Sign Up</a></li>
+                                        @endauth
+                                    </ul>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-lg-2 col-6">
-                            <div class="footer-item mt-4 mt-lg-0">
-                                <p class="fs-16 text-white mb-4">Support</p>
-                                <ul class="list-unstyled footer-list mb-0">
-                                    <li><a href="{{ route('contact') }}"><i class="mdi mdi-chevron-right"></i> Help Center</a></li>
-                                </ul>
+                            <div class="col-lg-2 col-6">
+                                <div class="hirevo-footer__col">
+                                    <h5 class="hirevo-footer__heading">Support</h5>
+                                    <ul class="hirevo-footer__links">
+                                        <li><a href="{{ route('contact') }}">Help Center</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
+                <div class="hirevo-footer__bottom">
+                    <div class="container">
+                        <p class="hirevo-footer__copyright">
+                            <script>document.write(new Date().getFullYear())</script> &copy; Hirevo — AI Career Intelligence
+                        </p>
+                    </div>
+                </div>
+            </footer>
             <!-- END FOOTER -->
-
-            <div class="footer-alt">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <p class="text-white-50 text-center mb-0">
-                                <script>document.write(new Date().getFullYear())</script> &copy; Hirevo - AI Career Intelligence.<a href="" target="_blank" class="text-reset text-decoration-underline"></a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Style switcher -->
             <div id="style-switcher" onclick="toggleSwitcher()" style="left: -165px;">
