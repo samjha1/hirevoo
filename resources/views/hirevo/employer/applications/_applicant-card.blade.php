@@ -23,7 +23,15 @@
         <div class="row g-3">
             <div class="col-12 col-lg">
                 <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
-                    <h6 class="applicant-name mb-0 fw-600">{{ $user->name }}</h6>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <h6 class="applicant-name mb-0 fw-600">{{ $user->name }}</h6>
+                        <span class="badge bg-primary" title="Job match score (calculated when they applied)">
+                            Match {{ $app->job_match_score !== null ? $app->job_match_score . '%' : '—' }}
+                        </span>
+                        @if($app->ats_score !== null)
+                            <span class="badge bg-secondary" title="Resume ATS score">ATS {{ $app->ats_score }}%</span>
+                        @endif
+                    </div>
                     <form action="{{ route('employer.applications.status', $app) }}" method="POST" class="d-inline applicant-status-form">
                         @csrf
                         @method('PATCH')
@@ -102,6 +110,12 @@
             </div>
         </div>
 
+        @if($app->job_match_explanation)
+            <div class="applicant-cover mt-3 pt-3 border-top">
+                <span class="detail-label d-block mb-1">Match summary</span>
+                <p class="text-muted small mb-0">{{ $app->job_match_explanation }}</p>
+            </div>
+        @endif
         @if($app->cover_message)
             <div class="applicant-cover mt-3 pt-3 border-top">
                 <span class="detail-label d-block mb-1">Cover message</span>

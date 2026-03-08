@@ -5,6 +5,8 @@
 @push('styles')
 <style>
     .hero-badge { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+    .hirevo-hero-title { font-size: clamp(1.75rem, 5vw, 2.75rem); }
+    @media (min-width: 768px) { .hirevo-hero-title { font-size: clamp(2rem, 4vw, 3.25rem); } }
     .hero-search-card { border-radius: 16px; box-shadow: 0 8px 32px rgba(11, 31, 59, 0.12); overflow: visible; }
     .hero-search-card .form-control, .hero-search-card .form-select { border: none; padding: 0.85rem 1rem; font-size: 1rem; }
     .hero-search-card .form-control:focus { box-shadow: none; }
@@ -17,7 +19,8 @@
     .hero-search-card .choices__inner { min-width: 0; }
     /* Prevent flex from shrinking dropdown so letters don't stack */
     .hero-search-card .choices__list .choices__item { width: 100%; box-sizing: border-box; }
-    .hero-search-card .btn-search { padding: 0.85rem 1.5rem; font-weight: 600; border-radius: 0 12px 12px 0; }
+    .hero-search-card .btn-search { padding: 0.85rem 1.5rem; font-weight: 600; border-radius: 0 12px 12px 0; background: var(--hirevo-primary); border-color: var(--hirevo-primary); box-shadow: 0 2px 8px rgba(11, 31, 59, 0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .hero-search-card .btn-search:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(11, 31, 59, 0.35); }
     .resume-hero-card { border-radius: 20px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(11, 31, 59, 0.04) 100%); border: 1px solid rgba(16, 185, 129, 0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .resume-hero-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15); }
     .resume-hero-card .resume-cta-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: linear-gradient(135deg, #10B981, #059669); color: #fff; }
@@ -35,7 +38,7 @@
             <div class="row align-items-center min-vh-50 py-5">
                 <div class="col-lg-7">
                     <span class="hero-badge text-primary mb-3 d-inline-block">AI Career Intelligence</span>
-                    <h1 class="display-4 fw-bold mb-3 lh-tight">Your job search <span class="text-primary">ends here</span></h1>
+                    <h1 class="hirevo-hero-title fw-bold mb-3 lh-tight">Own Your Next <span class="text-primary">Career Move</span></h1>
                     <p class="lead text-muted mb-4" style="max-width: 520px;">Discover matching job goals, get your resume scored, and grow with skill-gap analysis and verified referrals. One platform for your career.</p>
                     <form action="{{ route('job-list') }}" method="GET" class="mb-0">
                         <div class="hero-search-card bg-white d-flex flex-column flex-md-row align-stretch rounded-3 border">
@@ -467,7 +470,7 @@
                     <p class="text-muted mb-0">Browse and apply to jobs posted by employers. Filter by location, job type, and work mode.</p>
                 </div>
                 <div class="col-lg-6 text-lg-end">
-                    <a href="{{ route('job-openings') }}" class="btn btn-primary btn-lg rounded-pill px-4"><i class="uil uil-briefcase-alt me-1"></i> Browse jobs</a>
+                    <a href="{{ route('job-openings') }}" class="btn btn-primary btn-lg rounded-pill px-4 hirevo-cta-btn"><i class="uil uil-briefcase-alt me-1"></i> Browse jobs</a>
                 </div>
             </div>
         </div>
@@ -479,7 +482,7 @@
             <div class="row justify-content-center mb-4">
                 <div class="col-lg-6 text-center">
                     <h2 class="h3 fw-bold mb-2">Why Hirevo</h2>
-                    <p class="text-muted mb-0">AI Career Intelligence + Referral Network + Skill Monetization.</p>
+                    <p class="text-muted mb-0">Own Your Next Career Move — skill-gap analysis, referral marketplace & job goals.</p>
                 </div>
             </div>
             <div class="row g-4">

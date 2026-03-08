@@ -9,8 +9,10 @@ use App\Models\JobApplication;
 use App\Models\JobRole;
 use App\Models\Resume;
 use App\Models\UpskillOpportunity;
+use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -253,13 +255,77 @@ class HomeController extends Controller
         $profile->expected_salary = $request->filled('expected_salary') ? $request->expected_salary : $profile->expected_salary;
         $profile->save();
 
-        EmployerJobApplication::create([
+        $application = EmployerJobApplication::create([
             'employer_job_id' => $job->id,
             'user_id'         => $user->id,
             'resume_id'       => $request->resume_id ?: null,
             'cover_message'   => $request->cover_message ? trim($request->cover_message) : null,
             'status'          => 'applied',
         ]);
+
+        // Store ATS score and job match score for employer view
+        $resume = $application->resume;
+        $atsScore = $resume ? $resume->ai_score : null;
+        $resumeText = null;
+        if ($resume && Storage::disk('local')->exists($resume->file_path)) {
+            $resumeText = app(ResumeAnalysisService::class)->extractTextFromFile(
+                Storage::disk('local')->path($resume->file_path),
+                $resume->mime_type ?? 'application/pdf'
+            );
+        }
+        if ($resumeText === null || $resumeText === '') {
+            // Build minimal candidate summary from profile for match scoring
+            $parts = [];
+            if ($profile->headline) {
+                $parts[] = $profile->headline;
+            }
+            if ($profile->education) {
+                $parts[] = 'Education: ' . $profile->education;
+            }
+            if ($profile->experience_years !== null) {
+                $parts[] = 'Experience: ' . $profile->experience_years . ' years';
+            }
+            if ($profile->skills) {
+                $parts[] = 'Skills: ' . (is_array($profile->skills) ? implode(', ', $profile->skills) : $profile->skills);
+            }
+            $resumeText = implode("\n", $parts) ?: 'Candidate profile.';
+        }
+
+        // Job match score: try AI first, then always fall back to rule-based so score is set at apply time
+        $jobMatchScore = null;
+        $jobMatchExplanation = null;
+        $resumeAnalysis = app(ResumeAnalysisService::class);
+        if ($resumeText !== '') {
+            $gpt = app(GptService::class);
+            if ($gpt->isAvailable()) {
+                $match = $gpt->getResumeJobMatchScore(
+                    $resumeText,
+                    $job->title,
+                    $job->description ?? '',
+                    []
+                );
+                if ($match !== null) {
+                    $jobMatchScore = $match['score'];
+                    $jobMatchExplanation = $match['explanation'] ?? null;
+                }
+            }
+            if ($jobMatchScore === null) {
+                $match = $resumeAnalysis->getEmployerJobMatchRuleBased(
+                    $resumeText,
+                    $job->title,
+                    $job->description ?? ''
+                );
+                $jobMatchScore = $match['score'];
+                $jobMatchExplanation = $match['explanation'] ?? null;
+            }
+        }
+
+        $application->update([
+            'ats_score' => $atsScore,
+            'job_match_score' => $jobMatchScore,
+            'job_match_explanation' => $jobMatchExplanation,
+        ]);
+
         return redirect()->route('job-openings')->with('success', 'Your application has been submitted.');
     }
 }

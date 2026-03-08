@@ -18,36 +18,47 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
+            @if($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <strong>Please fix the errors below.</strong>
+                    <ul class="mb-0 mt-2">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <div class="section-title mt-4 mt-lg-0">
                         <h3 class="title">Get in touch</h3>
                         <p class="text-muted">Reach out for support, partnership, or any questions about Hirevo.</p>
-                        <form method="post" action="#" class="contact-form mt-4">
+                        <form method="post" action="{{ route('contact.submit') }}" class="contact-form mt-4">
                             @csrf
                             <div class="row">
                                 <div class="col-lg-12">
                                     <div class="mb-3">
                                         <label for="nameInput" class="form-label">Name</label>
-                                        <input type="text" name="name" id="nameInput" class="form-control" placeholder="Enter your name">
+                                        <input type="text" name="name" id="nameInput" class="form-control" placeholder="Enter your name" value="{{ old('name') }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="emailInput" class="form-label">Email</label>
-                                        <input type="email" name="email" id="emailInput" class="form-control" placeholder="Enter your email">
+                                        <input type="email" name="email" id="emailInput" class="form-control" placeholder="Enter your email" value="{{ old('email') }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="subjectInput" class="form-label">Subject</label>
-                                        <input type="text" name="subject" id="subjectInput" class="form-control" placeholder="Enter your subject">
+                                        <input type="text" name="subject" id="subjectInput" class="form-control" placeholder="Enter your subject" value="{{ old('subject') }}">
                                     </div>
                                 </div>
                                 <div class="col-lg-12">
                                     <div class="mb-3">
                                         <label for="messageInput" class="form-label">Your Message</label>
-                                        <textarea class="form-control" name="message" id="messageInput" placeholder="Enter your message" rows="4"></textarea>
+                                        <textarea class="form-control" name="message" id="messageInput" placeholder="Enter your message" rows="4">{{ old('message') }}</textarea>
                                     </div>
                                 </div>
                             </div>
@@ -83,7 +94,7 @@
                                 <i class="uil uil-phone-alt"></i>
                             </div>
                             <div class="flex-grow-1 ms-2">
-                                <p class="mb-0">+91 00000 00000</p>
+                                <p class="mb-0">Reach us via the form below or email</p>
                             </div>
                         </div>
                     </div>

@@ -322,6 +322,46 @@ class ResumeAnalysisService
     }
 
     /**
+     * Rule-based resume-to-employer-job match (no GPT). Used at apply time when AI is unavailable.
+     * Returns ['score' => 0-100, 'explanation' => string].
+     */
+    public function getEmployerJobMatchRuleBased(string $resumeText, string $jobTitle, string $jobDescription): array
+    {
+        $jobText = mb_strtolower(trim($jobTitle) . ' ' . trim($jobDescription));
+        $resumeLower = mb_strtolower($resumeText);
+        if (mb_strlen($jobText) < 2) {
+            return ['score' => 50, 'explanation' => 'Match score based on profile and job details.'];
+        }
+        $stopWords = ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'are', 'was', 'were', 'have', 'has', 'will', 'your', 'you', 'can', 'all', 'any', 'not', 'into', 'our', 'out', 'may', 'more', 'than', 'their', 'what', 'when', 'which', 'who', 'about', 'after', 'being', 'been', 'before', 'between', 'both', 'during', 'each', 'other', 'such', 'them', 'then', 'there', 'these', 'they', 'would', 'could', 'should', 'able', 'need', 'using', 'used', 'work', 'job', 'role', 'position'];
+        $extractWords = function (string $text) use ($stopWords): array {
+            $words = preg_split('/[\s\p{P}\d]+/u', $text, -1, PREG_SPLIT_NO_EMPTY);
+            $filtered = array_filter($words, function ($w) use ($stopWords) {
+                $w = mb_strtolower($w);
+                return mb_strlen($w) >= 2 && ! in_array($w, $stopWords, true);
+            });
+            return array_values(array_unique(array_map('mb_strtolower', $filtered)));
+        };
+        $jobWords = $extractWords($jobText);
+        if (count($jobWords) === 0) {
+            return ['score' => 50, 'explanation' => 'Match score based on profile and job details.'];
+        }
+        $matched = 0;
+        foreach ($jobWords as $word) {
+            if (mb_strlen($word) >= 2 && mb_strpos($resumeLower, $word) !== false) {
+                $matched++;
+            }
+        }
+        $score = (int) round((count($jobWords) > 0 ? ($matched / count($jobWords)) : 0.5) * 100);
+        $score = min(100, max(0, $score));
+        $explanation = sprintf(
+            'Candidate resume overlaps with job keywords (%d of %d). Score based on relevance to role.',
+            $matched,
+            count($jobWords)
+        );
+        return ['score' => $score, 'explanation' => $explanation];
+    }
+
+    /**
      * Rule-based resume-to-job-role match score (0-100) and explanation.
      * Used when GPT is not available. Employer-facing explanation.
      */

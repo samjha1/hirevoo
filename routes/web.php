@@ -11,8 +11,10 @@ use App\Http\Controllers\Employer\JobController as EmployerJobController;
 use App\Http\Controllers\Employer\ProfileController as EmployerProfileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobApplicationController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReferralSignupController;
 use App\Http\Controllers\ResumeController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +50,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/jobs/generate-description', [EmployerJobController::class, 'generateDescription'])->name('jobs.generate-description');
         Route::get('/jobs/{job}/applications', [EmployerApplicationController::class, 'index'])->name('jobs.applications')->scopeBindings();
         Route::patch('/applications/{application}/status', [EmployerApplicationController::class, 'updateStatus'])->name('applications.status')->scopeBindings();
+        Route::post('/applications/{application}/calculate-match', [EmployerApplicationController::class, 'calculateMatch'])->name('applications.calculate-match')->scopeBindings();
         Route::get('/applications/{application}/resume/view', [EmployerApplicationController::class, 'viewResume'])->name('applications.resume.view')->scopeBindings();
         Route::get('/applications/{application}/resume', [EmployerApplicationController::class, 'downloadResume'])->name('applications.resume')->scopeBindings();
         Route::post('/jobs/{job}/duplicate', [EmployerJobController::class, 'duplicate'])->name('jobs.duplicate')->scopeBindings();
@@ -75,3 +78,5 @@ Route::post('/job-goals/{jobRole}/apply', [JobApplicationController::class, 'sto
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
 Route::get('/about', fn () => view('hirevo.about'))->name('about');
 Route::get('/contact', fn () => view('hirevo.contact'))->name('contact');
+Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
+Route::post('/referral-signup', [ReferralSignupController::class, 'store'])->name('referral-signup.store');

@@ -82,7 +82,7 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="counter-box mt-3">
                         <div class="counters text-center">
-                            <h5 class="counter mb-0">24/7</h5>
+                            <h5 class="counter mb-0">Dedicated</h5>
                             <h6 class="fs-16 mt-3">Support</h6>
                         </div>
                     </div>

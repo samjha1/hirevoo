@@ -3,9 +3,12 @@
 <head>
     <meta charset="utf-8">
     <base href="{{ rtrim(config('app.asset_url') ?? config('app.url'), '/') }}/">
-    <title>@yield('title', 'Home') | Hirevo - AI Career Intelligence</title>
+    <title>@yield('title', 'Home') | Hirevo — Own Your Next Career Move</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Hirevo - AI Career Intelligence + Referral Network + Skill Monetization">
+    <meta name="description" content="Hirevo — Own Your Next Career Move. AI Career Intelligence, skill-gap analysis, referral marketplace & job goals.">
+    <meta property="og:title" content="@yield('og_title', 'Hirevo — Own Your Next Career Move')">
+    <meta property="og:description" content="@yield('og_description', 'AI Career Intelligence, skill-gap analysis, referral marketplace & job goals.')">
+    <meta property="og:type" content="website">
     <meta content="Hirevo" name="author">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -39,8 +42,7 @@
         <nav class="navbar navbar-expand-lg fixed-top sticky hirevo-navbar" id="navbar">
             <div class="container-fluid custom-container">
                 <a class="navbar-brand hirevo-nav-brand d-flex align-items-center" href="{{ route('home') }}">
-                    <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo logo-dark">
-                    <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo logo-light">
+                    <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo" width="160" height="48">
                 </a>
                 <button class="navbar-toggler hirevo-nav-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-label="Toggle navigation">
                     <i class="mdi mdi-menu fs-28"></i>
@@ -185,9 +187,37 @@
         @endguest
 
         <div class="main-content">
+            @if(session('referral_success'))
+                <div class="container mt-3">
+                    <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+                        {{ session('referral_success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+            @endif
             <div class="page-content">
                 @yield('content')
             </div>
+
+            <!-- START REFERRAL (Refer in your company & earn) -->
+            <section class="py-5" style="background: linear-gradient(135deg, var(--hirevo-primary, #0B1F3B) 0%, #162d4d 100%);">
+                <div class="container">
+                    <div class="row justify-content-between align-items-center">
+                        <div class="col-lg-7">
+                            <div class="text-center text-lg-start">
+                                <h4 class="text-white mb-2">Refer in your company & earn</h4>
+                                <p class="text-white-50 mb-0">If you can refer candidates in your company, sign up here. Share your company name and how many people you can refer — we’ll get in touch so you can start earning.</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-5 mt-4 mt-lg-0 text-center text-lg-end">
+                            <button type="button" class="btn btn-success btn-lg rounded-pill px-4 hirevo-cta-btn" data-bs-toggle="modal" data-bs-target="#referralSignupModal">
+                                <i class="uil uil-user-plus me-1"></i> I can refer in my company
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- END REFERRAL -->
 
             <!-- START SUBSCRIBE -->
             <section class="bg-subscribe">
@@ -203,9 +233,11 @@
                             <div class="mt-4 mt-lg-0">
                                 <form class="subscribe-form" action="#">
                                     <div class="input-group justify-content-center justify-content-lg-end">
-                                        <input type="text" class="form-control" id="subscribe" placeholder="Enter your email">
-                                        <button class="btn btn-primary" type="button" id="subscribebtn">Subscribe</button>
+                                        <label for="subscribe" class="visually-hidden">Your email address</label>
+                                        <input type="email" class="form-control" id="subscribe" name="subscribe" placeholder="Your email address" aria-label="Your email address" required>
+                                        <button class="btn btn-primary hirevo-cta-btn" type="button" id="subscribebtn">Subscribe</button>
                                     </div>
+                                    <div id="subscribe-message" class="hirevo-subscribe-message mt-2 text-center text-lg-end" aria-live="polite"></div>
                                 </form>
                             </div>
                         </div>
@@ -217,6 +249,57 @@
             </section>
             <!-- END SUBSCRIBE -->
 
+            <!-- Referral Signup Modal -->
+            <div class="modal fade" id="referralSignupModal" tabindex="-1" aria-labelledby="referralSignupModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="referralSignupModalLabel">Refer in your company & earn</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ route('referral-signup.store') }}" method="POST">
+                            @csrf
+                            <div class="modal-body">
+                                <p class="text-muted small mb-3">Share your details. We’ll contact you to help you refer candidates and start earning.</p>
+                                <div class="mb-3">
+                                    <label for="referral_company_name" class="form-label">Company name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('company_name') is-invalid @enderror" id="referral_company_name" name="company_name" value="{{ old('company_name') }}" placeholder="Your company name" required>
+                                    @error('company_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="referral_name" class="form-label">Your name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="referral_name" name="name" value="{{ old('name') }}" placeholder="Full name" required>
+                                    @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="referral_email" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="referral_email" name="email" value="{{ old('email') }}" placeholder="you@company.com" required>
+                                    @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="referral_phone" class="form-label">Phone</label>
+                                    <input type="text" class="form-control @error('phone') is-invalid @enderror" id="referral_phone" name="phone" value="{{ old('phone') }}" placeholder="Phone number">
+                                    @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="referral_max_candidates" class="form-label">How many candidates can you refer? <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control @error('max_candidates') is-invalid @enderror" id="referral_max_candidates" name="max_candidates" value="{{ old('max_candidates', 1) }}" min="1" max="100" required>
+                                    @error('max_candidates')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="mb-0">
+                                    <label for="referral_message" class="form-label">Message (optional)</label>
+                                    <textarea class="form-control" id="referral_message" name="message" rows="2" placeholder="Any additional details">{{ old('message') }}</textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <!-- START FOOTER -->
             <footer class="hirevo-footer">
                 <div class="hirevo-footer__main">
@@ -225,7 +308,7 @@
                             <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
                                 <div class="hirevo-footer__brand">
                                     <h4 class="hirevo-footer__logo">Hirevo</h4>
-                                    <p class="hirevo-footer__tagline">AI Career Intelligence + Referral Network + Skill Monetization. Find your dream role with skill-gap analysis and verified referrals.</p>
+                                    <p class="hirevo-footer__tagline">Own Your Next Career Move. AI Career Intelligence, skill-gap analysis, referral marketplace & job goals.</p>
                                     <p class="hirevo-footer__follow">Follow us</p>
                                     <ul class="hirevo-footer__social">
                                         <li><a href="#" aria-label="Facebook"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a></li>
@@ -271,7 +354,7 @@
                                 <div class="hirevo-footer__col">
                                     <h5 class="hirevo-footer__heading">Support</h5>
                                     <ul class="hirevo-footer__links">
-                                        <li><a href="{{ route('contact') }}">Help Center</a></li>
+                                        <li><a href="{{ route('contact') }}">Contact Support</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -281,7 +364,7 @@
                 <div class="hirevo-footer__bottom">
                     <div class="container">
                         <p class="hirevo-footer__copyright">
-                            <script>document.write(new Date().getFullYear())</script> &copy; Hirevo — AI Career Intelligence
+                            <script>document.write(new Date().getFullYear())</script> &copy; Hirevo. Own Your Next Career Move. All rights reserved.
                         </p>
                     </div>
                 </div>
@@ -329,6 +412,36 @@
         else { document.addEventListener('DOMContentLoaded', hidePreloader); window.addEventListener('load', hidePreloader); setTimeout(hidePreloader, 1500); }
     })();
     </script>
+    <script>
+    (function(){
+        document.addEventListener('DOMContentLoaded', function(){
+            var btn = document.getElementById('subscribebtn');
+            var input = document.getElementById('subscribe');
+            var msg = document.getElementById('subscribe-message');
+            if (!btn || !input || !msg) return;
+            btn.addEventListener('click', function(){
+                msg.classList.remove('text-success', 'text-danger');
+                var val = (input.value || '').trim();
+                var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!val) { msg.textContent = 'Please enter your email.'; msg.classList.add('text-danger'); return; }
+                if (!emailRe.test(val)) { msg.textContent = 'Please enter a valid email address.'; msg.classList.add('text-danger'); return; }
+                msg.textContent = 'Thanks for subscribing! We\'ll be in touch.';
+                msg.classList.add('text-success');
+                input.value = '';
+            });
+        });
+    })();
+    </script>
     @stack('scripts')
+    @if($errors->has('company_name') || $errors->has('max_candidates'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var modal = document.getElementById('referralSignupModal');
+                if (modal && typeof bootstrap !== 'undefined') {
+                    new bootstrap.Modal(modal).show();
+                }
+            });
+        </script>
+    @endif
 </body>
 </html>

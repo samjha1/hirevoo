@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <base href="{{ rtrim(config('app.asset_url') ?? config('app.url'), '/') }}/">
-    <title>@yield('title', 'Dashboard') | Hirevo Employer</title>
+    <title>@yield('title', 'Dashboard') | Hirevo — Own Your Next Career Move</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="{{ asset($theme.'/assets/images/favicon.ico') }}">

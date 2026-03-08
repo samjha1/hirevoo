@@ -34,6 +34,9 @@ class EmployerJobApplication extends Model
         'resume_id',
         'cover_message',
         'status',
+        'ats_score',
+        'job_match_score',
+        'job_match_explanation',
     ];
 
     public function employerJob(): BelongsTo

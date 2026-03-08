@@ -45,14 +45,17 @@
     margin-left: 0;
 }
 .hirevo-navbar .navbar-brand .hirevo-logo {
-    height: 40px !important;
-    max-width: 140px !important;
+    height: 48px !important;
+    min-height: 48px;
+    max-width: 180px !important;
+    width: auto;
+    object-fit: contain;
 }
 @media (min-width: 768px) {
-    .hirevo-navbar .navbar-brand .hirevo-logo { height: 44px !important; max-width: 160px !important; }
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 52px !important; max-width: 200px !important; }
 }
 @media (min-width: 992px) {
-    .hirevo-navbar .navbar-brand .hirevo-logo { height: 48px !important; max-width: 180px !important; }
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 56px !important; max-width: 220px !important; }
 }
 .hirevo-nav-links .nav-link {
     font-size: 0.9375rem;
@@ -537,11 +540,45 @@ a.text-primary {
     background-color: var(--hirevo-primary) !important;
 }
 
-/* Form focus */
+/* Form focus – smooth transition and clear focus ring */
+.form-control,
+.form-select {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
 .form-control:focus,
 .form-select:focus {
     border-color: var(--hirevo-primary);
     box-shadow: 0 0 0 0.2rem rgba(11, 31, 59, 0.25);
+    outline: 0;
+}
+
+/* CTA buttons – higher contrast and visual weight */
+.hirevo-cta-btn,
+.btn-primary.hirevo-cta-btn {
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(11, 31, 59, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.hirevo-cta-btn:hover,
+.btn-primary.hirevo-cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(11, 31, 59, 0.35);
+}
+
+/* Subscribe success/error message */
+.hirevo-subscribe-message { font-size: 0.9rem; min-height: 1.5em; }
+.hirevo-subscribe-message.text-success { color: rgba(255,255,255,0.95) !important; }
+.hirevo-subscribe-message.text-danger { color: #fca5a5 !important; }
+
+/* Why Hirevo section – cards with clear separation and hover */
+.why-hirevo-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+.why-hirevo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(11, 31, 59, 0.12);
+    border-color: rgba(11, 31, 59, 0.15) !important;
 }
 
 /* Compact select to match form-control-sm height */
@@ -556,14 +593,50 @@ a.text-primary {
     line-height: 1.5 !important;
 }
 
-/* Employer post/edit job: prevent theme from making selects oversized */
+/* Employer post/edit job: readable height and no text clipping */
 .post-job-page .form-select {
-    height: calc(1.5em + 0.75rem + 2px) !important;
-    min-height: 0 !important;
-    max-height: none;
+    min-height: 2.5rem !important;
+    height: 2.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    line-height: 1.5 !important;
+    color: #212529;
 }
 .post-job-page .form-select.status-select {
     max-width: 220px;
+}
+
+/* Post job page: prevent text clipping in inputs/textareas (SN Pro and form-control-sm) */
+.post-job-page .form-control,
+.post-job-page .form-select {
+    line-height: 1.5 !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+.post-job-page .form-control {
+    min-height: 2.5rem;
+    color: #212529;
+}
+.post-job-page .form-control::placeholder {
+    color: #6c757d;
+}
+.post-job-page .form-control-sm {
+    min-height: 2.35rem !important;
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+    line-height: 1.5 !important;
+    font-size: 0.9375rem;
+}
+.post-job-page textarea.form-control {
+    min-height: 6rem;
+    padding: 0.6rem 0.75rem !important;
+    line-height: 1.5 !important;
+}
+.post-job-page textarea.form-control#description {
+    min-height: 10rem;
+}
+.post-job-page textarea.form-control#perks {
+    min-height: 5rem;
 }
 
 /* Employer profile */
