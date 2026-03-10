@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->hasMany(JobApplication::class);
     }
 
+    public function employerJobApplications()
+    {
+        return $this->hasMany(EmployerJobApplication::class);
+    }
+
     public function employerJobs()
     {
         return $this->hasMany(EmployerJob::class, 'user_id');

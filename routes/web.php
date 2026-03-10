@@ -11,6 +11,7 @@ use App\Http\Controllers\Employer\JobController as EmployerJobController;
 use App\Http\Controllers\Employer\ProfileController as EmployerProfileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobApplicationController;
+use App\Http\Controllers\CandidateDashboardController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
@@ -31,6 +32,7 @@ Route::get('/auth/microsoft/redirect', [SocialAuthController::class, 'redirectTo
 Route::get('/auth/microsoft/callback', [SocialAuthController::class, 'handleMicrosoftCallback'])->name('auth.microsoft.callback');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [CandidateDashboardController::class, 'index'])->name('candidate.dashboard');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/fill-from-resume', [ProfileController::class, 'fillFromResume'])->name('profile.fill-from-resume');

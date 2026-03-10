@@ -85,6 +85,7 @@
                         @auth
                         @if(!auth()->user()->isReferrer() && !auth()->user()->isAdmin())
                             <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Home</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('candidate.dashboard') ? 'active' : '' }}" href="{{ route('candidate.dashboard') }}">My Applications</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('job-list') }}">Job Goals</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('job-openings') }}">Jobs</a></li>
                             <li class="nav-item"><a class="nav-link nav-link-resume {{ request()->routeIs('resume.*') ? 'active' : '' }}" href="{{ route('resume.upload') }}">Resume Score</a></li>
@@ -140,6 +141,7 @@
                                     <li><a class="dropdown-item" href="{{ route('admin.employers.index') }}">Manage Employers</a></li>
                                     <li><a class="dropdown-item" href="{{ route('profile') }}">My Profile</a></li>
                                 @else
+                                    <li><a class="dropdown-item" href="{{ route('candidate.dashboard') }}">My Applications</a></li>
                                     <li><a class="dropdown-item" href="{{ route('profile') }}">My Profile</a></li>
                                 @endif
                                 <li><hr class="dropdown-divider"></li>
