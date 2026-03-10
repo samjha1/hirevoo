@@ -376,7 +376,7 @@
                 <div class="breadcrumb-row">
                     <a href="{{ route('home') }}">Home</a>
                     <span class="sep">›</span>
-                    <span class="current">My Application</span>
+                    <span class="current">My Applications</span>
                 </div>
 
                 <div class="hero-inner">
