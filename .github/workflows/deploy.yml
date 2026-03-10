@@ -22,6 +22,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /var/www/hirevoo
+
             git pull origin main
 
             composer install --no-dev --optimize-autoloader
@@ -33,5 +34,14 @@ jobs:
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
+
+            # Fix Laravel permissions
+            sudo chown -R ubuntu:www-data /var/www/hirevoo
+            sudo chmod -R 775 storage
+            sudo chmod -R 775 bootstrap/cache
+
+            # Ensure log file exists
+            sudo touch storage/logs/laravel.log
+            sudo chmod 664 storage/logs/laravel.log
 
             php artisan queue:restart
