@@ -86,7 +86,7 @@
                         <label for="work_location_type" class="form-label fw-500">Work location type <span class="text-danger">*</span></label>
                         <select class="form-select @error('work_location_type') is-invalid @enderror" id="work_location_type" name="work_location_type" required>
                             <option value="">Select</option>
-                            <option value="office" {{ old('work_location_type') === 'office' ? 'selected' : '' }}>Office</option>
+                            <option value="office" {{ old('work_location_type') === 'office' ? 'selected' : '' }}>On-site</option>
                             <option value="remote" {{ old('work_location_type') === 'remote' ? 'selected' : '' }}>Remote</option>
                             <option value="hybrid" {{ old('work_location_type') === 'hybrid' ? 'selected' : '' }}>Hybrid</option>
                         </select>
