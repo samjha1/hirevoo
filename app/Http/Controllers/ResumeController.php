@@ -123,8 +123,9 @@ class ResumeController extends Controller
             [
                 'resume_id' => $resume->id,
                 'match_percentage' => $matchPercentage,
-                'matched_skills' => $matched,
-                'missing_skills' => $missing,
+                // Force JSON for older Laravel versions that don't auto-cast on save
+                'matched_skills' => json_encode($matched),
+                'missing_skills' => json_encode($missing),
             ]
         );
 
@@ -136,7 +137,8 @@ class ResumeController extends Controller
             [
                 'job_role_id' => $jobRole->id,
                 'match_percentage' => $matchPercentage,
-                'missing_skills' => $missing,
+                // Store as JSON string; model will cast back to array on read
+                'missing_skills' => json_encode($missing),
                 'status' => 'available',
             ]
         );

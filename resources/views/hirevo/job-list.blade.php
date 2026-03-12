@@ -7,6 +7,8 @@
     .job-goal-card { border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); transition: all 0.2s ease; }
     .job-goal-card:hover { border-color: var(--hirevo-primary); box-shadow: 0 8px 24px rgba(11, 31, 59, 0.08); }
     .job-list-search-card { border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); }
+    .job-goal-icon-wrap { flex-shrink: 0; }
+    .job-goal-icon { color: var(--hirevo-primary, #0B1F3B); }
 </style>
 @endpush
 
@@ -59,11 +61,40 @@
 
             <div class="row g-3 g-lg-4">
                 @forelse(($jobRoles ?? []) as $role)
+                @php
+                    $titleLower = strtolower($role->title ?? '');
+                    $icon = 'briefcase';
+                    if (str_contains($titleLower, 'backend') || str_contains($titleLower, 'developer') || str_contains($titleLower, 'engineer') || str_contains($titleLower, 'software') || str_contains($titleLower, 'dev')) {
+                        $icon = 'code';
+                    } elseif (str_contains($titleLower, 'data') || str_contains($titleLower, 'analyst') || str_contains($titleLower, 'analytics')) {
+                        $icon = 'chart';
+                    } elseif (str_contains($titleLower, 'business')) {
+                        $icon = 'briefcase';
+                    } elseif (str_contains($titleLower, 'frontend') || str_contains($titleLower, 'front-end')) {
+                        $icon = 'desktop';
+                    } elseif (str_contains($titleLower, 'design') || str_contains($titleLower, 'ux') || str_contains($titleLower, 'ui')) {
+                        $icon = 'palette';
+                    } elseif (str_contains($titleLower, 'product') || str_contains($titleLower, 'manager')) {
+                        $icon = 'clipboard';
+                    }
+                @endphp
                 <div class="col-lg-4 col-md-6">
                     <div class="card border-0 shadow-sm job-goal-card h-100">
                         <div class="card-body p-4 d-flex flex-column">
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10 text-primary mb-3" style="width: 48px; height: 48px;">
-                                <i class="uil uil-briefcase-alt fs-20"></i>
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10 text-primary mb-3 job-goal-icon-wrap" style="width: 56px; height: 56px;">
+                                @if($icon === 'code')
+                                    <svg class="job-goal-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                @elseif($icon === 'chart')
+                                    <svg class="job-goal-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                                @elseif($icon === 'desktop')
+                                    <svg class="job-goal-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                                @elseif($icon === 'palette')
+                                    <svg class="job-goal-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="0.5"/><circle cx="17.5" cy="10.5" r="0.5"/><circle cx="8.5" cy="7.5" r="0.5"/><circle cx="6.5" cy="12.5" r="0.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.648 0-.437-.18-.835-.437-1.125-.29-.29-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"/></svg>
+                                @elseif($icon === 'clipboard')
+                                    <svg class="job-goal-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/></svg>
+                                @else
+                                    <svg class="job-goal-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                                @endif
                             </div>
                             <h5 class="mb-2 fw-600"><a href="{{ route('job-goal.show', $role) }}" class="text-dark text-decoration-none stretched-link">{{ $role->title }}</a></h5>
                             <p class="text-muted mb-0 fs-14 flex-grow-1">{{ Str::limit($role->description, 80) }}</p>
