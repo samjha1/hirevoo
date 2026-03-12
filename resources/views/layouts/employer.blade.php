@@ -67,7 +67,12 @@
     <div class="d-flex employer-wrapper">
         <aside class="employer-sidebar" id="employerSidebar" aria-label="Employer menu">
             <div class="sidebar-brand d-flex align-items-center justify-content-between">
-                <a href="{{ route('home') }}" class="d-flex align-items-center"><img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo"></a>
+                <a href="{{ route('home') }}" class="d-flex align-items-center">
+                    <picture>
+                        <source srcset="{{ asset('images/12575%20%20-2.svg') }}" type="image/svg+xml">
+                        <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo">
+                    </picture>
+                </a>
                 <button type="button" class="btn btn-link text-white p-0 d-lg-none ms-2" id="employerSidebarClose" aria-label="Close menu"><i class="mdi mdi-close mdi-24px"></i></button>
             </div>
             <nav class="nav flex-column py-2">

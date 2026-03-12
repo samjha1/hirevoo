@@ -15,8 +15,8 @@
         <div class="container">
             <nav class="mb-3" aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0 fs-14">
-                    <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Job Goals</li>
+                    <!-- <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li> -->
+                    <!-- <li class="breadcrumb-item active" aria-current="page">Job Goals</li> -->
                 </ol>
             </nav>
 

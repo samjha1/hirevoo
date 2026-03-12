@@ -42,7 +42,10 @@
         <nav class="navbar navbar-expand-lg fixed-top sticky hirevo-navbar" id="navbar">
             <div class="container-fluid custom-container">
                 <a class="navbar-brand hirevo-nav-brand d-flex align-items-center" href="{{ route('home') }}">
-                    <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo" width="160" height="48">
+                    <picture>
+                        <source srcset="{{ asset('images/12575%20%20-2.svg') }}" type="image/svg+xml">
+                        <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo" width="192" height="58">
+                    </picture>
                 </a>
                 <button class="navbar-toggler hirevo-nav-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-label="Toggle navigation">
                     <i class="mdi mdi-menu fs-28"></i>
@@ -309,7 +312,12 @@
                         <div class="row align-items-start">
                             <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
                                 <div class="hirevo-footer__brand">
-                                    <h4 class="hirevo-footer__logo">Hirevo</h4>
+                                    <a href="{{ route('home') }}" class="hirevo-footer__logo d-inline-block">
+                                        <picture>
+                                            <source srcset="{{ asset('images/12575%20%20-2.svg') }}" type="image/svg+xml">
+                                            <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo" width="170" height="52">
+                                        </picture>
+                                    </a>
                                     <p class="hirevo-footer__tagline">Own Your Next Career Move. AI Career Intelligence, skill-gap analysis, referral marketplace & job goals.</p>
                                     <p class="hirevo-footer__follow">Follow us</p>
                                     <ul class="hirevo-footer__social">

@@ -6,10 +6,10 @@
     <section class="section py-4">
         <div class="container">
             <nav class="mb-3" aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0 fs-14">
+                <!-- <ol class="breadcrumb mb-0 fs-14">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Pricing</li>
-                </ol>
+                </ol> -->
             </nav>
 
             <div class="row justify-content-center">

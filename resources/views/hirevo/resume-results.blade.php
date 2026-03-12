@@ -21,11 +21,11 @@
     <section class="section pb-5">
         <div class="container">
             <nav class="mb-3" aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0 fs-14">
+                <!-- <ol class="breadcrumb mb-0 fs-14">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('resume.upload') }}">Submit CV</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Results</li>
-                </ol>
+                </ol> -->
             </nav>
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">

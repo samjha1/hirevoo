@@ -16,11 +16,11 @@
     <section class="section pt-3">
         <div class="container">
             <nav class="mb-3 fs-14" aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0">
+                <!-- <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('job-list') }}">Job Goals</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ $primaryResume ? 'Matching jobs' : $jobRole->title }}</li>
-                </ol>
+                </ol> -->
             </nav>
             @if(session('success'))
                 <div class="alert alert-success mb-4">{{ session('success') }}</div>

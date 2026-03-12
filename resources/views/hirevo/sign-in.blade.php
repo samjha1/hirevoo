@@ -12,8 +12,10 @@
                         <div class="col-lg-6 text-center">
                             <div class="card-body p-4">
                                 <a href="{{ route('home') }}">
-{{--                                    <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo logo-light">--}}
-{{--                                    <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo logo-dark">--}}
+                                    <picture>
+                                        <source srcset="{{ asset('images/12575%20%20-2.svg') }}" type="image/svg+xml">
+                                        <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo">
+                                    </picture>
                                 </a>
                                 <div class="mt-5">
                                     <img src="{{ asset($theme.'/assets/images/auth/sign-in.png') }}" alt="" class="img-fluid">

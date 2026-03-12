@@ -161,7 +161,7 @@ class HomeController extends Controller
             $query->where('job_type', $request->get('job_type'));
         }
 
-        $validWorkTypes = ['office', 'remote', 'hybrid'];
+        $validWorkTypes = ['On-site', 'remote', 'hybrid'];
         if ($request->filled('work_location_type') && in_array($request->get('work_location_type'), $validWorkTypes, true)) {
             $query->where('work_location_type', $request->get('work_location_type'));
         }
