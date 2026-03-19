@@ -20,13 +20,15 @@
         body.employer-body { background: #f5f6f8; margin: 0; }
         .employer-wrapper { min-height: 100vh; }
         .employer-sidebar { background: var(--hirevo-primary, #0B1F3B); width: 260px; flex-shrink: 0; position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; overflow-y: auto; }
-        .employer-sidebar .nav-link { color: rgba(255,255,255,0.88); padding: 0.65rem 1.25rem; border-radius: 0.5rem; margin: 0 0.5rem; font-size: 0.9375rem; display: flex; align-items: center; }
+        .employer-sidebar .nav-link { color: #fff; padding: 0.65rem 1.25rem; border-radius: 0.5rem; margin: 0 0.5rem; font-size: 0.9375rem; display: flex; align-items: center; }
         .employer-sidebar .nav-link:hover { color: #fff; background: rgba(255,255,255,0.1); }
         .employer-sidebar .nav-link.active { color: #fff; background: var(--hirevo-secondary, #10B981); font-weight: 500; }
         .employer-sidebar .nav-link i { margin-right: 0.75rem; font-size: 1.25rem; opacity: 0.95; }
         .employer-sidebar .sidebar-brand { padding: 1.25rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.12); }
         .employer-sidebar .sidebar-brand a { color: #fff; font-weight: 700; text-decoration: none; font-size: 1.125rem; display: flex; align-items: center; }
         .employer-sidebar .sidebar-brand a img { margin-right: 0.5rem; }
+        .employer-sidebar .sidebar-brand .hirevo-logo-wrap { background: var(--hirevo-primary, #0B1F3B); display: inline-flex; align-items: center; border-radius: 6px; padding: 0.2rem 0.35rem; }
+        .employer-sidebar .sidebar-brand .hirevo-logo-wrap img { filter: brightness(0) invert(1); height: 75px !important; width: 160px; max-width: 400px; }
         .employer-main { flex: 1; min-width: 0; margin-left: 260px; display: flex; flex-direction: column; background: #f5f6f8; min-height: 100vh; }
         .employer-topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0.875rem 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 30; flex-shrink: 0; }
         .employer-content { padding: 1.5rem; flex: 1; }
@@ -68,10 +70,7 @@
         <aside class="employer-sidebar" id="employerSidebar" aria-label="Employer menu">
             <div class="sidebar-brand d-flex align-items-center justify-content-between">
                 <a href="{{ route('home') }}" class="d-flex align-items-center">
-                    <picture>
-                        <source srcset="{{ asset('images/12575%20%20-2.svg') }}" type="image/svg+xml">
-                        <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo">
-                    </picture>
+                    <span class="hirevo-logo-wrap"><img src="{{ asset('images/logo.png') }}" alt="Hirevo" class="hirevo-logo"></span>
                 </a>
                 <button type="button" class="btn btn-link text-white p-0 d-lg-none ms-2" id="employerSidebarClose" aria-label="Close menu"><i class="mdi mdi-close mdi-24px"></i></button>
             </div>

@@ -43,7 +43,7 @@
             <div class="container-fluid custom-container">
                 <a class="navbar-brand hirevo-nav-brand d-flex align-items-center" href="{{ route('home') }}">
                     <picture>
-                        <source srcset="{{ asset('images/12575%20%20-2.svg') }}" type="image/svg+xml">
+                        <source srcset="{{ asset('images/12575-2.svg') }}" type="image/svg+xml">
                         <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo" width="192" height="58">
                     </picture>
                 </a>
@@ -314,8 +314,8 @@
                                 <div class="hirevo-footer__brand">
                                     <a href="{{ route('home') }}" class="hirevo-footer__logo d-inline-block">
                                         <picture>
-                                            <source srcset="{{ asset('images/12575%20%20-2.svg') }}" type="image/svg+xml">
-                                            <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo" width="170" height="52">
+                                            <source srcset="{{ asset('images/12575-2.svg')}}" type="image/svg+xml">
+{{--                                            <source srcset="{{ asset('images/hirevo-logo.png')}}" type="image/svg+xml">--}}
                                         </picture>
                                     </a>
                                     <p class="hirevo-footer__tagline">Own Your Next Career Move. AI Career Intelligence, skill-gap analysis, referral marketplace & job goals.</p>

@@ -18,7 +18,7 @@
                             <div class="card-body p-4">
                                 <a href="{{ route('home') }}">
                                     <picture>
-                                        <source srcset="{{ asset('images/12575%20%20-2.svg') }}" type="image/svg+xml">
+                                        <source srcset="{{ asset('images/12575-2.svg') }}" type="image/svg+xml">
                                         <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo">
                                     </picture>
                                 </a>
