@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\ReferrerProfile;
 use App\Rules\WorkEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +37,7 @@ class RegisterController extends Controller
 
         if ($role === 'referrer') {
             $rules['email'][] = new WorkEmail;
+            $rules['company_name'] = ['required', 'string', 'max:255'];
         }
 
         $validated = $request->validate($rules);
@@ -51,6 +53,16 @@ class RegisterController extends Controller
         Auth::login($user);
 
         if ($user->isReferrer()) {
+            ReferrerProfile::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'company_name' => $validated['company_name'] ?? null,
+                    'company_email' => $validated['email'],
+                    'company_email_verified' => false,
+                    'is_approved' => false,
+                    'credits' => 5,
+                ]
+            );
             return redirect(route('employer.dashboard'));
         }
 

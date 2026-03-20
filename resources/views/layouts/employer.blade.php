@@ -31,15 +31,63 @@
         .employer-sidebar .sidebar-brand .hirevo-logo-wrap img { filter: brightness(0) invert(1); height: 75px !important; width: 160px; max-width: 400px; }
         .employer-main { flex: 1; min-width: 0; margin-left: 260px; display: flex; flex-direction: column; background: #f5f6f8; min-height: 100vh; }
         .employer-topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0.875rem 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 30; flex-shrink: 0; }
-        .employer-content { padding: 1.5rem; flex: 1; }
-        .employer-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
+        .employer-content {
+            padding: 1.5rem;
+            flex: 1;
+            width: 100%;
+            max-width: 1220px;
+            margin: 0 auto;
+        }
         .employer-job-card { transition: box-shadow 0.2s, border-color 0.2s; }
-        .employer-job-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-color: #d1d5db; }
-        .employer-tabs { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid #e5e7eb; margin-bottom: 1.25rem; background: #fff; padding: 0 0.25rem; border-radius: 8px 8px 0 0; }
-        .employer-tabs .tab-link { padding: 0.6rem 1rem; font-size: 0.875rem; color: #6b7280; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: 4px 4px 0 0; }
-        .employer-tabs .tab-link:hover { color: var(--hirevo-primary); }
-        .employer-tabs .tab-link.active { color: var(--hirevo-primary); font-weight: 600; border-bottom-color: var(--hirevo-primary); }
-        .job-card-status { font-size: 0.8125rem; font-weight: 500; }
+        .employer-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 28px rgba(17, 24, 39, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+        .employer-job-card:hover { box-shadow: 0 14px 36px rgba(17, 24, 39, 0.08); border-color: #d1d5db; }
+
+        /* Modern pill-style tabs */
+        .employer-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            border-bottom: 0;
+            margin-bottom: 1.25rem;
+            background: #fff;
+            padding: 0.5rem;
+            border-radius: 12px;
+            align-items: center;
+        }
+        .employer-tabs .tab-link {
+            padding: 0.55rem 0.9rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+            text-decoration: none;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            background: transparent;
+            transition: all 0.15s ease;
+        }
+        .employer-tabs .tab-link:hover {
+            color: var(--hirevo-primary);
+            background: rgba(11, 31, 59, 0.04);
+            border-color: rgba(11, 31, 59, 0.08);
+        }
+        .employer-tabs .tab-link.active {
+            color: var(--hirevo-primary);
+            font-weight: 600;
+            background: rgba(11, 31, 59, 0.06);
+            border-color: rgba(11, 31, 59, 0.12);
+        }
+
+        .job-card-status {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 0.25rem 0.55rem;
+            line-height: 1;
+        }
         .job-card-meta { font-size: 0.8125rem; color: #6b7280; }
         .credits-sidebar-box { margin: 0.75rem 0.75rem 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.875rem; }
         .credits-sidebar-box.out { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fecaca; }
@@ -55,7 +103,7 @@
             .employer-main { margin-left: 0; width: 100%; }
             .employer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1040; }
             .employer-backdrop.show { display: block; }
-            .employer-content { padding: 1rem; }
+            .employer-content { padding: 1rem; max-width: 100%; }
         }
         @media (min-width: 992px) {
             .employer-sidebar-toggle { display: none !important; }
@@ -79,12 +127,29 @@
                     <i class="mdi mdi-view-dashboard-outline"></i> Dashboard
                 </a>
                 @if(auth()->user()->referrerProfile?->is_approved)
+                @php
+                    $pipelineJob = auth()->user()
+                        ->employerJobs()
+                        ->orderByDesc('created_at')
+                        ->first(['id', 'title', 'status']);
+                @endphp
                 <a class="nav-link {{ request()->routeIs('employer.jobs.*') && !request()->routeIs('employer.jobs.create') ? 'active' : '' }}" href="{{ route('employer.jobs.index') }}">
                     <i class="mdi mdi-briefcase-outline"></i> Jobs
                 </a>
                 <a class="nav-link {{ request()->routeIs('employer.jobs.create') ? 'active' : '' }}" href="{{ route('employer.jobs.create') }}">
                     <i class="mdi mdi-plus-circle-outline"></i> Post Job
                 </a>
+
+                @if($pipelineJob)
+                    <a class="nav-link {{ request()->routeIs('employer.jobs.pipeline') ? 'active' : '' }}"
+                       href="{{ route('employer.jobs.pipeline', $pipelineJob) }}">
+                        <i class="mdi mdi-source-pull"></i> ATS Pipeline
+                    </a>
+                @else
+                    <span class="nav-link opacity-50" style="cursor:not-allowed; user-select:none;">
+                        <i class="mdi mdi-source-pull"></i> ATS Pipeline
+                    </span>
+                @endif
                 @endif
                 <a class="nav-link {{ request()->routeIs('employer.profile') ? 'active' : '' }}" href="{{ route('employer.profile') }}">
                     <i class="mdi mdi-domain"></i> Company Profile

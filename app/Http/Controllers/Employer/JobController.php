@@ -83,6 +83,7 @@ class JobController extends Controller
             'is_night_shift'      => ['nullable', 'boolean'],
             'work_location_type'  => ['required', 'in:office,remote,hybrid'],
             'pay_type'            => ['required', 'in:fixed,hourly,negotiable,not_disclosed,other'],
+            'salary_amount'      => ['nullable', 'string', 'max:255'],
             'perks'               => ['nullable', 'string', 'max:2000'],
             'joining_fee_required'=> ['required', 'in:0,1'],
         ]);
@@ -98,6 +99,7 @@ class JobController extends Controller
             'is_night_shift'      => ! empty($request->boolean('is_night_shift')),
             'work_location_type'  => $validated['work_location_type'],
             'pay_type'            => $validated['pay_type'],
+            'salary_amount'      => $validated['salary_amount'] ?? null,
             'perks'               => $validated['perks'] ?? null,
             'joining_fee_required'=> (bool) $validated['joining_fee_required'],
         ]);
@@ -139,6 +141,7 @@ class JobController extends Controller
             'is_night_shift'       => ['nullable', 'boolean'],
             'work_location_type'   => ['nullable', 'in:office,remote,hybrid'],
             'pay_type'             => ['nullable', 'in:fixed,hourly,negotiable,not_disclosed,other'],
+            'salary_amount'       => ['nullable', 'string', 'max:255'],
             'perks'                => ['nullable', 'string', 'max:2000'],
             'joining_fee_required' => ['nullable', 'in:0,1'],
         ]);
@@ -152,6 +155,7 @@ class JobController extends Controller
             'is_night_shift'       => ! empty($request->boolean('is_night_shift')),
             'work_location_type'   => $validated['work_location_type'] ?? null,
             'pay_type'             => $validated['pay_type'] ?? null,
+            'salary_amount'       => $validated['salary_amount'] ?? null,
             'perks'                => $validated['perks'] ?? null,
             'joining_fee_required'  => isset($validated['joining_fee_required']) ? (bool) $validated['joining_fee_required'] : $job->joining_fee_required,
         ]);
@@ -195,6 +199,7 @@ class JobController extends Controller
             'is_night_shift'       => $job->is_night_shift,
             'work_location_type'   => $job->work_location_type,
             'pay_type'             => $job->pay_type,
+            'salary_amount'       => $job->salary_amount,
             'perks'                => $job->perks,
             'joining_fee_required' => $job->joining_fee_required,
         ]);
@@ -229,6 +234,7 @@ class JobController extends Controller
             'is_night_shift'       => $job->is_night_shift,
             'work_location_type'   => $job->work_location_type,
             'pay_type'             => $job->pay_type,
+            'salary_amount'       => $job->salary_amount,
             'perks'                => $job->perks,
             'joining_fee_required' => $job->joining_fee_required,
         ]);

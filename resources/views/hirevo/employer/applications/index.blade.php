@@ -6,6 +6,11 @@
 
 @section('header_actions')
     <a href="{{ route('employer.jobs.index') }}" class="btn btn-outline-primary btn-sm">Back to jobs</a>
+    <a href="{{ route('employer.jobs.pipeline', $job) }}"
+       class="btn btn-soft-primary btn-lg fw-600 d-flex align-items-center gap-2"
+       style="padding:0.65rem 1rem;">
+        <i class="mdi mdi-timeline"></i>Pipeline
+    </a>
 @endsection
 
 @section('content')
@@ -88,7 +93,13 @@
     <script>
         document.querySelectorAll('.application-status-select').forEach(function(el) {
             el.addEventListener('change', function() {
-                this.closest('form').submit();
+                // Prevent double-submit when the change event fires twice quickly.
+                if (el.dataset.submitting === '1') return;
+                el.dataset.submitting = '1';
+                el.disabled = true;
+
+                var form = el.closest('form');
+                if (form) form.submit();
             });
         });
         var filterForm = document.getElementById('applications-filter-form');

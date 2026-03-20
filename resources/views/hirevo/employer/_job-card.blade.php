@@ -25,6 +25,9 @@
                     </div>
                 </div>
                 <p class="job-card-meta mb-0 mt-2"><i class="mdi mdi-map-marker-outline me-1"></i>{{ $job->location ?? '—' }}</p>
+                @if(!empty($job->salary_amount) && ($job->pay_type ?? '') !== 'not_disclosed')
+                    <p class="job-card-meta mb-0 mt-1"><i class="mdi mdi-cash-multiple me-1"></i>{{ $job->salary_amount }}</p>
+                @endif
                 <p class="job-card-meta mb-0">Posted on {{ $job->created_at->format('d M Y') }}</p>
             </div>
             <div class="col-12 col-lg-auto">

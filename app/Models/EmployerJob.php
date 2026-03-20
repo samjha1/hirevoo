@@ -22,6 +22,7 @@ class EmployerJob extends Model
         'location',
         'work_location_type',
         'pay_type',
+        'salary_amount',
         'perks',
         'joining_fee_required',
         'status',

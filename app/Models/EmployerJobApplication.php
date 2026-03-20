@@ -53,4 +53,9 @@ class EmployerJobApplication extends Model
     {
         return $this->belongsTo(Resume::class);
     }
+
+    public function interviews()
+    {
+        return $this->hasMany(InterviewSchedule::class, 'employer_job_application_id');
+    }
 }

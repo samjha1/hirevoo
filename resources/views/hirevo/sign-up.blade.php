@@ -78,6 +78,13 @@
                                             <input type="text" class="form-control @error('contact') is-invalid @enderror" id="contact" name="contact" value="{{ old('contact') }}" placeholder="Phone number" required>
                                             @error('contact')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
+                                        @if($isEmployer)
+                                            <div class="mb-3">
+                                                <label for="company_name" class="form-label">Company name</label>
+                                                <input type="text" class="form-control @error('company_name') is-invalid @enderror" id="company_name" name="company_name" value="{{ old('company_name') }}" placeholder="Your company name" required>
+                                                @error('company_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                            </div>
+                                        @endif
                                         <div class="mb-3">
                                             <label for="email" class="form-label">{{ $isEmployer ? 'Work Email' : 'Email' }}</label>
                                             <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="{{ $isEmployer ? 'yourname@company.com' : 'Enter your email' }}" required>

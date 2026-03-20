@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\EmployerController as AdminEmployerController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialAuthController;
@@ -52,21 +51,29 @@ Route::middleware('auth')->group(function () {
         Route::post('/jobs/generate-description', [EmployerJobController::class, 'generateDescription'])->name('jobs.generate-description');
         Route::get('/jobs/{job}/applications', [EmployerApplicationController::class, 'index'])->name('jobs.applications')->scopeBindings();
         Route::patch('/applications/{application}/status', [EmployerApplicationController::class, 'updateStatus'])->name('applications.status')->scopeBindings();
+        // ATS / Pipeline tracking (Kanban-style stages)
+        Route::get('/jobs/{job}/pipeline', [EmployerApplicationController::class, 'pipeline'])->name('jobs.pipeline')->scopeBindings();
+        // Application detail view (candidate + resume + scores)
+        Route::get('/applications/{application}', [EmployerApplicationController::class, 'show'])->name('applications.show')->scopeBindings();
         Route::post('/applications/{application}/calculate-match', [EmployerApplicationController::class, 'calculateMatch'])->name('applications.calculate-match')->scopeBindings();
         Route::get('/applications/{application}/resume/view', [EmployerApplicationController::class, 'viewResume'])->name('applications.resume.view')->scopeBindings();
         Route::get('/applications/{application}/resume', [EmployerApplicationController::class, 'downloadResume'])->name('applications.resume')->scopeBindings();
+        // Interview scheduling
+        Route::post('/applications/{application}/interviews', [EmployerApplicationController::class, 'storeInterview'])
+            ->name('applications.interviews.store')
+            ->scopeBindings();
+        Route::patch('/interviews/{interview}/cancel', [EmployerApplicationController::class, 'cancelInterview'])
+            ->name('interviews.cancel')
+            ->scopeBindings();
+        Route::get('/interviews/{interview}/calendar', [EmployerApplicationController::class, 'calendarInvite'])
+            ->name('interviews.calendar')
+            ->scopeBindings();
         Route::post('/jobs/{job}/duplicate', [EmployerJobController::class, 'duplicate'])->name('jobs.duplicate')->scopeBindings();
         Route::post('/jobs/{job}/repost', [EmployerJobController::class, 'repost'])->name('jobs.repost')->scopeBindings();
         Route::resource('jobs', EmployerJobController::class)->names('jobs')->except(['show']);
         Route::get('/credits', [EmployerCreditsController::class, 'index'])->name('credits.index');
     });
 
-    // Admin routes
-    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/employers', [AdminEmployerController::class, 'index'])->name('employers.index');
-        Route::post('/employers/{employer}/approve', [AdminEmployerController::class, 'approve'])->name('employers.approve');
-        Route::post('/employers/{employer}/reject', [AdminEmployerController::class, 'reject'])->name('employers.reject');
-    });
 });
 
 Route::get('/job-list', [HomeController::class, 'jobList'])->name('job-list');

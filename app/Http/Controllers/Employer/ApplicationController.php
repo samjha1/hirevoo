@@ -5,17 +5,278 @@ namespace App\Http\Controllers\Employer;
 use App\Http\Controllers\Controller;
 use App\Models\EmployerJob;
 use App\Models\EmployerJobApplication;
+use App\Models\InterviewSchedule;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\View\View;
 
 class ApplicationController extends Controller
 {
+    /**
+     * ATS / Pipeline tracking board per job.
+     * Shows applications grouped by their current stage (status) and allows moving them.
+     */
+    public function pipeline(Request $request, EmployerJob $job): View|RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user->isReferrer() || $job->user_id !== $user->id) {
+            return redirect()->route('employer.dashboard');
+        }
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to view applications.');
+        }
+
+        $focus = $request->get('focus'); // optional: 'shortlisted' or any other status key
+        $validStatuses = array_keys(EmployerJobApplication::statusOptions());
+        if ($focus && ! in_array($focus, $validStatuses, true)) {
+            $focus = null;
+        }
+
+        // Dropdown should show only "posted" jobs (active), not drafts.
+        $jobsForSelect = $user->employerJobs()
+            ->where('status', 'active')
+            ->orderByDesc('created_at')
+            ->get(['id', 'title', 'status']);
+
+        // Safety: if current $job is not active for some reason, keep it selectable in the dropdown.
+        if ($job->status !== 'active' && $job->exists) {
+            $jobsForSelect = $jobsForSelect->prepend($job);
+        }
+
+        // Load applications once, then group in the view.
+        $applications = $job->applications()
+            ->with(['user.candidateProfile', 'resume'])
+            ->get();
+
+        return view('hirevo.employer.applications.pipeline', [
+            'job' => $job,
+            'jobsForSelect' => $jobsForSelect,
+            'applications' => $applications,
+            'focus' => $focus,
+        ]);
+    }
+
+    /**
+     * Application detail view (candidate info + resume viewer + match scores).
+     */
+    public function show(Request $request, EmployerJobApplication $application): View|RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user->isReferrer() || $application->employerJob->user_id !== $user->id) {
+            abort(403);
+        }
+
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to view applications.');
+        }
+
+        $application->load(['employerJob', 'user.candidateProfile', 'resume', 'interviews']);
+
+        return view('hirevo.employer.applications.show', [
+            'application' => $application,
+        ]);
+    }
+
+    /**
+     * Schedule an interview for a candidate application.
+     * - Auto-generates meeting URL for Video interviews (placeholder links).
+     * - Moves application stage to "interviewed".
+     */
+    public function storeInterview(Request $request, EmployerJobApplication $application): RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user->isReferrer() || $application->employerJob->user_id !== $user->id) {
+            abort(403);
+        }
+
+        $profile = $user->referrerProfile;
+        if (! $profile || ! $profile->is_approved) {
+            return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage applications.');
+        }
+
+        $validated = $request->validate([
+            'interview_type'    => ['required', 'in:phone,video,in_person'],
+            'interviewer_name'  => ['nullable', 'string', 'max:255'],
+            'scheduled_at'      => ['required', 'date'],
+            'duration_minutes'  => ['nullable', 'integer', 'min:15', 'max:240'],
+            'meeting_provider'  => ['nullable', 'in:zoom,google_meet,teams'],
+            'notes'             => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $interviewType = $validated['interview_type'];
+        $provider = $validated['meeting_provider'] ?? 'google_meet';
+
+        $meetingUrl = null;
+        if ($interviewType === 'video') {
+            $token = substr(str_replace('-', '', (string) Str::uuid()), 0, 12);
+            if ($provider === 'zoom') {
+                $meetingUrl = 'https://zoom.us/j/' . random_int(1000000000, 9999999999);
+            } elseif ($provider === 'teams') {
+                $meetingUrl = 'https://teams.microsoft.com/l/meetup-join/' . $token;
+            } else {
+                // Google Meet join link format: https://meet.google.com/xxx-yyyy-zzz (3-4-3).
+                // We generate an alphanumeric token then split into the expected groups.
+                $meetToken = Str::random(10); // xxx-yyyy-zzz => 3 + 4 + 3
+                $a = substr($meetToken, 0, 3);
+                $b = substr($meetToken, 3, 4);
+                $c = substr($meetToken, 7, 3);
+                $meetingUrl = 'https://meet.google.com/' . $a . '-' . $b . '-' . $c;
+            }
+        }
+
+        $interview = InterviewSchedule::create([
+            'employer_job_application_id' => $application->id,
+            'interview_type'               => $interviewType,
+            'interviewer_name'            => $validated['interviewer_name'] ?? null,
+            'scheduled_at'                => $validated['scheduled_at'],
+            'duration_minutes'           => (int) ($validated['duration_minutes'] ?? 30),
+            'meeting_url'                => $meetingUrl,
+            'status'                      => 'scheduled',
+            'notes'                       => $validated['notes'] ?? null,
+        ]);
+
+        // Move candidate to Interviewed stage when scheduling.
+        $application->update(['status' => EmployerJobApplication::STATUS_INTERVIEWED]);
+
+        // Best-effort notifications (won't break scheduling if mail isn't configured).
+        try {
+            $candidateEmail = $application->user?->email;
+            $companyEmail = $application->employerJob?->user?->email;
+
+            if ($candidateEmail) {
+                Mail::raw(
+                    "Hi {$application->user->name},\n\nYour interview has been scheduled.\n\n"
+                    . "Job: {$application->employerJob->title}\n"
+                    . "Type: {$interviewType}\n"
+                    . "When: {$interview->scheduled_at}\n"
+                    . "Meeting link: {$meetingUrl}\n",
+                    function ($m) use ($candidateEmail) {
+                        $m->to($candidateEmail)->subject('Interview Scheduled');
+                    }
+                );
+            }
+
+            if ($companyEmail) {
+                // optional: inform interviewer/employer too
+                // Keep it lightweight to avoid template work.
+                Mail::raw(
+                    "Interview scheduled for {$application->user->name}.",
+                    function ($m) use ($companyEmail) {
+                        $m->to($companyEmail)->subject('Interview Scheduled');
+                    }
+                );
+            }
+        } catch (\Throwable $e) {
+            // Ignore notification failures for now.
+        }
+
+        return redirect()->back()->with('success', 'Interview scheduled successfully.');
+    }
+
+    /**
+     * Cancel an interview schedule.
+     */
+    public function cancelInterview(Request $request, InterviewSchedule $interview): RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user->isReferrer()) {
+            abort(403);
+        }
+
+        $application = $interview->application()->with('employerJob')->first();
+        if (! $application || $application->employerJob->user_id !== $user->id) {
+            abort(403);
+        }
+
+        $interview->update(['status' => 'cancelled']);
+
+        return redirect()->back()->with('success', 'Interview cancelled.');
+    }
+
+    /**
+     * Download an iCalendar (.ics) invite for a scheduled interview.
+     */
+    public function calendarInvite(Request $request, InterviewSchedule $interview): Response
+    {
+        $user = auth()->user();
+        if (! $user->isReferrer()) {
+            abort(403);
+        }
+
+        $interview->load(['application.employerJob', 'application.user']);
+        $application = $interview->application;
+        if (! $application || ! $application->employerJob || $application->employerJob->user_id !== $user->id) {
+            abort(403);
+        }
+
+        $jobTitle = $application->employerJob->title ?? 'Interview';
+        $candidateName = $application->user->name ?? 'Candidate';
+        $meetingUrl = $interview->meeting_url;
+
+        $startUtc = $interview->scheduled_at->copy()->setTimezone('UTC');
+        $endUtc = $interview->scheduled_at->copy()->addMinutes((int) $interview->duration_minutes)->setTimezone('UTC');
+
+        $icsEscape = static function (?string $value): string {
+            $value = $value ?? '';
+            // Escape special chars for iCalendar fields
+            return str_replace(
+                ["\\", "\r\n", "\n", "\r", ',', ';'],
+                ["\\\\", "\\n", "\\n", "\\n", '\\,', '\\;'],
+                $value
+            );
+        };
+
+        $uid = ($interview->id ?: (string) Str::uuid()) . '@hirevo';
+        $dtStamp = now()->utc()->format('Ymd\\THis\\Z');
+        $dtStart = $startUtc->format('Ymd\\THis\\Z');
+        $dtEnd = $endUtc->format('Ymd\\THis\\Z');
+
+        $summary = $icsEscape("Interview - {$jobTitle} ({$candidateName})");
+        $descriptionParts = [
+            "Candidate: {$candidateName}",
+            "Job: {$jobTitle}",
+            $meetingUrl ? "Meeting link: {$meetingUrl}" : null,
+            $interview->notes ? "Notes: {$interview->notes}" : null,
+        ];
+        $description = $icsEscape(implode("\\n", array_filter($descriptionParts)));
+
+        $location = $interview->interview_type === 'in_person'
+            ? $icsEscape('On-site / In-Person')
+            : $icsEscape($interview->meeting_url ? 'Online' : 'TBD');
+
+        $body = "BEGIN:VCALENDAR\r\n"
+            . "VERSION:2.0\r\n"
+            . "PRODID:-//Hirevo//Interview Scheduling//EN\r\n"
+            . "CALSCALE:GREGORIAN\r\n"
+            . "METHOD:PUBLISH\r\n"
+            . "BEGIN:VEVENT\r\n"
+            . "UID:{$uid}\r\n"
+            . "DTSTAMP:{$dtStamp}\r\n"
+            . "DTSTART:{$dtStart}\r\n"
+            . "DTEND:{$dtEnd}\r\n"
+            . "SUMMARY:{$summary}\r\n"
+            . "DESCRIPTION:{$description}\r\n"
+            . "LOCATION:{$location}\r\n"
+            . "URL:{$icsEscape($meetingUrl)}\r\n"
+            . "END:VEVENT\r\n"
+            . "END:VCALENDAR\r\n";
+
+        $filename = 'interview-' . $interview->id . '.ics';
+        return response($body, 200, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
     public function index(Request $request, EmployerJob $job): View|RedirectResponse
     {
         $user = auth()->user();

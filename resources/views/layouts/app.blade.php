@@ -69,7 +69,6 @@
                             </li>
                         @elseif(auth()->user()->isAdmin())
                             <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Home</a></li>
-                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.employers.index') }}">Employers</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('pricing') }}">Pricing</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('about') }}">About</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">Contact</a></li>
@@ -141,7 +140,6 @@
                                     <li><a class="dropdown-item" href="{{ route('employer.dashboard') }}">Employer Dashboard</a></li>
                                     <li><a class="dropdown-item" href="{{ route('employer.profile') }}">Company Profile</a></li>
                                 @elseif(auth()->user()->isAdmin())
-                                    <li><a class="dropdown-item" href="{{ route('admin.employers.index') }}">Manage Employers</a></li>
                                     <li><a class="dropdown-item" href="{{ route('profile') }}">My Profile</a></li>
                                 @else
                                     <li><a class="dropdown-item" href="{{ route('candidate.dashboard') }}">My Applications</a></li>

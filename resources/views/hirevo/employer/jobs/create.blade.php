@@ -120,6 +120,18 @@
                         @error('pay_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
+                    <div class="mb-4" id="salary_amount_wrap">
+                        <label for="salary_amount" class="form-label fw-500">Salary amount <small class="text-muted">(optional)</small></label>
+                        <input type="text"
+                               class="form-control @error('salary_amount') is-invalid @enderror"
+                               id="salary_amount"
+                               name="salary_amount"
+                               value="{{ old('salary_amount') }}"
+                               placeholder="e.g. ₹25-30 LPA, ₹40/hr, 50,000/month">
+                        @error('salary_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <p class="small text-muted mt-1 mb-0">Add salary if you want candidates to see it. If you select “Not disclosed”, you can leave this blank.</p>
+                    </div>
+
                     <div class="mb-4">
                         <label for="perks" class="form-label fw-500">Do you offer any additional perks?</label>
                         <textarea class="form-control" id="perks" name="perks" rows="3" placeholder="e.g. Health insurance, Flexible hours, Work from home">{{ old('perks') }}</textarea>
@@ -172,7 +184,10 @@
                         <span class="small text-muted">Active = visible to candidates</span>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
-                        <button type="submit" class="btn btn-primary">Continue & post job</button>
+                        <button type="submit" class="btn btn-outline-secondary"
+                                onclick="document.getElementById('status').value='draft'">Save Draft</button>
+                        <button type="submit" class="btn btn-primary"
+                                onclick="document.getElementById('status').value='active'">Continue & post job</button>
                         <a href="{{ route('employer.jobs.index') }}" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </div>
@@ -240,6 +255,24 @@
                     btn.disabled = false;
                 });
             });
+        })();
+
+        // Hide/disable salary_amount when pay_type is "not_disclosed".
+        (function () {
+            var payType = document.getElementById('pay_type');
+            var wrap = document.getElementById('salary_amount_wrap');
+            var salaryInput = document.getElementById('salary_amount');
+            if (!payType || !wrap || !salaryInput) return;
+
+            function toggleSalary() {
+                var isNotDisclosed = payType.value === 'not_disclosed';
+                wrap.style.display = isNotDisclosed ? 'none' : '';
+                salaryInput.disabled = isNotDisclosed;
+                if (isNotDisclosed) salaryInput.value = '';
+            }
+
+            payType.addEventListener('change', toggleSalary);
+            toggleSalary();
         })();
     </script>
     @endpush
