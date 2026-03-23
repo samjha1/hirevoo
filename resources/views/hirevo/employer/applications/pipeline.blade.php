@@ -13,6 +13,23 @@
     @php
         $statusMap = \App\Models\EmployerJobApplication::statusOptions();
         $stageOrder = ['applied', 'shortlisted', 'interviewed', 'offered', 'hired', 'rejected'];
+        $locationDecoded = is_string($job->location) ? json_decode($job->location, true) : null;
+        $locationParts = is_array($locationDecoded)
+            ? array_filter([
+                $locationDecoded['area'] ?? null,
+                $locationDecoded['city'] ?? null,
+                $locationDecoded['state'] ?? null,
+                $locationDecoded['country'] ?? null,
+                $locationDecoded['pincode'] ?? null,
+            ])
+            : [];
+        $jobLocationText = !empty($locationParts) ? implode(', ', $locationParts) : ($job->location ?? '—');
+        $jobSalaryText = null;
+        if (($job->pay_type ?? '') !== 'not_disclosed' && (!is_null($job->salary_min) || !is_null($job->salary_max))) {
+            $jobSalaryText = ($job->salary_min ?? '—') . ' - ' . ($job->salary_max ?? '—');
+        } elseif (($job->pay_type ?? '') !== 'not_disclosed' && !empty($job->salary_amount)) {
+            $jobSalaryText = $job->salary_amount;
+        }
 
         $focusStatus = $focus ?: null;
         if ($focusStatus && !array_key_exists($focusStatus, $statusMap)) {
@@ -57,7 +74,18 @@
     <div class="mb-4 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="d-flex flex-column">
             <h2 class="h5 mb-0 fw-700 text-dark">{{ $job->title }}</h2>
-            <p class="text-muted small mb-0">{{ $job->location ?? '—' }}</p>
+            <p class="text-muted small mb-0">{{ $jobLocationText }}</p>
+            <p class="text-muted small mb-0">
+                @if(!empty($job->job_department))
+                    <span class="me-2">Department: {{ $job->job_department }}</span>
+                @endif
+                @if($jobSalaryText)
+                    <span class="me-2">Salary: {{ $jobSalaryText }}</span>
+                @endif
+                @if(!is_null($job->experience_years))
+                    <span>Experience: {{ $job->experience_years }} years</span>
+                @endif
+            </p>
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2">
