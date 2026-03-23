@@ -65,22 +65,36 @@
         .ats-move-row { margin-top: 0.6rem; display: flex; gap: 0.5rem; align-items: center; }
         .ats-move-row select { font-size: 0.8rem; }
         .ats-view-link { color: var(--hirevo-primary, #0B1F3B); text-decoration: none; font-weight: 700; }
+        .ats-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+        .ats-job-summary { min-width: 260px; flex: 1 1 420px; }
+        .ats-meta-line { display: flex; flex-wrap: wrap; gap: 0.45rem 0.9rem; }
+        .ats-toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 0.5rem; flex: 1 1 520px; }
+        .ats-job-switch { display: flex; align-items: center; gap: 0.45rem; min-width: 260px; }
+        .ats-job-switch .form-select { width: 100%; min-width: 220px; max-width: 320px; }
+        .ats-search-wrap { display: flex; align-items: center; gap: 0.5rem; }
+        .ats-search-wrap input { width: 220px; }
+
+        @media (max-width: 992px) {
+            .ats-toolbar { justify-content: flex-start; }
+            .ats-job-switch { flex: 1 1 100%; }
+            .ats-job-switch .form-select { max-width: 100%; }
+        }
 
         /* Compact mode helps when a stage has many candidates (ex: 100+ applied). */
         .ats-board.ats-compact .ats-badge { display: none; }
         .ats-board.ats-compact .ats-card-meta { display: none; }
     </style>
 
-    <div class="mb-4 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="d-flex flex-column">
+    <div class="mb-4 ats-header">
+        <div class="d-flex flex-column ats-job-summary">
             <h2 class="h5 mb-0 fw-700 text-dark">{{ $job->title }}</h2>
             <p class="text-muted small mb-0">{{ $jobLocationText }}</p>
-            <p class="text-muted small mb-0">
+            <p class="text-muted small mb-0 ats-meta-line">
                 @if(!empty($job->job_department))
-                    <span class="me-2">Department: {{ $job->job_department }}</span>
+                    <span>Department: {{ $job->job_department }}</span>
                 @endif
                 @if($jobSalaryText)
-                    <span class="me-2">Salary: {{ $jobSalaryText }}</span>
+                    <span>Salary: {{ $jobSalaryText }}</span>
                 @endif
                 @if(!is_null($job->experience_years))
                     <span>Experience: {{ $job->experience_years }} years</span>
@@ -88,8 +102,8 @@
             </p>
         </div>
 
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <div class="d-flex align-items-center gap-2">
+        <div class="ats-toolbar">
+            <div class="ats-job-switch">
                 <span class="text-muted small fw-600">Job:</span>
                 <select class="form-select form-select-sm" onchange="window.location.href=this.value">
                     @foreach($jobsForSelect as $j)
@@ -109,8 +123,8 @@
                 </a>
             @endif
 
-            <div class="d-flex align-items-center gap-2 ms-2">
-                <input type="search" id="atsCandidateSearch" class="form-control form-control-sm" style="width: 220px;"
+            <div class="ats-search-wrap">
+                <input type="search" id="atsCandidateSearch" class="form-control form-control-sm"
                        placeholder="Search candidate..." autocomplete="off"
                        value="{{ request()->get('q') }}">
                 <div class="form-check form-switch m-0">
