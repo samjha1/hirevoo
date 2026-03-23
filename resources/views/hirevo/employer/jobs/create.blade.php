@@ -42,6 +42,23 @@
                     </div>
 
                     <div class="mb-4">
+                        <label for="job_department" class="form-label fw-500">Job department <span class="text-danger">*</span></label>
+                        <select class="form-select @error('job_department') is-invalid @enderror" id="job_department" name="job_department" required>
+                            <option value="">Select department</option>
+                            <option value="Sales" {{ old('job_department') === 'Sales' ? 'selected' : '' }}>Sales</option>
+                            <option value="Marketing" {{ old('job_department') === 'Marketing' ? 'selected' : '' }}>Marketing</option>
+                            <option value="Human Resources" {{ old('job_department') === 'Human Resources' ? 'selected' : '' }}>Human Resources</option>
+                            <option value="Finance" {{ old('job_department') === 'Finance' ? 'selected' : '' }}>Finance</option>
+                            <option value="Engineering" {{ old('job_department') === 'Engineering' ? 'selected' : '' }}>Engineering</option>
+                            <option value="Operations" {{ old('job_department') === 'Operations' ? 'selected' : '' }}>Operations</option>
+                            <option value="Customer Support" {{ old('job_department') === 'Customer Support' ? 'selected' : '' }}>Customer Support</option>
+                            <option value="Legal" {{ old('job_department') === 'Legal' ? 'selected' : '' }}>Legal</option>
+                            <option value="Other" {{ old('job_department') === 'Other' ? 'selected' : '' }}>Other</option>
+                        </select>
+                        @error('job_department')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="mb-4">
                         <label for="title" class="form-label fw-500">Job title / Designation <span class="text-danger">*</span></label>
                         <input type="text" class="form-control form-control-sm @error('title') is-invalid @enderror" id="title" name="title" value="{{ old('title') }}" placeholder="e.g. Accountant" required>
                         <p class="small text-muted mt-1 mb-0"><i class="mdi mdi-information-outline me-1"></i>Only similar job title edits are allowed after publishing.</p>
@@ -93,10 +110,32 @@
                         @error('work_location_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
-                    <div>
-                        <label for="location" class="form-label fw-500">Address / Area</label>
-                        <input type="text" class="form-control @error('location') is-invalid @enderror" id="location" name="location" value="{{ old('location') }}" placeholder="e.g. Sector 63, Noida or Remote">
-                        @error('location')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="location_area" class="form-label fw-500">Area / Address</label>
+                            <input type="text" class="form-control @error('location_area') is-invalid @enderror" id="location_area" name="location_area" value="{{ old('location_area') }}" placeholder="e.g. Sector 63">
+                            @error('location_area')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label for="location_city" class="form-label fw-500">City</label>
+                            <input type="text" class="form-control @error('location_city') is-invalid @enderror" id="location_city" name="location_city" value="{{ old('location_city') }}" placeholder="e.g. Noida">
+                            @error('location_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label for="location_state" class="form-label fw-500">State</label>
+                            <input type="text" class="form-control @error('location_state') is-invalid @enderror" id="location_state" name="location_state" value="{{ old('location_state') }}" placeholder="e.g. Uttar Pradesh">
+                            @error('location_state')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label for="location_country" class="form-label fw-500">Country</label>
+                            <input type="text" class="form-control @error('location_country') is-invalid @enderror" id="location_country" name="location_country" value="{{ old('location_country') }}" placeholder="e.g. India">
+                            @error('location_country')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label for="location_pincode" class="form-label fw-500">Pincode</label>
+                            <input type="text" class="form-control @error('location_pincode') is-invalid @enderror" id="location_pincode" name="location_pincode" value="{{ old('location_pincode') }}" placeholder="e.g. 201301">
+                            @error('location_pincode')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
                     </div>
                 </div>
             </div>
@@ -121,15 +160,45 @@
                     </div>
 
                     <div class="mb-4" id="salary_amount_wrap">
-                        <label for="salary_amount" class="form-label fw-500">Salary amount <small class="text-muted">(optional)</small></label>
-                        <input type="text"
-                               class="form-control @error('salary_amount') is-invalid @enderror"
-                               id="salary_amount"
-                               name="salary_amount"
-                               value="{{ old('salary_amount') }}"
-                               placeholder="e.g. ₹25-30 LPA, ₹40/hr, 50,000/month">
-                        @error('salary_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <label class="form-label fw-500">Salary amount <small class="text-muted">(optional)</small></label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <input type="number"
+                                       class="form-control @error('salary_min') is-invalid @enderror"
+                                       id="salary_min"
+                                       name="salary_min"
+                                       min="0"
+                                       step="1"
+                                       value="{{ old('salary_min') }}"
+                                       placeholder="Minimum salary">
+                                @error('salary_min')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-6">
+                                <input type="number"
+                                       class="form-control @error('salary_max') is-invalid @enderror"
+                                       id="salary_max"
+                                       name="salary_max"
+                                       min="0"
+                                       step="1"
+                                       value="{{ old('salary_max') }}"
+                                       placeholder="Maximum salary">
+                                @error('salary_max')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
                         <p class="small text-muted mt-1 mb-0">Add salary if you want candidates to see it. If you select “Not disclosed”, you can leave this blank.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="experience_years" class="form-label fw-500">Experience required (years)</label>
+                        <input type="number"
+                               class="form-control @error('experience_years') is-invalid @enderror"
+                               id="experience_years"
+                               name="experience_years"
+                               min="0"
+                               step="1"
+                               value="{{ old('experience_years') }}"
+                               placeholder="e.g. 2">
+                        @error('experience_years')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
                     <div class="mb-4">
@@ -261,14 +330,19 @@
         (function () {
             var payType = document.getElementById('pay_type');
             var wrap = document.getElementById('salary_amount_wrap');
-            var salaryInput = document.getElementById('salary_amount');
-            if (!payType || !wrap || !salaryInput) return;
+            var salaryMinInput = document.getElementById('salary_min');
+            var salaryMaxInput = document.getElementById('salary_max');
+            if (!payType || !wrap || !salaryMinInput || !salaryMaxInput) return;
 
             function toggleSalary() {
                 var isNotDisclosed = payType.value === 'not_disclosed';
                 wrap.style.display = isNotDisclosed ? 'none' : '';
-                salaryInput.disabled = isNotDisclosed;
-                if (isNotDisclosed) salaryInput.value = '';
+                salaryMinInput.disabled = isNotDisclosed;
+                salaryMaxInput.disabled = isNotDisclosed;
+                if (isNotDisclosed) {
+                    salaryMinInput.value = '';
+                    salaryMaxInput.value = '';
+                }
             }
 
             payType.addEventListener('change', toggleSalary);

@@ -14,6 +14,7 @@ class EmployerJob extends Model
     protected $fillable = [
         'user_id',
         'company_name',
+        'job_department',
         'title',
         'slug',
         'job_type',
@@ -22,7 +23,10 @@ class EmployerJob extends Model
         'location',
         'work_location_type',
         'pay_type',
+        'salary_min',
+        'salary_max',
         'salary_amount',
+        'experience_years',
         'perks',
         'joining_fee_required',
         'status',
@@ -33,6 +37,9 @@ class EmployerJob extends Model
         return [
             'is_night_shift' => 'boolean',
             'joining_fee_required' => 'boolean',
+            'salary_min' => 'integer',
+            'salary_max' => 'integer',
+            'experience_years' => 'integer',
         ];
     }
 

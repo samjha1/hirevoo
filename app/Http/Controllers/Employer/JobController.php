@@ -75,31 +75,63 @@ class JobController extends Controller
         }
 
         $validated = $request->validate([
+            'job_department'      => ['required', 'string', 'max:100'],
             'title'               => ['required', 'string', 'max:255'],
             'description'         => ['nullable', 'string', 'max:10000'],
-            'location'            => ['nullable', 'string', 'max:255'],
+            'location_area'       => ['nullable', 'string', 'max:120'],
+            'location_city'       => ['nullable', 'string', 'max:120'],
+            'location_state'      => ['nullable', 'string', 'max:120'],
+            'location_country'    => ['nullable', 'string', 'max:120'],
+            'location_pincode'    => ['nullable', 'string', 'max:20'],
             'status'              => ['nullable', 'in:draft,active,closed'],
             'job_type'            => ['required', 'in:full_time,part_time,contract,internship,temporary,volunteer,other'],
             'is_night_shift'      => ['nullable', 'boolean'],
             'work_location_type'  => ['required', 'in:office,remote,hybrid'],
             'pay_type'            => ['required', 'in:fixed,hourly,negotiable,not_disclosed,other'],
-            'salary_amount'      => ['nullable', 'string', 'max:255'],
+            'salary_min'          => ['nullable', 'integer', 'min:0'],
+            'salary_max'          => ['nullable', 'integer', 'min:0', 'gte:salary_min'],
+            'experience_years'    => ['nullable', 'integer', 'min:0', 'max:60'],
             'perks'               => ['nullable', 'string', 'max:2000'],
             'joining_fee_required'=> ['required', 'in:0,1'],
         ]);
 
+        $location = [
+            'area' => $validated['location_area'] ?? null,
+            'city' => $validated['location_city'] ?? null,
+            'state' => $validated['location_state'] ?? null,
+            'country' => $validated['location_country'] ?? null,
+            'pincode' => $validated['location_pincode'] ?? null,
+        ];
+        $hasLocationValue = collect($location)->contains(fn ($value) => ! is_null($value) && $value !== '');
+        $salaryAmount = null;
+        if (isset($validated['salary_min']) || isset($validated['salary_max'])) {
+            $min = $validated['salary_min'] ?? null;
+            $max = $validated['salary_max'] ?? null;
+            if ($min !== null && $max !== null) {
+                $salaryAmount = $min . '-' . $max;
+            } elseif ($min !== null) {
+                $salaryAmount = (string) $min;
+            } elseif ($max !== null) {
+                $salaryAmount = (string) $max;
+            }
+        }
+
         $profile->decrement('credits');
         $user->employerJobs()->create([
             'company_name'         => $profile->company_name ?? null,
+            'job_department'       => $validated['job_department'],
             'title'               => $validated['title'],
             'description'         => $validated['description'] ?? null,
-            'location'            => $validated['location'] ?? null,
+            'location'            => $hasLocationValue ? json_encode($location, JSON_UNESCAPED_UNICODE) : null,
             'status'              => $validated['status'] ?? 'active',
             'job_type'            => $validated['job_type'],
             'is_night_shift'      => ! empty($request->boolean('is_night_shift')),
             'work_location_type'  => $validated['work_location_type'],
             'pay_type'            => $validated['pay_type'],
-            'salary_amount'      => $validated['salary_amount'] ?? null,
+            'salary_min'          => $validated['salary_min'] ?? null,
+            'salary_max'          => $validated['salary_max'] ?? null,
+            'salary_amount'       => $salaryAmount,
+            'experience_years'    => $validated['experience_years'] ?? null,
             'perks'               => $validated['perks'] ?? null,
             'joining_fee_required'=> (bool) $validated['joining_fee_required'],
         ]);
@@ -133,29 +165,61 @@ class JobController extends Controller
         }
 
         $validated = $request->validate([
+            'job_department'        => ['nullable', 'string', 'max:100'],
             'title'                => ['required', 'string', 'max:255'],
             'description'          => ['nullable', 'string', 'max:10000'],
-            'location'             => ['nullable', 'string', 'max:255'],
+            'location_area'        => ['nullable', 'string', 'max:120'],
+            'location_city'        => ['nullable', 'string', 'max:120'],
+            'location_state'       => ['nullable', 'string', 'max:120'],
+            'location_country'     => ['nullable', 'string', 'max:120'],
+            'location_pincode'     => ['nullable', 'string', 'max:20'],
             'status'               => ['required', 'in:draft,active,closed'],
             'job_type'             => ['nullable', 'in:full_time,part_time,contract,internship,temporary,volunteer,other'],
             'is_night_shift'       => ['nullable', 'boolean'],
             'work_location_type'   => ['nullable', 'in:office,remote,hybrid'],
             'pay_type'             => ['nullable', 'in:fixed,hourly,negotiable,not_disclosed,other'],
-            'salary_amount'       => ['nullable', 'string', 'max:255'],
+            'salary_min'           => ['nullable', 'integer', 'min:0'],
+            'salary_max'           => ['nullable', 'integer', 'min:0', 'gte:salary_min'],
+            'experience_years'     => ['nullable', 'integer', 'min:0', 'max:60'],
             'perks'                => ['nullable', 'string', 'max:2000'],
             'joining_fee_required' => ['nullable', 'in:0,1'],
         ]);
 
+        $location = [
+            'area' => $validated['location_area'] ?? null,
+            'city' => $validated['location_city'] ?? null,
+            'state' => $validated['location_state'] ?? null,
+            'country' => $validated['location_country'] ?? null,
+            'pincode' => $validated['location_pincode'] ?? null,
+        ];
+        $hasLocationValue = collect($location)->contains(fn ($value) => ! is_null($value) && $value !== '');
+        $salaryAmount = null;
+        if (isset($validated['salary_min']) || isset($validated['salary_max'])) {
+            $min = $validated['salary_min'] ?? null;
+            $max = $validated['salary_max'] ?? null;
+            if ($min !== null && $max !== null) {
+                $salaryAmount = $min . '-' . $max;
+            } elseif ($min !== null) {
+                $salaryAmount = (string) $min;
+            } elseif ($max !== null) {
+                $salaryAmount = (string) $max;
+            }
+        }
+
         $job->update([
+            'job_department'       => $validated['job_department'] ?? $job->job_department,
             'title'                => $validated['title'],
             'description'          => $validated['description'] ?? null,
-            'location'             => $validated['location'] ?? null,
+            'location'             => $hasLocationValue ? json_encode($location, JSON_UNESCAPED_UNICODE) : null,
             'status'               => $validated['status'],
             'job_type'             => $validated['job_type'] ?? null,
             'is_night_shift'       => ! empty($request->boolean('is_night_shift')),
             'work_location_type'   => $validated['work_location_type'] ?? null,
             'pay_type'             => $validated['pay_type'] ?? null,
-            'salary_amount'       => $validated['salary_amount'] ?? null,
+            'salary_min'           => $validated['salary_min'] ?? null,
+            'salary_max'           => $validated['salary_max'] ?? null,
+            'salary_amount'        => $salaryAmount,
+            'experience_years'     => $validated['experience_years'] ?? null,
             'perks'                => $validated['perks'] ?? null,
             'joining_fee_required'  => isset($validated['joining_fee_required']) ? (bool) $validated['joining_fee_required'] : $job->joining_fee_required,
         ]);
@@ -191,6 +255,7 @@ class JobController extends Controller
 
         $user->employerJobs()->create([
             'company_name'         => $profile->company_name ?? $job->company_name,
+            'job_department'       => $job->job_department,
             'title'               => $job->title . ' (Copy)',
             'description'         => $job->description,
             'location'             => $job->location,
@@ -199,7 +264,10 @@ class JobController extends Controller
             'is_night_shift'       => $job->is_night_shift,
             'work_location_type'   => $job->work_location_type,
             'pay_type'             => $job->pay_type,
+            'salary_min'           => $job->salary_min,
+            'salary_max'           => $job->salary_max,
             'salary_amount'       => $job->salary_amount,
+            'experience_years'     => $job->experience_years,
             'perks'                => $job->perks,
             'joining_fee_required' => $job->joining_fee_required,
         ]);
@@ -226,6 +294,7 @@ class JobController extends Controller
         $profile->decrement('credits');
         $user->employerJobs()->create([
             'company_name'         => $profile->company_name ?? $job->company_name,
+            'job_department'       => $job->job_department,
             'title'               => $job->title,
             'description'         => $job->description,
             'location'            => $job->location,
@@ -234,7 +303,10 @@ class JobController extends Controller
             'is_night_shift'       => $job->is_night_shift,
             'work_location_type'   => $job->work_location_type,
             'pay_type'             => $job->pay_type,
+            'salary_min'           => $job->salary_min,
+            'salary_max'           => $job->salary_max,
             'salary_amount'       => $job->salary_amount,
+            'experience_years'     => $job->experience_years,
             'perks'                => $job->perks,
             'joining_fee_required' => $job->joining_fee_required,
         ]);
