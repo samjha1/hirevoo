@@ -1,11 +1,27 @@
 <div class="card employer-card employer-job-card mb-3">
     <div class="card-body p-4">
+        @php
+            $locationDecoded = is_string($job->location) ? json_decode($job->location, true) : null;
+            $locationParts = is_array($locationDecoded)
+                ? array_filter([
+                    $locationDecoded['area'] ?? null,
+                    $locationDecoded['city'] ?? null,
+                    $locationDecoded['state'] ?? null,
+                    $locationDecoded['country'] ?? null,
+                    $locationDecoded['pincode'] ?? null,
+                ])
+                : [];
+            $locationText = !empty($locationParts) ? implode(', ', $locationParts) : ($job->location ?? '—');
+        @endphp
         <div class="row align-items-center g-3">
             <div class="col-12 col-lg">
                 <div class="d-flex align-items-start justify-content-between gap-2">
                     <div>
                         <h6 class="mb-1 fw-600 text-dark">{{ $job->title }}</h6>
                         <span class="badge job-card-status {{ $job->status === 'active' ? 'bg-success' : ($job->status === 'closed' ? 'bg-danger' : 'bg-warning text-dark') }}">{{ ucfirst($job->status) }}</span>
+                        @if(!empty($job->job_department))
+                            <span class="badge bg-light text-dark border ms-1">{{ $job->job_department }}</span>
+                        @endif
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-sm employer-job-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Job actions">
@@ -24,9 +40,14 @@
                         </ul>
                     </div>
                 </div>
-                <p class="job-card-meta mb-0 mt-2"><i class="mdi mdi-map-marker-outline me-1"></i>{{ $job->location ?? '—' }}</p>
-                @if(!empty($job->salary_amount) && ($job->pay_type ?? '') !== 'not_disclosed')
+                <p class="job-card-meta mb-0 mt-2"><i class="mdi mdi-map-marker-outline me-1"></i>{{ $locationText }}</p>
+                @if(($job->pay_type ?? '') !== 'not_disclosed' && (!is_null($job->salary_min) || !is_null($job->salary_max)))
+                    <p class="job-card-meta mb-0 mt-1"><i class="mdi mdi-cash-multiple me-1"></i>{{ $job->salary_min ?? '—' }} - {{ $job->salary_max ?? '—' }}</p>
+                @elseif(!empty($job->salary_amount) && ($job->pay_type ?? '') !== 'not_disclosed')
                     <p class="job-card-meta mb-0 mt-1"><i class="mdi mdi-cash-multiple me-1"></i>{{ $job->salary_amount }}</p>
+                @endif
+                @if(!is_null($job->experience_years))
+                    <p class="job-card-meta mb-0 mt-1"><i class="mdi mdi-briefcase-clock-outline me-1"></i>{{ $job->experience_years }} years experience</p>
                 @endif
                 <p class="job-card-meta mb-0">Posted on {{ $job->created_at->format('d M Y') }}</p>
             </div>
