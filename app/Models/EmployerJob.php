@@ -15,6 +15,7 @@ class EmployerJob extends Model
         'user_id',
         'company_name',
         'job_department',
+        'required_skills',
         'title',
         'slug',
         'job_type',
@@ -37,6 +38,7 @@ class EmployerJob extends Model
         return [
             'is_night_shift' => 'boolean',
             'joining_fee_required' => 'boolean',
+            'required_skills' => 'array',
             'salary_min' => 'integer',
             'salary_max' => 'integer',
             'experience_years' => 'integer',

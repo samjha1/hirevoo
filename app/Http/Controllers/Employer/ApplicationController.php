@@ -309,6 +309,11 @@ class ApplicationController extends Controller
             $query->where('job_match_score', '>=', (int) $request->match_min);
         }
 
+        $perPage = (int) $request->get('per_page', 10);
+        if (! in_array($perPage, [10, 25, 50], true)) {
+            $perPage = 10;
+        }
+
         // Sort: default = highest match, then ATS, then experience, then date
         $sort = $request->get('sort', 'match');
         if ($sort === 'ats') {
@@ -324,7 +329,8 @@ class ApplicationController extends Controller
             $query->orderByRaw('job_match_score IS NULL')->orderByDesc('job_match_score')->orderByRaw('ats_score IS NULL')->orderByDesc('ats_score')->orderByDesc('created_at');
         }
 
-        $applications = $query->get();
+        // Apply filters/sorting on full query, then paginate the filtered result.
+        $applications = $query->paginate($perPage)->withQueryString();
 
         return view('hirevo.employer.applications.index', [
             'job'          => $job,
@@ -335,6 +341,7 @@ class ApplicationController extends Controller
                 'ats_min'  => $request->get('ats_min'),
                 'match_min'=> $request->get('match_min'),
                 'sort'     => $sort,
+                'per_page' => $perPage,
             ],
         ]);
     }
@@ -448,19 +455,24 @@ class ApplicationController extends Controller
 
         $match = null;
         $gpt = app(GptService::class);
+        $requiredSkills = is_array($job->required_skills)
+            ? $job->required_skills
+            : (is_string($job->required_skills) ? preg_split('/[\r\n,;|]+/', $job->required_skills) : []);
+        $requiredSkills = array_values(array_filter(array_map('trim', $requiredSkills ?? []), fn ($s) => $s !== ''));
         if ($gpt->isAvailable()) {
             $match = $gpt->getResumeJobMatchScore(
                 $resumeText,
                 $job->title,
                 $job->description ?? '',
-                []
+                $requiredSkills
             );
         }
         if ($match === null) {
             $match = app(ResumeAnalysisService::class)->getEmployerJobMatchRuleBased(
                 $resumeText,
                 $job->title,
-                $job->description ?? ''
+                $job->description ?? '',
+                $requiredSkills
             );
         }
 

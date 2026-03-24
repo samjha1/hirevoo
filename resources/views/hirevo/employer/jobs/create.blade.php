@@ -66,6 +66,13 @@
                     </div>
 
                     <div class="mb-4">
+                        <label for="required_skills" class="form-label fw-500">Skills required</label>
+                        <textarea class="form-control @error('required_skills') is-invalid @enderror" id="required_skills" name="required_skills" rows="3" placeholder="e.g. Laravel, PHP, MySQL, REST API">{{ old('required_skills') }}</textarea>
+                        <p class="small text-muted mt-1 mb-0">Add comma-separated skills. These are used in resume/profile match scoring.</p>
+                        @error('required_skills')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="mb-4">
                         <label class="form-label fw-500">Type of job <span class="text-danger">*</span></label>
                         <div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="Job type">
                             <input type="radio" class="btn-check" name="job_type" id="jt_full_time" value="full_time" {{ old('job_type') === 'full_time' ? 'checked' : '' }} required>
@@ -253,6 +260,7 @@
                         <span class="small text-muted">Active = visible to candidates</span>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-primary" id="preview-job-btn" data-bs-toggle="modal" data-bs-target="#jobPreviewModal">Preview</button>
                         <button type="submit" class="btn btn-outline-secondary"
                                 onclick="document.getElementById('status').value='draft'">Save Draft</button>
                         <button type="submit" class="btn btn-primary"
@@ -262,6 +270,42 @@
                 </div>
             </div>
         </form>
+    </div>
+
+    <div class="modal fade" id="jobPreviewModal" tabindex="-1" aria-labelledby="jobPreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="jobPreviewModalLabel">Job Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h5 class="mb-1" id="preview_title">—</h5>
+                        <p class="text-muted mb-0" id="preview_company">{{ $companyName ?: '—' }}</p>
+                    </div>
+                    <hr>
+                    <div class="row g-3">
+                        <div class="col-md-6"><strong>Department:</strong> <span id="preview_department">—</span></div>
+                        <div class="col-md-6"><strong>Job type:</strong> <span id="preview_job_type">—</span></div>
+                        <div class="col-md-6"><strong>Work mode:</strong> <span id="preview_work_mode">—</span></div>
+                        <div class="col-md-6"><strong>Night shift:</strong> <span id="preview_night_shift">No</span></div>
+                        <div class="col-md-6"><strong>Experience:</strong> <span id="preview_experience">—</span></div>
+                        <div class="col-md-6"><strong>Salary:</strong> <span id="preview_salary">Not specified</span></div>
+                        <div class="col-12"><strong>Location:</strong> <span id="preview_location">—</span></div>
+                        <div class="col-12"><strong>Required skills:</strong> <span id="preview_skills">—</span></div>
+                        <div class="col-12"><strong>Perks:</strong> <span id="preview_perks">—</span></div>
+                        <div class="col-12"><strong>Joining fee/deposit required:</strong> <span id="preview_joining_fee">No</span></div>
+                        <div class="col-12"><strong>Description:</strong>
+                            <div class="border rounded p-3 mt-1 bg-light" style="white-space: pre-wrap;" id="preview_description">—</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     @push('scripts')
@@ -347,6 +391,71 @@
 
             payType.addEventListener('change', toggleSalary);
             toggleSalary();
+        })();
+
+        (function () {
+            var previewBtn = document.getElementById('preview-job-btn');
+            if (!previewBtn) return;
+
+            function getCheckedValue(name) {
+                var checked = document.querySelector('input[name="' + name + '"]:checked');
+                return checked ? checked.value : '';
+            }
+
+            function textOrDash(value) {
+                var v = (value || '').toString().trim();
+                return v !== '' ? v : '—';
+            }
+
+            function selectedText(selectId) {
+                var el = document.getElementById(selectId);
+                if (!el) return '—';
+                var option = el.options[el.selectedIndex];
+                return option ? textOrDash(option.text) : '—';
+            }
+
+            function buildLocation() {
+                var parts = [
+                    document.getElementById('location_area')?.value || '',
+                    document.getElementById('location_city')?.value || '',
+                    document.getElementById('location_state')?.value || '',
+                    document.getElementById('location_country')?.value || '',
+                    document.getElementById('location_pincode')?.value || ''
+                ].map(function (v) { return v.trim(); }).filter(function (v) { return v !== ''; });
+                return parts.length ? parts.join(', ') : '—';
+            }
+
+            function updatePreview() {
+                var title = document.getElementById('title')?.value || '';
+                var exp = document.getElementById('experience_years')?.value || '';
+                var salaryMin = document.getElementById('salary_min')?.value || '';
+                var salaryMax = document.getElementById('salary_max')?.value || '';
+                var requiredSkills = document.getElementById('required_skills')?.value || '';
+                var perks = document.getElementById('perks')?.value || '';
+                var description = document.getElementById('description')?.value || '';
+                var joiningFee = getCheckedValue('joining_fee_required') === '1' ? 'Yes' : 'No';
+                var nightShift = document.getElementById('is_night_shift')?.checked ? 'Yes' : 'No';
+
+                var salaryText = 'Not specified';
+                if (salaryMin && salaryMax) salaryText = salaryMin + ' - ' + salaryMax;
+                else if (salaryMin) salaryText = salaryMin;
+                else if (salaryMax) salaryText = salaryMax;
+
+                document.getElementById('preview_title').textContent = textOrDash(title);
+                document.getElementById('preview_department').textContent = selectedText('job_department');
+                document.getElementById('preview_job_type').textContent = textOrDash(getCheckedValue('job_type')).replaceAll('_', ' ');
+                document.getElementById('preview_work_mode').textContent = selectedText('work_location_type');
+                document.getElementById('preview_night_shift').textContent = nightShift;
+                document.getElementById('preview_experience').textContent = exp ? exp + ' years' : '—';
+                document.getElementById('preview_salary').textContent = salaryText;
+                document.getElementById('preview_location').textContent = buildLocation();
+                document.getElementById('preview_skills').textContent = textOrDash(requiredSkills);
+                document.getElementById('preview_perks').textContent = textOrDash(perks);
+                document.getElementById('preview_joining_fee').textContent = joiningFee;
+                document.getElementById('preview_description').textContent = textOrDash(description);
+            }
+
+            previewBtn.addEventListener('click', updatePreview);
         })();
     </script>
     @endpush

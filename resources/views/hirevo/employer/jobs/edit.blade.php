@@ -63,6 +63,13 @@
                     </div>
 
                     <div class="mb-4">
+                        <label for="required_skills" class="form-label fw-500">Skills required</label>
+                        <textarea class="form-control @error('required_skills') is-invalid @enderror" id="required_skills" name="required_skills" rows="3" placeholder="e.g. Laravel, PHP, MySQL, REST API">{{ old('required_skills', is_array($job->required_skills) ? implode(', ', $job->required_skills) : '') }}</textarea>
+                        <p class="small text-muted mt-1 mb-0">Add comma-separated skills. These are used in resume/profile match scoring.</p>
+                        @error('required_skills')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="mb-4">
                         <label for="job_type" class="form-label fw-500">Type of job <span class="text-danger">*</span></label>
                         <select class="form-select @error('job_type') is-invalid @enderror" id="job_type" name="job_type" required>
                             <option value="">Select type</option>

@@ -76,6 +76,7 @@ class JobController extends Controller
 
         $validated = $request->validate([
             'job_department'      => ['required', 'string', 'max:100'],
+            'required_skills'     => ['nullable', 'string', 'max:2000'],
             'title'               => ['required', 'string', 'max:255'],
             'description'         => ['nullable', 'string', 'max:10000'],
             'location_area'       => ['nullable', 'string', 'max:120'],
@@ -115,11 +116,14 @@ class JobController extends Controller
                 $salaryAmount = (string) $max;
             }
         }
+        $requiredSkills = $this->normalizeSkillsInput($validated['required_skills'] ?? null);
+        $requiredSkillsJson = ! empty($requiredSkills) ? json_encode($requiredSkills, JSON_UNESCAPED_UNICODE) : null;
 
         $profile->decrement('credits');
         $user->employerJobs()->create([
             'company_name'         => $profile->company_name ?? null,
             'job_department'       => $validated['job_department'],
+            'required_skills'      => $requiredSkillsJson,
             'title'               => $validated['title'],
             'description'         => $validated['description'] ?? null,
             'location'            => $hasLocationValue ? json_encode($location, JSON_UNESCAPED_UNICODE) : null,
@@ -166,6 +170,7 @@ class JobController extends Controller
 
         $validated = $request->validate([
             'job_department'        => ['nullable', 'string', 'max:100'],
+            'required_skills'       => ['nullable', 'string', 'max:2000'],
             'title'                => ['required', 'string', 'max:255'],
             'description'          => ['nullable', 'string', 'max:10000'],
             'location_area'        => ['nullable', 'string', 'max:120'],
@@ -205,9 +210,12 @@ class JobController extends Controller
                 $salaryAmount = (string) $max;
             }
         }
+        $requiredSkills = $this->normalizeSkillsInput($validated['required_skills'] ?? null);
+        $requiredSkillsJson = ! empty($requiredSkills) ? json_encode($requiredSkills, JSON_UNESCAPED_UNICODE) : null;
 
         $job->update([
             'job_department'       => $validated['job_department'] ?? $job->job_department,
+            'required_skills'      => $requiredSkillsJson,
             'title'                => $validated['title'],
             'description'          => $validated['description'] ?? null,
             'location'             => $hasLocationValue ? json_encode($location, JSON_UNESCAPED_UNICODE) : null,
@@ -256,6 +264,7 @@ class JobController extends Controller
         $user->employerJobs()->create([
             'company_name'         => $profile->company_name ?? $job->company_name,
             'job_department'       => $job->job_department,
+            'required_skills'      => $job->required_skills,
             'title'               => $job->title . ' (Copy)',
             'description'         => $job->description,
             'location'             => $job->location,
@@ -295,6 +304,7 @@ class JobController extends Controller
         $user->employerJobs()->create([
             'company_name'         => $profile->company_name ?? $job->company_name,
             'job_department'       => $job->job_department,
+            'required_skills'      => $job->required_skills,
             'title'               => $job->title,
             'description'         => $job->description,
             'location'            => $job->location,
@@ -343,5 +353,30 @@ class JobController extends Controller
         }
 
         return response()->json(['description' => $description]);
+    }
+
+    private function normalizeSkillsInput(?string $skills): ?array
+    {
+        if (! is_string($skills) || trim($skills) === '') {
+            return null;
+        }
+
+        $items = preg_split('/[\r\n,;|]+/', $skills) ?: [];
+        $normalized = [];
+        $seen = [];
+        foreach ($items as $item) {
+            $skill = trim((string) $item);
+            if ($skill === '') {
+                continue;
+            }
+            $key = mb_strtolower($skill);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $normalized[] = $skill;
+        }
+
+        return count($normalized) > 0 ? array_slice($normalized, 0, 50) : null;
     }
 }

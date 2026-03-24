@@ -325,9 +325,10 @@ class ResumeAnalysisService
      * Rule-based resume-to-employer-job match (no GPT). Used at apply time when AI is unavailable.
      * Returns ['score' => 0-100, 'explanation' => string].
      */
-    public function getEmployerJobMatchRuleBased(string $resumeText, string $jobTitle, string $jobDescription): array
+    public function getEmployerJobMatchRuleBased(string $resumeText, string $jobTitle, string $jobDescription, array $requiredSkills = []): array
     {
-        $jobText = mb_strtolower(trim($jobTitle) . ' ' . trim($jobDescription));
+        $skillsText = implode(' ', array_filter(array_map(fn ($s) => is_string($s) ? trim($s) : '', $requiredSkills)));
+        $jobText = mb_strtolower(trim($jobTitle) . ' ' . trim($jobDescription) . ' ' . trim($skillsText));
         $resumeLower = mb_strtolower($resumeText);
         if (mb_strlen($jobText) < 2) {
             return ['score' => 50, 'explanation' => 'Match score based on profile and job details.'];

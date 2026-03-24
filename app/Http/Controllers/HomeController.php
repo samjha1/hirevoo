@@ -225,40 +225,46 @@ class HomeController extends Controller
         if ($exists) {
             return redirect()->route('job-openings')->with('info', 'You have already applied for this job.');
         }
-        $request->validate([
-            'resume_id'       => ['nullable', 'integer', 'exists:resumes,id'],
-            'cover_message'  => ['nullable', 'string', 'max:2000'],
-            'phone'           => ['nullable', 'string', 'max:20'],
-            'headline'        => ['nullable', 'string', 'max:255'],
-            'education'       => ['nullable', 'string', 'max:500'],
-            'experience_years'=> ['nullable', 'integer', 'min:0', 'max:50'],
-            'skills'          => ['nullable', 'string', 'max:2000'],
-            'location'        => ['nullable', 'string', 'max:255'],
-            'expected_salary' => ['nullable', 'string', 'max:100'],
+        $validated = $request->validate([
+            'resume_id'        => ['required', 'integer', 'exists:resumes,id'],
+            'cover_message'    => ['nullable', 'string', 'max:2000'],
+            'phone'            => ['required', 'string', 'max:20'],
+            'headline'         => ['required', 'string', 'max:255'],
+            'education'        => ['required', 'string', 'max:500'],
+            'experience_years' => ['required', 'integer', 'min:0', 'max:50'],
+            'skills'           => ['required', 'string', 'max:2000'],
+            'location'         => ['required', 'string', 'max:255'],
+            'expected_salary'  => ['required', 'string', 'max:100'],
+        ], [
+            'resume_id.required' => 'Please attach a resume before submitting.',
+            'phone.required' => 'Phone number is required.',
+            'headline.required' => 'Current role / headline is required.',
+            'education.required' => 'Education is required.',
+            'experience_years.required' => 'Experience is required.',
+            'skills.required' => 'Skills are required.',
+            'location.required' => 'Location is required.',
+            'expected_salary.required' => 'Expected salary is required.',
         ]);
         $user = auth()->user();
-        if ($request->resume_id) {
-            $resume = Resume::where('user_id', $user->id)->find($request->resume_id);
-            if (! $resume) {
-                return back()->withErrors(['resume_id' => 'Invalid resume.']);
-            }
+        $resume = Resume::where('user_id', $user->id)->find($validated['resume_id']);
+        if (! $resume) {
+            return back()->withErrors(['resume_id' => 'Selected resume does not belong to your account.'])->withInput();
         }
-        if ($request->filled('phone')) {
-            $user->update(['phone' => $request->phone]);
-        }
+
+        $user->update(['phone' => $validated['phone']]);
         $profile = $user->candidateProfile ?? new CandidateProfile(['user_id' => $user->id]);
-        $profile->headline = $request->filled('headline') ? $request->headline : $profile->headline;
-        $profile->education = $request->filled('education') ? $request->education : $profile->education;
-        $profile->experience_years = $request->filled('experience_years') ? (int) $request->experience_years : $profile->experience_years;
-        $profile->skills = $request->filled('skills') ? $request->skills : $profile->skills;
-        $profile->location = $request->filled('location') ? $request->location : $profile->location;
-        $profile->expected_salary = $request->filled('expected_salary') ? $request->expected_salary : $profile->expected_salary;
+        $profile->headline = $validated['headline'];
+        $profile->education = $validated['education'];
+        $profile->experience_years = (int) $validated['experience_years'];
+        $profile->skills = $validated['skills'];
+        $profile->location = $validated['location'];
+        $profile->expected_salary = $validated['expected_salary'];
         $profile->save();
 
         $application = EmployerJobApplication::create([
             'employer_job_id' => $job->id,
             'user_id'         => $user->id,
-            'resume_id'       => $request->resume_id ?: null,
+            'resume_id'       => (int) $validated['resume_id'],
             'cover_message'   => $request->cover_message ? trim($request->cover_message) : null,
             'status'          => 'applied',
         ]);
@@ -295,6 +301,10 @@ class HomeController extends Controller
         $jobMatchScore = null;
         $jobMatchExplanation = null;
         $resumeAnalysis = app(ResumeAnalysisService::class);
+        $requiredSkills = is_array($job->required_skills)
+            ? $job->required_skills
+            : (is_string($job->required_skills) ? preg_split('/[\r\n,;|]+/', $job->required_skills) : []);
+        $requiredSkills = array_values(array_filter(array_map('trim', $requiredSkills ?? []), fn ($s) => $s !== ''));
         if ($resumeText !== '') {
             $gpt = app(GptService::class);
             if ($gpt->isAvailable()) {
@@ -302,7 +312,7 @@ class HomeController extends Controller
                     $resumeText,
                     $job->title,
                     $job->description ?? '',
-                    []
+                    $requiredSkills
                 );
                 if ($match !== null) {
                     $jobMatchScore = $match['score'];
@@ -313,7 +323,8 @@ class HomeController extends Controller
                 $match = $resumeAnalysis->getEmployerJobMatchRuleBased(
                     $resumeText,
                     $job->title,
-                    $job->description ?? ''
+                    $job->description ?? '',
+                    $requiredSkills
                 );
                 $jobMatchScore = $match['score'];
                 $jobMatchExplanation = $match['explanation'] ?? null;

@@ -75,32 +75,39 @@
                                     <h6 class="text-muted small text-uppercase mb-3">Profile details</h6>
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <label for="phone" class="form-label">Phone</label>
-                                            <input type="text" name="phone" id="phone" class="form-control" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="10-digit mobile">
+                                            <label for="phone" class="form-label">Phone <span class="text-danger">*</span></label>
+                                            <input type="text" name="phone" id="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="10-digit mobile" required>
+                                            @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-12">
-                                            <label for="headline" class="form-label">Current role / Headline</label>
-                                            <input type="text" name="headline" id="headline" class="form-control" value="{{ old('headline', $profile?->headline ?? '') }}" placeholder="e.g. Business Intelligence Analyst">
+                                            <label for="headline" class="form-label">Current role / Headline <span class="text-danger">*</span></label>
+                                            <input type="text" name="headline" id="headline" class="form-control @error('headline') is-invalid @enderror" value="{{ old('headline', $profile?->headline ?? '') }}" placeholder="e.g. Business Intelligence Analyst" required>
+                                            @error('headline')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-12">
-                                            <label for="education" class="form-label">Education</label>
-                                            <input type="text" name="education" id="education" class="form-control" value="{{ old('education', $profile?->education ?? '') }}" placeholder="e.g. BE/B.Tech, College Name">
+                                            <label for="education" class="form-label">Education <span class="text-danger">*</span></label>
+                                            <input type="text" name="education" id="education" class="form-control @error('education') is-invalid @enderror" value="{{ old('education', $profile?->education ?? '') }}" placeholder="e.g. BE/B.Tech, College Name" required>
+                                            @error('education')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-md-4">
-                                            <label for="experience_years" class="form-label">Experience (years)</label>
-                                            <input type="number" name="experience_years" id="experience_years" class="form-control" value="{{ old('experience_years', $profile?->experience_years ?? '') }}" min="0" max="50" placeholder="0">
+                                            <label for="experience_years" class="form-label">Experience (years) <span class="text-danger">*</span></label>
+                                            <input type="number" name="experience_years" id="experience_years" class="form-control @error('experience_years') is-invalid @enderror" value="{{ old('experience_years', $profile?->experience_years ?? '') }}" min="0" max="50" placeholder="0" required>
+                                            @error('experience_years')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-md-4">
-                                            <label for="location" class="form-label">Location</label>
-                                            <input type="text" name="location" id="location" class="form-control" value="{{ old('location', $profile?->location ?? '') }}" placeholder="e.g. Gurgaon">
+                                            <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                                            <input type="text" name="location" id="location" class="form-control @error('location') is-invalid @enderror" value="{{ old('location', $profile?->location ?? '') }}" placeholder="e.g. Gurgaon" required>
+                                            @error('location')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-md-4">
-                                            <label for="expected_salary" class="form-label">Expected salary</label>
-                                            <input type="text" name="expected_salary" id="expected_salary" class="form-control" value="{{ old('expected_salary', $profile?->expected_salary ?? '') }}" placeholder="e.g. 4.7 L">
+                                            <label for="expected_salary" class="form-label">Expected salary <span class="text-danger">*</span></label>
+                                            <input type="text" name="expected_salary" id="expected_salary" class="form-control @error('expected_salary') is-invalid @enderror" value="{{ old('expected_salary', $profile?->expected_salary ?? '') }}" placeholder="e.g. 4.7 L" required>
+                                            @error('expected_salary')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-12">
-                                            <label for="skills" class="form-label">Skills (comma-separated)</label>
-                                            <textarea name="skills" id="skills" class="form-control" rows="2" placeholder="e.g. SQL, Excel, Python">{{ old('skills', $profile?->skills ?? '') }}</textarea>
+                                            <label for="skills" class="form-label">Skills (comma-separated) <span class="text-danger">*</span></label>
+                                            <textarea name="skills" id="skills" class="form-control @error('skills') is-invalid @enderror" rows="2" placeholder="e.g. SQL, Excel, Python" required>{{ old('skills', $profile?->skills ?? '') }}</textarea>
+                                            @error('skills')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                     </div>
                                 </div>
@@ -109,15 +116,16 @@
                                     <h6 class="text-muted small text-uppercase mb-3">Resume & message</h6>
                                     @if($resumes->count() > 0)
                                         <div class="mb-3">
-                                            <label for="resume_id" class="form-label">Attach resume</label>
-                                            <select name="resume_id" id="resume_id" class="form-select">
-                                                <option value="">No resume</option>
+                                            <label for="resume_id" class="form-label">Attach resume <span class="text-danger">*</span></label>
+                                            <select name="resume_id" id="resume_id" class="form-select @error('resume_id') is-invalid @enderror" required>
+                                                <option value="">Select resume</option>
                                                 @foreach($resumes as $r)
                                                     <option value="{{ $r->id }}" {{ old('resume_id', $resumes->first()?->id) == $r->id ? 'selected' : '' }}>
                                                         {{ $r->file_name ?? 'Resume #' . $r->id }}{{ $r->ai_score ? ' (' . $r->ai_score . '% ATS)' : '' }}
                                                     </option>
                                                 @endforeach
                                             </select>
+                                            @error('resume_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                     @else
                                         <div class="alert alert-light border mb-3 py-2">

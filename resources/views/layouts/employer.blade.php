@@ -19,12 +19,63 @@
     <style>
         body.employer-body { background: #f5f6f8; margin: 0; }
         .employer-wrapper { min-height: 100vh; }
-        .employer-sidebar { background: var(--hirevo-primary, #0B1F3B); width: 260px; flex-shrink: 0; position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; overflow-y: auto; }
-        .employer-sidebar .nav-link { color: #fff; padding: 0.65rem 1.25rem; border-radius: 0.5rem; margin: 0 0.5rem; font-size: 0.9375rem; display: flex; align-items: center; }
-        .employer-sidebar .nav-link:hover { color: #fff; background: rgba(255,255,255,0.1); }
-        .employer-sidebar .nav-link.active { color: #fff; background: var(--hirevo-secondary, #10B981); font-weight: 500; }
-        .employer-sidebar .nav-link i { margin-right: 0.75rem; font-size: 1.25rem; opacity: 0.95; }
-        .employer-sidebar .sidebar-brand { padding: 1.25rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.12); }
+        .employer-sidebar {
+            background: linear-gradient(180deg, #0b1f3b 0%, #0f2a50 48%, #0b1f3b 100%);
+            width: 260px;
+            flex-shrink: 0;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 40;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.08);
+        }
+        .employer-sidebar::-webkit-scrollbar { width: 7px; }
+        .employer-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
+        .employer-sidebar .nav-link {
+            color: rgba(255,255,255,0.9);
+            padding: 0.72rem 0.95rem;
+            border-radius: 0.75rem;
+            margin: 0 0.75rem 0.3rem;
+            font-size: 0.93rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            position: relative;
+        }
+        .employer-sidebar .nav-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.12);
+            transform: translateX(2px);
+        }
+        .employer-sidebar .nav-link.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.12));
+            border-color: rgba(16,185,129,0.42);
+            font-weight: 600;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 8px 18px rgba(3, 10, 30, 0.24);
+        }
+        .employer-sidebar .nav-link.active::before {
+            content: "";
+            position: absolute;
+            left: -0.25rem;
+            top: 18%;
+            height: 64%;
+            width: 3px;
+            border-radius: 999px;
+            background: #34d399;
+        }
+        .employer-sidebar .nav-link i {
+            margin-right: 0.72rem;
+            font-size: 1.15rem;
+            opacity: 0.95;
+            min-width: 20px;
+            text-align: center;
+        }
+        .employer-sidebar .sidebar-brand { padding: 1.1rem 1.2rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.12); }
         .employer-sidebar .sidebar-brand a { color: #fff; font-weight: 700; text-decoration: none; font-size: 1.125rem; display: flex; align-items: center; }
         .employer-sidebar .sidebar-brand a img { margin-right: 0.5rem; }
         .employer-sidebar .sidebar-brand .hirevo-logo-wrap { background: var(--hirevo-primary, #0B1F3B); display: inline-flex; align-items: center; border-radius: 6px; padding: 0.2rem 0.35rem; }
@@ -32,11 +83,23 @@
         .employer-main { flex: 1; min-width: 0; margin-left: 260px; display: flex; flex-direction: column; background: #f5f6f8; min-height: 100vh; }
         .employer-topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0.875rem 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 30; flex-shrink: 0; }
         .employer-content {
-            padding: 1.5rem;
+            padding: 1rem 1.25rem 1.5rem;
             flex: 1;
             width: 100%;
-            max-width: 1220px;
+            max-width: none;
             margin: 0 auto;
+        }
+        @media (min-width: 1200px) {
+            .employer-content {
+                padding-left: 1.75rem;
+                padding-right: 1.75rem;
+            }
+        }
+        @media (min-width: 1600px) {
+            .employer-content {
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
         }
         .employer-job-card { transition: box-shadow 0.2s, border-color 0.2s; }
         .employer-card {
@@ -89,7 +152,7 @@
             line-height: 1;
         }
         .job-card-meta { font-size: 0.8125rem; color: #6b7280; }
-        .credits-sidebar-box { margin: 0.75rem 0.75rem 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.875rem; }
+        .credits-sidebar-box { margin: 0.9rem 0.75rem 1rem; padding: 0.85rem 1rem; border-radius: 12px; font-size: 0.875rem; backdrop-filter: blur(4px); }
         .credits-sidebar-box.out { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fecaca; }
         .credits-sidebar-box.ok { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: rgba(255,255,255,0.95); }
         .credits-sidebar-box .btn { font-size: 0.8125rem; padding: 0.4rem 0.75rem; }
@@ -98,7 +161,7 @@
         .credits-sidebar-box.ok .btn { border-color: rgba(255,255,255,0.5); color: #fff; }
         .credits-sidebar-box.ok .btn:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.6); color: #fff; }
         @media (max-width: 991.98px) {
-            .employer-sidebar { width: 280px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 1050; transform: translateX(-100%); transition: transform 0.25s ease; box-shadow: 4px 0 12px rgba(0,0,0,0.15); }
+            .employer-sidebar { width: 280px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 1050; transform: translateX(-100%); transition: transform 0.28s ease; box-shadow: 12px 0 28px rgba(0,0,0,0.28); }
             .employer-sidebar.show { transform: translateX(0); }
             .employer-main { margin-left: 0; width: 100%; }
             .employer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1040; }
@@ -122,7 +185,7 @@
                 </a>
                 <button type="button" class="btn btn-link text-white p-0 d-lg-none ms-2" id="employerSidebarClose" aria-label="Close menu"><i class="mdi mdi-close mdi-24px"></i></button>
             </div>
-            <nav class="nav flex-column py-2">
+            <nav class="nav flex-column py-3">
                 <a class="nav-link {{ request()->routeIs('employer.dashboard') ? 'active' : '' }}" href="{{ route('employer.dashboard') }}">
                     <i class="mdi mdi-view-dashboard-outline"></i> Dashboard
                 </a>
