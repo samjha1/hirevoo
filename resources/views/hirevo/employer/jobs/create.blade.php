@@ -64,6 +64,18 @@
                         <p class="small text-muted mt-1 mb-0"><i class="mdi mdi-information-outline me-1"></i>Only similar job title edits are allowed after publishing.</p>
                         @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
+                    <div class="mb-4">
+                        <label for="experience_years" class="form-label fw-500">Experience required (years)</label>
+                        <input type="number"
+                               class="form-control @error('experience_years') is-invalid @enderror"
+                               id="experience_years"
+                               name="experience_years"
+                               min="0"
+                               step="1"
+                               value="{{ old('experience_years') }}"
+                               placeholder="e.g. 2">
+                        @error('experience_years')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
 
                     <div class="mb-4">
                         <label for="required_skills" class="form-label fw-500">Skills required</label>
@@ -195,18 +207,7 @@
                         <p class="small text-muted mt-1 mb-0">Add salary if you want candidates to see it. If you select “Not disclosed”, you can leave this blank.</p>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="experience_years" class="form-label fw-500">Experience required (years)</label>
-                        <input type="number"
-                               class="form-control @error('experience_years') is-invalid @enderror"
-                               id="experience_years"
-                               name="experience_years"
-                               min="0"
-                               step="1"
-                               value="{{ old('experience_years') }}"
-                               placeholder="e.g. 2">
-                        @error('experience_years')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
+               
 
                     <div class="mb-4">
                         <label for="perks" class="form-label fw-500">Do you offer any additional perks?</label>

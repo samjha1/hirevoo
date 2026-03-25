@@ -247,6 +247,17 @@
                                 </select>
                             </div>
 
+                            <div class="col-12" id="meeting_url_wrap" style="display:none;">
+                                <label for="meeting_url" class="form-label fw-600">Google Meet link (or any meeting link)</label>
+                                <input type="url"
+                                       class="form-control form-control-sm @error('meeting_url') is-invalid @enderror"
+                                       id="meeting_url" name="meeting_url"
+                                       value="{{ old('meeting_url') }}"
+                                       placeholder="https://meet.google.com/xxx-yyyy-zzz">
+                                @error('meeting_url')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                <div class="text-muted small mt-1">If empty, we’ll auto-generate a placeholder link for video interviews.</div>
+                            </div>
+
                             <div class="col-12 col-md-6">
                                 <label for="scheduled_at" class="form-label fw-600">Date & time</label>
                                 <input type="datetime-local"
@@ -301,9 +312,12 @@
                             (function () {
                                 var type = document.getElementById('interview_type');
                                 var wrap = document.getElementById('meeting_provider_wrap');
+                                var urlWrap = document.getElementById('meeting_url_wrap');
                                 function toggle() {
                                     if (!type || !wrap) return;
-                                    wrap.style.display = type.value === 'video' ? 'block' : 'none';
+                                    var isVideo = type.value === 'video';
+                                    wrap.style.display = isVideo ? 'block' : 'none';
+                                    if (urlWrap) urlWrap.style.display = isVideo ? 'block' : 'none';
                                 }
                                 if (type) type.addEventListener('change', toggle);
                                 toggle();

@@ -109,14 +109,19 @@ class ApplicationController extends Controller
             'scheduled_at'      => ['required', 'date'],
             'duration_minutes'  => ['nullable', 'integer', 'min:15', 'max:240'],
             'meeting_provider'  => ['nullable', 'in:zoom,google_meet,teams'],
+            'meeting_url'       => ['nullable', 'url', 'max:2000'],
             'notes'             => ['nullable', 'string', 'max:2000'],
         ]);
 
         $interviewType = $validated['interview_type'];
         $provider = $validated['meeting_provider'] ?? 'google_meet';
 
-        $meetingUrl = null;
-        if ($interviewType === 'video') {
+        $meetingUrl = $validated['meeting_url'] ?? null;
+        if ($meetingUrl === '') {
+            $meetingUrl = null;
+        }
+
+        if ($interviewType === 'video' && ! $meetingUrl) {
             $token = substr(str_replace('-', '', (string) Str::uuid()), 0, 12);
             if ($provider === 'zoom') {
                 $meetingUrl = 'https://zoom.us/j/' . random_int(1000000000, 9999999999);
@@ -151,14 +156,27 @@ class ApplicationController extends Controller
         try {
             $candidateEmail = $application->user?->email;
             $companyEmail = $application->employerJob?->user?->email;
+            $candidateName = $application->user?->name ?: 'Candidate';
+            $jobTitle = $application->employerJob?->title ?: 'Job';
+            $when = $interview->scheduled_at instanceof \Carbon\CarbonInterface
+                ? $interview->scheduled_at->format('d M Y, g:i A')
+                : (string) $interview->scheduled_at;
+            $duration = (int) ($interview->duration_minutes ?? 30);
+            $typeLabel = $interviewType === 'in_person' ? 'In-Person' : ucfirst($interviewType);
+            $meetLine = $meetingUrl ? "Meeting link: {$meetingUrl}\n" : '';
+            $interviewerLine = ! empty($validated['interviewer_name'])
+                ? "Interviewer: {$validated['interviewer_name']}\n"
+                : '';
 
             if ($candidateEmail) {
                 Mail::raw(
-                    "Hi {$application->user->name},\n\nYour interview has been scheduled.\n\n"
-                    . "Job: {$application->employerJob->title}\n"
-                    . "Type: {$interviewType}\n"
-                    . "When: {$interview->scheduled_at}\n"
-                    . "Meeting link: {$meetingUrl}\n",
+                    "Hi {$candidateName},\n\nYour interview has been scheduled.\n\n"
+                    . "Job: {$jobTitle}\n"
+                    . "Type: {$typeLabel}\n"
+                    . "When: {$when}\n"
+                    . "Duration: {$duration} mins\n"
+                    . $interviewerLine
+                    . $meetLine,
                     function ($m) use ($candidateEmail) {
                         $m->to($candidateEmail)->subject('Interview Scheduled');
                     }
@@ -166,10 +184,15 @@ class ApplicationController extends Controller
             }
 
             if ($companyEmail) {
-                // optional: inform interviewer/employer too
-                // Keep it lightweight to avoid template work.
                 Mail::raw(
-                    "Interview scheduled for {$application->user->name}.",
+                    "Interview scheduled.\n\n"
+                    . "Candidate: {$candidateName}\n"
+                    . "Job: {$jobTitle}\n"
+                    . "Type: {$typeLabel}\n"
+                    . "When: {$when}\n"
+                    . "Duration: {$duration} mins\n"
+                    . $interviewerLine
+                    . $meetLine,
                     function ($m) use ($companyEmail) {
                         $m->to($companyEmail)->subject('Interview Scheduled');
                     }
