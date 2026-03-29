@@ -102,7 +102,7 @@
                                                 <div class="flex-grow-1 min-w-0">
                                                     <h6 class="mb-1"><a href="{{ route('job-openings.apply', $job) }}" class="text-dark text-decoration-none">{{ $job->title }}</a></h6>
                                                     <p class="text-muted small mb-0">{{ $job->company_name ?? $job->user->referrerProfile?->company_name ?? 'Company' }}</p>
-                                                    @if($job->location)<span class="small text-muted"><i class="uil uil-map-marker me-1"></i>{{ $job->location }}</span>@endif
+                                                    @if($job->formatted_location)<span class="small text-muted"><i class="uil uil-map-marker me-1"></i>{{ $job->formatted_location }}</span>@endif
                                                 </div>
                                                 <div class="flex-shrink-0">
                                                     @if(in_array($job->id, $appliedEmployerJobIds ?? []))
@@ -302,7 +302,7 @@
                                                     <div class="flex-grow-1 min-w-0">
                                                         <h6 class="mb-1"><a href="{{ route('job-openings.apply', $job) }}" class="text-dark text-decoration-none">{{ $job->title }}</a></h6>
                                                         <p class="text-muted small mb-0">{{ $job->company_name ?? $job->user->referrerProfile?->company_name ?? 'Company' }}</p>
-                                                        @if($job->location)<span class="small text-muted"><i class="uil uil-map-marker me-1"></i>{{ $job->location }}</span>@endif
+                                                        @if($job->formatted_location)<span class="small text-muted"><i class="uil uil-map-marker me-1"></i>{{ $job->formatted_location }}</span>@endif
                                                     </div>
                                                     <div class="flex-shrink-0">
                                                         @if(in_array($job->id, $appliedEmployerJobIds ?? []))

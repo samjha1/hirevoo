@@ -490,10 +490,10 @@
                                         </div>
                                         <p class="app-job-title"><a href="{{ route('job-openings') }}">{{ $job->title }}</a></p>
                                         <div class="app-meta">
-                                            @if($job->location)
+                                            @if($job->formatted_location)
                                                 <span class="meta-tag">
                                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                                {{ $job->location }}
+                                                {{ $job->formatted_location }}
                                             </span>
                                             @endif
                                             @if($job->work_location_type)

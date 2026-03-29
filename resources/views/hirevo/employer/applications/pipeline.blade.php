@@ -13,17 +13,7 @@
     @php
         $statusMap = \App\Models\EmployerJobApplication::statusOptions();
         $stageOrder = ['applied', 'shortlisted', 'interviewed', 'offered', 'hired', 'rejected'];
-        $locationDecoded = is_string($job->location) ? json_decode($job->location, true) : null;
-        $locationParts = is_array($locationDecoded)
-            ? array_filter([
-                $locationDecoded['area'] ?? null,
-                $locationDecoded['city'] ?? null,
-                $locationDecoded['state'] ?? null,
-                $locationDecoded['country'] ?? null,
-                $locationDecoded['pincode'] ?? null,
-            ])
-            : [];
-        $jobLocationText = !empty($locationParts) ? implode(', ', $locationParts) : ($job->location ?? '—');
+        $jobLocationText = $job->formatted_location ?: '—';
         $jobSalaryText = null;
         if (($job->pay_type ?? '') !== 'not_disclosed' && (!is_null($job->salary_min) || !is_null($job->salary_max))) {
             $jobSalaryText = ($job->salary_min ?? '—') . ' - ' . ($job->salary_max ?? '—');

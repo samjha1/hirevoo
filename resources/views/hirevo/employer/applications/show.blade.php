@@ -31,7 +31,7 @@
                 <h2 class="h5 mb-1 fw-800 text-dark">{{ $candidate->name ?? 'Candidate' }}</h2>
                 <p class="text-muted small mb-0">
                     {{ $job->title ?? '' }}
-                    @if(!empty($job->location)) · {{ $job->location }} @endif
+                    @if(!empty($job->formatted_location)) · {{ $job->formatted_location }} @endif
                     · <span class="fw-600">{{ ucfirst($application->status) }}</span>
                 </p>
             </div>

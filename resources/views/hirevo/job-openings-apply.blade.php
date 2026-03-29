@@ -19,31 +19,84 @@
                 <div class="col-lg-5 order-lg-2 mb-4 mb-lg-0">
                     <div class="card border shadow-none rounded-3 sticky-top" style="top: 90px;">
                         <div class="card-body p-4">
+                            @php
+                                $jobTypeLabels = ['full_time' => 'Full Time', 'part_time' => 'Part Time', 'contract' => 'Contract', 'internship' => 'Internship', 'temporary' => 'Temporary', 'volunteer' => 'Volunteer', 'other' => 'Other'];
+                                $workLabels = ['office' => 'Work from Office', 'remote' => 'Work from Home', 'hybrid' => 'Hybrid'];
+                                $payTypeLabels = ['fixed' => 'Fixed', 'hourly' => 'Hourly', 'negotiable' => 'Negotiable', 'not_disclosed' => 'Not disclosed', 'other' => 'Other'];
+                                $companyDisplay = $job->company_name ?: ($job->user->referrerProfile?->company_name ?? 'Company');
+                                $requiredSkillsList = is_array($job->required_skills) ? array_values(array_filter($job->required_skills, fn ($s) => $s !== null && $s !== '')) : [];
+                                $salaryDisplay = null;
+                                if (($job->pay_type ?? '') !== 'not_disclosed') {
+                                    if (!is_null($job->salary_min) || !is_null($job->salary_max)) {
+                                        $salaryDisplay = ($job->salary_min ?? '—') . ' – ' . ($job->salary_max ?? '—');
+                                    } elseif (!empty($job->salary_amount)) {
+                                        $salaryDisplay = $job->salary_amount;
+                                    } elseif (($job->pay_type ?? '') === 'negotiable') {
+                                        $salaryDisplay = 'Negotiable';
+                                    }
+                                }
+                            @endphp
                             <h1 class="h4 fw-600 mb-2">{{ $job->title }}</h1>
-                            <p class="text-muted mb-2">{{ $job->user->referrerProfile?->company_name ?? 'Company' }}</p>
+                            <p class="text-muted mb-2">{{ $companyDisplay }}</p>
                             <div class="d-flex flex-wrap gap-2 mb-3">
-                                @if($job->location)
-                                    <span class="text-muted small"><i class="uil uil-map-marker me-1"></i>{{ $job->location }}</span>
+                                @if($job->formatted_location)
+                                    <span class="text-muted small"><i class="uil uil-map-marker me-1"></i>{{ $job->formatted_location }}</span>
                                 @endif
                                 @if($job->job_type)
-                                    @php
-                                        $jobTypeLabels = ['full_time' => 'Full Time', 'part_time' => 'Part Time', 'contract' => 'Contract', 'internship' => 'Internship', 'temporary' => 'Temporary', 'volunteer' => 'Volunteer', 'other' => 'Other'];
-                                    @endphp
                                     <span class="badge bg-soft-primary">{{ $jobTypeLabels[$job->job_type] ?? $job->job_type }}</span>
                                 @endif
                                 @if($job->work_location_type)
-                                    @php
-                                        $workLabels = ['office' => 'Work from Office', 'remote' => 'Work from Home', 'hybrid' => 'Hybrid'];
-                                    @endphp
                                     <span class="badge bg-soft-success">{{ $workLabels[$job->work_location_type] ?? $job->work_location_type }}</span>
                                 @endif
+                                @if($job->is_night_shift)
+                                    <span class="badge bg-soft-warning text-dark">Night shift</span>
+                                @endif
                             </div>
+
+                            <dl class="row small mb-3 g-2 job-apply-meta">
+                                @if(!empty($job->job_department))
+                                    <dt class="col-sm-4 text-muted mb-0">Department</dt>
+                                    <dd class="col-sm-8 mb-0">{{ $job->job_department }}</dd>
+                                @endif
+                                @if(!is_null($job->experience_years))
+                                    <dt class="col-sm-4 text-muted mb-0">Experience</dt>
+                                    <dd class="col-sm-8 mb-0">{{ $job->experience_years }} {{ $job->experience_years === 1 ? 'year' : 'years' }} (min.)</dd>
+                                @endif
+                                <dt class="col-sm-4 text-muted mb-0">Pay</dt>
+                                <dd class="col-sm-8 mb-0">
+                                    {{ $payTypeLabels[$job->pay_type] ?? ($job->pay_type ?? '—') }}
+                                    @if($salaryDisplay)
+                                        <span class="d-block text-dark mt-1">{{ $salaryDisplay }}</span>
+                                    @endif
+                                </dd>
+                                @if($job->joining_fee_required)
+                                    <dt class="col-sm-4 text-muted mb-0">Joining</dt>
+                                    <dd class="col-sm-8 mb-0 text-warning">Joining fee may apply — confirm with employer.</dd>
+                                @endif
+                                <dt class="col-sm-4 text-muted mb-0">Posted</dt>
+                                <dd class="col-sm-8 mb-0">{{ $job->created_at->format('d M Y') }}</dd>
+                            </dl>
+
+                            @if(count($requiredSkillsList) > 0)
+                                <h6 class="fw-600 mb-2 small text-uppercase text-muted">Required skills</h6>
+                                <div class="d-flex flex-wrap gap-1 mb-3">
+                                    @foreach($requiredSkillsList as $skill)
+                                        <span class="badge bg-light text-dark border fw-normal">{{ $skill }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if(!empty($job->perks))
+                                <h6 class="fw-600 mb-2 small text-uppercase text-muted">Perks &amp; benefits</h6>
+                                <div class="text-muted small mb-3" style="white-space: pre-wrap;">{{ $job->perks }}</div>
+                            @endif
+
                             <hr>
-                            <h6 class="fw-600 mb-2">Job details</h6>
+                            <h6 class="fw-600 mb-2">Job description</h6>
                             @if($job->description)
-                                <div class="text-muted small mb-0 job-description-apply" style="max-height: 280px; overflow-y: auto; white-space: pre-wrap;">{{ $job->description }}</div>
+                                <div class="text-muted small mb-0 job-description-apply" style="max-height: 360px; overflow-y: auto; white-space: pre-wrap;">{{ $job->description }}</div>
                             @else
-                                <p class="text-muted small mb-0">—</p>
+                                <p class="text-muted small mb-0">No description provided.</p>
                             @endif
                             <div class="mt-3">
                                 <a href="{{ route('job-openings') }}" class="btn btn-outline-secondary btn-sm">Back to jobs</a>

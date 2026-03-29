@@ -131,8 +131,8 @@
                                                 {{ $job->user->referrerProfile?->company_name ?? 'Company' }}
                                             </p>
                                             <div class="d-flex flex-wrap gap-2 align-items-center small">
-                                                @if($job->location)
-                                                    <span class="text-muted"><i class="uil uil-map-marker me-1"></i>{{ $job->location }}</span>
+                                                @if($job->formatted_location)
+                                                    <span class="text-muted"><i class="uil uil-map-marker me-1"></i>{{ $job->formatted_location }}</span>
                                                 @endif
                                                 @if($job->job_type)
                                                     @php

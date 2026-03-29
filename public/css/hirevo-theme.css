@@ -225,10 +225,14 @@ textarea,
     width: auto;
     max-width: 240px;
 }
+/* Employer sidebar: width fills column; height follows aspect ratio (see layouts/employer.blade.php). */
 .employer-sidebar .sidebar-brand .hirevo-logo {
-    height: 40px !important;
-    width: auto;
-    max-width: 170px;
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    object-fit: contain;
+    object-position: left center;
 }
 .bg-auth .hirevo-logo {
     height: 58px !important;
@@ -241,12 +245,12 @@ textarea,
 }
 @media (min-width: 768px) {
     .navbar-brand .hirevo-logo { height: 105px !important; max-width: 310px; }
-    .employer-sidebar .sidebar-brand .hirevo-logo { height: 50px !important; max-width: 195px; }
+    .employer-sidebar .sidebar-brand .hirevo-logo { max-height: none !important; }
     .bg-auth .hirevo-logo { height: 86px !important; max-width: 335px; }
 }
 @media (min-width: 992px) {
     .navbar-brand .hirevo-logo { height: 132px !important; max-width: 385px; }
-    .employer-sidebar .sidebar-brand .hirevo-logo { height: 70px !important; max-width: 240px; }
+    .employer-sidebar .sidebar-brand .hirevo-logo { max-height: none !important; }
     .bg-auth .hirevo-logo { height: 98px !important; max-width: 360px; }
 }
 
@@ -784,6 +788,132 @@ img, video, iframe { max-width: 100%; height: auto; }
     font-weight: 600;
 }
 
+/* Employer jobs list: status filters (overridden inside .ec in layouts/employer.blade.php) */
+.employer-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.75rem 1rem 1rem;
+    margin: 0;
+    background: #f5f7fa;
+    border-bottom: 1px solid #e5e8ee;
+}
+@media (min-width: 768px) {
+    .employer-tabs {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+.employer-tabs .tab-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563 !important;
+    text-decoration: none !important;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.employer-tabs .tab-link:hover {
+    color: #0f2a50 !important;
+    background: rgba(15, 42, 80, 0.06);
+    border-color: rgba(15, 42, 80, 0.12);
+}
+.employer-tabs .tab-link.active {
+    color: #fff !important;
+    font-weight: 600;
+    background: linear-gradient(135deg, #163d73 0%, #0f2a50 100%);
+    border-color: rgba(15, 42, 80, 0.35);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.employer-tabs .tab-link.active:hover {
+    color: #fff !important;
+    filter: brightness(1.05);
+}
+
+/* Employer job cards (list) */
+.employer-job-card {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.employer-job-card:hover {
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+    border-color: #d1d5db !important;
+}
+.employer-job-card .card-body {
+    padding: 1.35rem 1.5rem !important;
+}
+.employer-job-card-title {
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+}
+.employer-job-card-meta-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.35rem;
+    max-width: 100%;
+}
+.employer-job-meta-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-width: 0;
+}
+.employer-job-meta-row--muted .employer-job-meta-line {
+    color: #9ca3af;
+    font-size: 0.78rem;
+}
+.employer-job-meta-icon {
+    flex-shrink: 0;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    color: #0b1f3b;
+    opacity: 0.45;
+    margin-top: 0.05rem;
+}
+.employer-job-meta-body {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #6b7280;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.employer-job-meta-line--primary {
+    color: #374151;
+    font-weight: 500;
+}
+.employer-job-meta-line + .employer-job-meta-line {
+    margin-top: 0.2rem;
+    font-weight: 400;
+    color: #6b7280;
+}
+.employer-job-applied-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+    font-weight: 600;
+}
+.employer-job-applied-count {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0b1f3b;
+    line-height: 1.2;
+}
+.employer-job-card-hint {
+    color: #6b7280;
+}
+
 /* Employer: applicant profile cards (applications page) */
 .applicant-card .detail-label {
     font-size: 0.7rem;
@@ -826,7 +956,7 @@ img, video, iframe { max-width: 100%; height: auto; }
         padding: 0.5rem 0.6rem;
         font-size: 0.8125rem;
     }
-    .employer-job-card .d-flex.gap-2 {
+    .employer-job-card-actions .d-flex.flex-wrap.gap-2 {
         flex-direction: column;
         align-items: stretch;
     }

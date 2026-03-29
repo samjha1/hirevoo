@@ -9,15 +9,20 @@
 @endsection
 
 @section('content')
-    <div class="card employer-card border-0 mb-0">
+    @php
+        $statusParam = request()->query('status');
+        $statusParam = is_string($statusParam) ? strtolower(trim($statusParam)) : '';
+        $statusFilter = in_array($statusParam, ['active', 'draft', 'closed'], true) ? $statusParam : null;
+    @endphp
+    <div class="card employer-card border border-light shadow-sm mb-0 rounded-3 overflow-hidden">
         <div class="card-body p-0">
-            <div class="employer-tabs">
-                <a href="{{ route('employer.jobs.index') }}" class="tab-link {{ !request('status') ? 'active' : '' }}">All ({{ $counts['all'] }})</a>
-                <a href="{{ route('employer.jobs.index', ['status' => 'active']) }}" class="tab-link {{ request('status') === 'active' ? 'active' : '' }}">Active ({{ $counts['active'] }})</a>
-                <a href="{{ route('employer.jobs.index', ['status' => 'draft']) }}" class="tab-link {{ request('status') === 'draft' ? 'active' : '' }}">Draft ({{ $counts['draft'] }})</a>
-                <a href="{{ route('employer.jobs.index', ['status' => 'closed']) }}" class="tab-link {{ request('status') === 'closed' ? 'active' : '' }}">Closed ({{ $counts['closed'] }})</a>
+            <div class="employer-tabs" role="tablist" aria-label="Job status">
+                <a href="{{ route('employer.jobs.index') }}" class="tab-link {{ $statusFilter === null ? 'active' : '' }}" @if($statusFilter === null) aria-current="page" @endif>All ({{ $counts['all'] }})</a>
+                <a href="{{ route('employer.jobs.index', ['status' => 'active']) }}" class="tab-link {{ $statusFilter === 'active' ? 'active' : '' }}" @if($statusFilter === 'active') aria-current="page" @endif>Active ({{ $counts['active'] }})</a>
+                <a href="{{ route('employer.jobs.index', ['status' => 'draft']) }}" class="tab-link {{ $statusFilter === 'draft' ? 'active' : '' }}" @if($statusFilter === 'draft') aria-current="page" @endif>Draft ({{ $counts['draft'] }})</a>
+                <a href="{{ route('employer.jobs.index', ['status' => 'closed']) }}" class="tab-link {{ $statusFilter === 'closed' ? 'active' : '' }}" @if($statusFilter === 'closed') aria-current="page" @endif>Closed ({{ $counts['closed'] }})</a>
             </div>
-            <div class="p-4 pt-0">
+            <div class="employer-jobs-list-wrap pb-4 pt-3 bg-light bg-opacity-50">
                 @if($jobs->isEmpty())
                     <div class="text-center py-5">
                         <i class="mdi mdi-briefcase-outline text-muted" style="font-size: 4rem;"></i>

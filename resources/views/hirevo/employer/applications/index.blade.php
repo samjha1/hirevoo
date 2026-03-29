@@ -14,22 +14,9 @@
 @endsection
 
 @section('content')
-    @php
-        $locationDecoded = is_string($job->location) ? json_decode($job->location, true) : null;
-        $locationParts = is_array($locationDecoded)
-            ? array_filter([
-                $locationDecoded['area'] ?? null,
-                $locationDecoded['city'] ?? null,
-                $locationDecoded['state'] ?? null,
-                $locationDecoded['country'] ?? null,
-                $locationDecoded['pincode'] ?? null,
-            ])
-            : [];
-        $jobLocationText = !empty($locationParts) ? implode(', ', $locationParts) : ($job->location ?? '—');
-    @endphp
     <div class="mb-4">
         <h5 class="mb-1">{{ $job->title }}</h5>
-        <p class="text-muted small mb-0">{{ $jobLocationText }} · {{ ucfirst($job->status) }}</p>
+        <p class="text-muted small mb-0">{{ $job->formatted_location ?: '—' }} · {{ ucfirst($job->status) }}</p>
     </div>
 
     @if(session('success'))
