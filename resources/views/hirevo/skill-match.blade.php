@@ -108,7 +108,9 @@
                                                     @if(in_array($job->id, $appliedEmployerJobIds ?? []))
                                                         <span class="badge bg-success">Applied</span>
                                                     @else
-                                                        <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm">Apply</a>
+                                                        <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm">
+                                                            {{ $job->apply_link ? 'Apply on Company Site' : 'Apply Now' }}
+                                                        </a>
                                                     @endif
                                                 </div>
                                             </div>
@@ -308,7 +310,9 @@
                                                         @if(in_array($job->id, $appliedEmployerJobIds ?? []))
                                                             <span class="badge bg-success">Applied</span>
                                                         @else
-                                                            <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm">Apply</a>
+                                                            <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm">
+                                                                {{ $job->apply_link ? 'Apply on Company Site' : 'Apply Now' }}
+                                                            </a>
                                                         @endif
                                                     </div>
                                                 </div>

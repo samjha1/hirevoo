@@ -112,6 +112,16 @@
                             <h5 class="fw-600 mb-1">Apply for this job</h5>
                             <p class="text-muted small mb-4">Fill in your details. Add a resume so the employer can view your CV.</p>
 
+                            @if(!empty($job->apply_link))
+                                <div class="alert alert-info d-flex align-items-start gap-2 mb-4" role="alert">
+                                    <i class="uil uil-info-circle fs-18 mt-1"></i>
+                                    <div class="small">
+                                        <div class="fw-600">You’ll be redirected after submission</div>
+                                        <div class="opacity-75">After you submit, we’ll save your application on Hirevo and redirect you to the employer’s website to finish the application.</div>
+                                    </div>
+                                </div>
+                            @endif
+
                             <form action="{{ route('job-openings.apply.store', $job) }}" method="POST">
                                 @csrf
                                 @if($errors->any())
@@ -192,7 +202,9 @@
                                 </div>
 
                                 <div class="d-flex flex-wrap gap-2">
-                                    <button type="submit" class="btn btn-primary">Submit application</button>
+                                    <button type="submit" class="btn btn-primary">
+                                        {{ !empty($job->apply_link) ? 'Submit & Continue' : 'Submit application' }}
+                                    </button>
                                     <a href="{{ route('job-openings') }}" class="btn btn-outline-secondary">Cancel</a>
                                 </div>
                             </form>

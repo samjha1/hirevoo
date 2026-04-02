@@ -337,6 +337,36 @@ class HomeController extends Controller
             'job_match_explanation' => $jobMatchExplanation,
         ]);
 
+        $applyLink = is_string($job->apply_link ?? null) ? trim((string) $job->apply_link) : null;
+        if ($applyLink !== '') {
+            return redirect()
+                ->route('job-openings.apply.external-redirect', $job)
+                ->with('success', 'Application saved. Redirecting you to the employer’s website to complete your application.')
+                ->with('apply_link', $applyLink);
+        }
+
         return redirect()->route('job-openings')->with('success', 'Your application has been submitted.');
+    }
+
+    public function externalEmployerJobApplyRedirect(EmployerJob $job): View|RedirectResponse
+    {
+        if ($job->status !== 'active') {
+            return redirect()->route('job-openings')->with('info', 'This job is no longer accepting applications.');
+        }
+
+        $applyLink = session('apply_link');
+        if (! is_string($applyLink) || trim($applyLink) === '') {
+            return redirect()->route('job-openings')->with('info', 'No external apply link found for this job.');
+        }
+
+        $applyLink = trim($applyLink);
+        if (! filter_var($applyLink, FILTER_VALIDATE_URL)) {
+            return redirect()->route('job-openings')->with('info', 'External apply link is invalid.');
+        }
+
+        return view('hirevo.job-apply-redirect', [
+            'job' => $job,
+            'applyLink' => $applyLink,
+        ]);
     }
 }

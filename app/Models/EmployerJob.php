@@ -22,6 +22,7 @@ class EmployerJob extends Model
         'job_type',
         'is_night_shift',
         'description',
+        'apply_link',
         'location',
         'work_location_type',
         'pay_type',

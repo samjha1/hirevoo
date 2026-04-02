@@ -70,6 +70,20 @@
                     </div>
 
                     <div class="mb-4">
+                        <label for="apply_link" class="form-label fw-500">External Apply Link <small class="text-muted">(Optional)</small></label>
+                        <input type="url"
+                               class="form-control @error('apply_link') is-invalid @enderror"
+                               id="apply_link"
+                               name="apply_link"
+                               value="{{ old('apply_link', $job->apply_link) }}"
+                               placeholder="https://company.com/apply">
+                        <p class="small text-muted mt-1 mb-0">
+                            If provided, candidates will fill the Hirevo form first, then they’ll be redirected to your website to complete the application.
+                        </p>
+                        @error('apply_link')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="mb-4">
                         <label for="job_type" class="form-label fw-500">Type of job <span class="text-danger">*</span></label>
                         <select class="form-select @error('job_type') is-invalid @enderror" id="job_type" name="job_type" required>
                             <option value="">Select type</option>

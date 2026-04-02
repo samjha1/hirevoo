@@ -80,6 +80,8 @@ Route::get('/job-list', [HomeController::class, 'jobList'])->name('job-list');
 Route::get('/job-openings', [HomeController::class, 'jobOpenings'])->name('job-openings');
 Route::get('/job-openings/{job}/apply', [HomeController::class, 'showEmployerJobApply'])->name('job-openings.apply');
 Route::post('/job-openings/{job}/apply', [HomeController::class, 'storeEmployerJobApply'])->middleware('auth')->name('job-openings.apply.store');
+Route::get('/job-openings/{job}/apply/external', [HomeController::class, 'externalEmployerJobApplyRedirect'])
+    ->name('job-openings.apply.external-redirect');
 Route::get('/job-goals/{jobRole}', [HomeController::class, 'skillMatch'])->name('job-goal.show');
 Route::get('/job-goals/{jobRole}/apply', [JobApplicationController::class, 'showApplyForm'])->name('job-goal.apply');
 Route::get('/job-goals/{jobRole}/match-score', [JobApplicationController::class, 'matchScore'])->middleware('auth')->name('job-goal.match-score');
