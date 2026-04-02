@@ -69,8 +69,8 @@
                     </div>
                 </div>
                 <div class="col-lg-5 ms-auto order-first order-lg-last">
-                    <div class="text-center">
-                        <img src="{{ asset($theme.'/assets/images/contact.png') }}" alt="" class="img-fluid" onerror="this.style.display='none'">
+                    <div class="text-center rounded-4 overflow-hidden shadow-sm">
+                        <img src="{{ asset('images/webisteimages/' . rawurlencode('jefferson-santos-9SoCnyQmkzI-unsplash.jpg')) }}" alt="We’re here to help — reach out anytime" class="img-fluid w-100 hirevo-site-photo" style="max-height: 320px; object-fit: cover;" loading="lazy" width="800" height="320">
                     </div>
                     <div class="mt-4 pt-3">
                         <div class="d-flex text-muted align-items-center mt-2">

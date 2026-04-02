@@ -23,7 +23,7 @@
                                     </picture>
                                 </a>
                                 <div class="mt-5">
-                                    <img src="{{ asset($theme.'/assets/images/auth/sign-up.png') }}" alt="" class="img-fluid">
+                                    <img src="{{ asset('images/webisteimages/' . rawurlencode('Image 3.PNG')) }}" alt="Build your profile and discover roles that fit you" class="img-fluid" style="max-height: 280px;" loading="lazy" width="400" height="260">
                                 </div>
                             </div>
                         </div>
@@ -116,7 +116,7 @@
                                         <div class="mb-4">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" name="terms" id="terms" required>
-                                                <label class="form-check-label" for="terms">I agree to the <a href="javascript:void(0)" class="text-white text-decoration-underline">Terms and conditions</a></label>
+                                                <label class="form-check-label" for="terms">I agree to the <a href="{{ route('terms') }}" class="text-white text-decoration-underline">Terms and conditions</a></label>
                                             </div>
                                         </div>
                                         <div class="text-center">

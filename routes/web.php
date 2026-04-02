@@ -11,6 +11,7 @@ use App\Http\Controllers\Employer\ProfileController as EmployerProfileController
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\CandidateDashboardController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
@@ -32,6 +33,8 @@ Route::get('/auth/microsoft/callback', [SocialAuthController::class, 'handleMicr
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [CandidateDashboardController::class, 'index'])->name('candidate.dashboard');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/fill-from-resume', [ProfileController::class, 'fillFromResume'])->name('profile.fill-from-resume');
@@ -88,6 +91,12 @@ Route::get('/job-goals/{jobRole}/match-score', [JobApplicationController::class,
 Route::post('/job-goals/{jobRole}/apply', [JobApplicationController::class, 'store'])->middleware('auth')->name('job-goal.apply.store');
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
 Route::get('/about', fn () => view('hirevo.about'))->name('about');
+Route::get('/help', fn () => view('hirevo.help'))->name('help');
+Route::get('/faq', fn () => view('hirevo.faq'))->name('faq');
+Route::get('/terms', fn () => view('hirevo.legal.terms'))->name('terms');
+Route::get('/privacy', fn () => view('hirevo.legal.privacy'))->name('privacy');
+Route::get('/cookies', fn () => view('hirevo.legal.cookies'))->name('cookies');
+Route::get('/disclaimer', fn () => view('hirevo.legal.disclaimer'))->name('disclaimer');
 Route::get('/contact', fn () => view('hirevo.contact'))->name('contact');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 Route::post('/referral-signup', [ReferralSignupController::class, 'store'])->name('referral-signup.store');

@@ -74,6 +74,9 @@ class JobController extends Controller
                 ->with('error', 'You need at least 1 credit to post a job. Buy credits to continue.');
         }
 
+        $salaryMinFloor = (int) config('hirevo.employer_salary_min_floor_inr', 150_000);
+        $floorLabel = number_format($salaryMinFloor);
+
         $validated = $request->validate([
             'job_department'      => ['required', 'string', 'max:100'],
             'required_skills'     => ['nullable', 'string', 'max:2000'],
@@ -90,7 +93,23 @@ class JobController extends Controller
             'is_night_shift'      => ['nullable', 'boolean'],
             'work_location_type'  => ['required', 'in:office,remote,hybrid'],
             'pay_type'            => ['required', 'in:fixed,hourly,negotiable,not_disclosed,other'],
-            'salary_min'          => ['nullable', 'integer', 'min:0'],
+            'salary_min'          => [
+                'nullable',
+                'integer',
+                'min:0',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request, $salaryMinFloor, $floorLabel): void {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+                    $payType = (string) $request->input('pay_type', '');
+                    if (! in_array($payType, ['fixed', 'negotiable'], true)) {
+                        return;
+                    }
+                    if ((int) $value > 0 && (int) $value < $salaryMinFloor) {
+                        $fail("Minimum salary must be at least ₹{$floorLabel} per annum (LPA) for fixed or negotiable pay.");
+                    }
+                },
+            ],
             'salary_max'          => ['nullable', 'integer', 'min:0', 'gte:salary_min'],
             'experience_years'    => ['nullable', 'integer', 'min:0', 'max:60'],
             'perks'               => ['nullable', 'string', 'max:2000'],
@@ -170,6 +189,9 @@ class JobController extends Controller
             return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage jobs.');
         }
 
+        $salaryMinFloor = (int) config('hirevo.employer_salary_min_floor_inr', 150_000);
+        $floorLabel = number_format($salaryMinFloor);
+
         $validated = $request->validate([
             'job_department'        => ['nullable', 'string', 'max:100'],
             'required_skills'       => ['nullable', 'string', 'max:2000'],
@@ -186,7 +208,23 @@ class JobController extends Controller
             'is_night_shift'       => ['nullable', 'boolean'],
             'work_location_type'   => ['nullable', 'in:office,remote,hybrid'],
             'pay_type'             => ['nullable', 'in:fixed,hourly,negotiable,not_disclosed,other'],
-            'salary_min'           => ['nullable', 'integer', 'min:0'],
+            'salary_min'           => [
+                'nullable',
+                'integer',
+                'min:0',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request, $salaryMinFloor, $floorLabel): void {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+                    $payType = (string) $request->input('pay_type', '');
+                    if (! in_array($payType, ['fixed', 'negotiable'], true)) {
+                        return;
+                    }
+                    if ((int) $value > 0 && (int) $value < $salaryMinFloor) {
+                        $fail("Minimum salary must be at least ₹{$floorLabel} per annum (LPA) for fixed or negotiable pay.");
+                    }
+                },
+            ],
             'salary_max'           => ['nullable', 'integer', 'min:0', 'gte:salary_min'],
             'experience_years'     => ['nullable', 'integer', 'min:0', 'max:60'],
             'perks'                => ['nullable', 'string', 'max:2000'],

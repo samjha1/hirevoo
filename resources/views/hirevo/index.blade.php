@@ -28,18 +28,39 @@
     .trending-role-card:hover { border-color: var(--hirevo-primary); box-shadow: 0 8px 24px rgba(11, 31, 59, 0.08); }
     .why-hirevo-card { border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); transition: all 0.2s ease; }
     .why-hirevo-card:hover { border-color: rgba(11, 31, 59, 0.15); box-shadow: 0 8px 28px rgba(11, 31, 59, 0.1); }
+    .hirevo-value-card__eyebrow { font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: #64748b; margin-bottom: 0.5rem; }
+    .hirevo-value-card__media { border-radius: 12px; background: linear-gradient(180deg, rgba(11, 31, 59, 0.04) 0%, rgba(255,255,255,0) 100%); padding: 0.75rem; }
+    .hirevo-value-card__img { max-height: 176px; width: 100%; object-fit: contain; object-position: center bottom; display: block; margin: 0 auto; }
+    .hirevo-value-card__img--photo { object-fit: cover; object-position: center; border-radius: 10px; max-height: 160px; }
+    .hirevo-value-list { margin: 0; padding-left: 1.1rem; color: #64748b; font-size: 0.9rem; }
+    .hirevo-value-list li { margin-bottom: 0.35rem; }
+    .hirevo-value-list li:last-child { margin-bottom: 0; }
 </style>
 @endpush
 
 @section('content')
+    @php
+        $siteImg = fn (string $file) => asset('images/webisteimages/' . rawurlencode($file));
+    @endphp
     <!-- HERO - Apna-style -->
     <section class="hirevo-hero position-relative" id="home">
         <div class="container position-relative">
             <div class="row align-items-center min-vh-50 py-5">
                 <div class="col-lg-7">
-                    <span class="hero-badge text-primary mb-3 d-inline-block">AI Career Intelligence</span>
+                    <span class="hero-badge text-primary mb-3 d-inline-block">Built for students & freshers</span>
                     <h1 class="hirevo-hero-title fw-bold mb-3 lh-tight">Own Your Next <span class="text-primary">Career Move</span></h1>
-                    <p class="lead text-muted mb-4" style="max-width: 520px;">Discover matching job goals, get your resume scored, and grow with skill-gap analysis and verified referrals. One platform for your career.</p>
+                    <p class="lead text-muted mb-4" style="max-width: 560px;">
+                        Finding the right job shouldn’t feel confusing or random.
+                        We help you understand where you stand, what to improve, and where real opportunities exist.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        <a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => route('resume.upload')]) }}" class="btn btn-primary rounded-pill px-4">
+                            Get Started
+                        </a>
+                        <a href="{{ route('job-openings') }}" class="btn btn-outline-primary rounded-pill px-4">
+                            Explore Opportunities
+                        </a>
+                    </div>
                     <form action="{{ route('job-list') }}" method="GET" class="mb-0">
                         <div class="hero-search-card bg-white d-flex flex-column flex-md-row align-stretch rounded-3 border">
                             <div class="flex-grow-1 d-flex align-items-center border-end">
@@ -58,41 +79,133 @@
                             <button type="submit" class="btn btn-primary btn-search flex-shrink-0"><i class="uil uil-search me-1"></i> Find Jobs</button>
                         </div>
                     </form>
+                    <p class="small text-muted mt-2 mb-0">If you’re unsure where to start, begin with your resume.</p>
                 </div>
                 <div class="col-lg-5 text-center mt-5 mt-lg-0">
-                    <img src="{{ asset($theme.'/assets/images/process-02.png') }}" alt="Career growth" class="img-fluid hirevo-hero-img">
+                    <img src="{{ asset($theme.'/assets/images/process-02.png') }}" alt="Career growth" class="img-fluid hirevo-hero-img" width="520" height="400" fetchpriority="high" decoding="async">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- RESUME SCORE HERO - Key feature -->
+    <!-- RESUME ANALYSIS -->
     <section class="py-4 py-lg-5">
         <div class="container">
             <a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => route('resume.upload')]) }}" class="text-decoration-none text-dark d-block">
-                <div class="resume-hero-card p-4 p-lg-5 d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">
-                    <div class="d-flex align-items-center gap-4 flex-grow-1">
-                        <div class="resume-cta-icon flex-shrink-0">
-                            <i class="uil uil-file-search-alt"></i>
+                <div class="resume-hero-card p-4 p-lg-5">
+                    <div class="row align-items-center g-4">
+                        <div class="col-lg-7">
+                            <div class="d-flex flex-column flex-md-row align-items-md-center gap-4">
+                                <div class="resume-cta-icon flex-shrink-0 mx-auto mx-md-0">
+                                    <i class="uil uil-file-search-alt"></i>
+                                </div>
+                                <div class="flex-grow-1 text-center text-md-start">
+                                    <h3 class="h4 fw-bold mb-2">Start with your resume</h3>
+                                    <p class="text-muted mb-0">
+                                        Before applying more, know if your profile is actually working for you.
+                                        Upload your resume and get a clear idea of where you stand. <span class="fw-semibold">Takes less than 2 minutes.</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-4 text-center text-md-start">
+                                @auth
+                                    <span class="btn resume-btn btn-lg rounded-pill px-4">
+                                        <i class="uil uil-file-upload me-1"></i> Upload Resume
+                                    </span>
+                                @else
+                                    <span class="btn resume-btn btn-lg rounded-pill px-4">
+                                        <i class="uil uil-file-upload me-1"></i> Upload Your Resume
+                                    </span>
+                                @endauth
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="h4 fw-bold mb-2">Get your resume scored and discover matching job goals</h3>
-                            <p class="text-muted mb-0">Upload your CV — we'll show your ATS score, AI summary, and recommend job goals that match your skills.</p>
+                        <div class="col-lg-5 text-center">
+                            <img src="{{ $siteImg('Image 3.PNG') }}" alt="Skill insights and job matches tailored to your profile" class="img-fluid hirevo-site-illustration mx-auto" style="max-height: 240px;" loading="lazy" width="400" height="260">
                         </div>
-                    </div>
-                    <div class="flex-shrink-0">
-                        @auth
-                            <span class="btn resume-btn btn-lg rounded-pill px-4">
-            <i class="uil uil-file-upload me-1"></i> Upload Resume
-        </span>
-                        @else
-                            <span class="btn resume-btn btn-lg rounded-pill px-4">
-            <i class="uil uil-file-upload me-1"></i> Get Started Free
-        </span>
-                        @endauth
                     </div>
                 </div>
             </a>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section pt-2 pb-0">
+        <div class="container">
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-8 text-center">
+                    <h2 class="h3 fw-bold mb-2">How Hirevoo works</h2>
+                    <p class="text-muted mb-0">Clarity first. Then direction. Then smarter applications.</p>
+                </div>
+            </div>
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-10 text-center">
+                    <img src="{{ $siteImg('Image 5.PNG') }}" alt="From your profile to the right role: search, match, and succeed" class="img-fluid hirevo-site-illustration hirevo-how-it-works-img" loading="lazy" width="920" height="320">
+                </div>
+            </div>
+            <div class="row g-3 g-lg-4">
+                <div class="col-md-4">
+                    <div class="why-hirevo-card p-4 h-100">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+                                <strong>1</strong>
+                            </div>
+                            <h3 class="h6 fw-700 mb-0">Understand your profile</h3>
+                        </div>
+                        <p class="text-muted mb-0">Upload your resume and see where you stand.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="why-hirevo-card p-4 h-100">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+                                <strong>2</strong>
+                            </div>
+                            <h3 class="h6 fw-700 mb-0">Identify what’s missing</h3>
+                        </div>
+                        <p class="text-muted mb-0">Get clarity on skills, roles, and direction.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="why-hirevo-card p-4 h-100">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+                                <strong>3</strong>
+                            </div>
+                            <h3 class="h6 fw-700 mb-0">Apply smarter</h3>
+                        </div>
+                        <p class="text-muted mb-0">Focus on opportunities that actually match you.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DIFFERENTIATION + VALUE -->
+    <section class="section pt-4">
+        <div class="container">
+            <div class="row g-4 align-items-stretch">
+                <div class="col-lg-6">
+                    <div class="why-hirevo-card p-4 p-lg-5 h-100">
+                        <h2 class="h4 fw-bold mb-2">Not just another job platform</h2>
+                        <p class="text-muted mb-0">
+                            Most platforms focus on quantity. <span class="fw-semibold">We focus on clarity.</span>
+                            Instead of pushing you to apply more, we help you understand what actually works for your profile and where you should focus.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="why-hirevo-card p-4 p-lg-5 h-100">
+                        <h2 class="h4 fw-bold mb-3">What you actually get</h2>
+                        <ul class="text-muted mb-0 ps-3">
+                            <li>Better visibility for your profile</li>
+                            <li>Clear direction on what to improve</li>
+                            <li>Access to relevant opportunities</li>
+                            <li>Support in becoming job-ready</li>
+                        </ul>
+                        <p class="small text-muted mt-3 mb-0">Focus on quality, not quantity.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -461,64 +574,131 @@
     </div>
 </section>
 
-    <!-- JOB OPENINGS CTA -->
+    <!-- JOB SEARCH -->
     <section class="section bg-light py-5">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <h2 class="h3 fw-bold mb-2">Live job openings</h2>
-                    <p class="text-muted mb-0">Browse and apply to jobs posted by employers. Filter by location, job type, and work mode.</p>
+            <div class="row align-items-center g-4">
+                <div class="col-lg-6 order-lg-2">
+                    <h2 class="h3 fw-bold mb-2">Find opportunities that actually match you</h2>
+                    <p class="text-muted mb-4">
+                        Instead of applying everywhere, focus on roles that make sense for your profile.
+                        We help you discover jobs that are relevant, practical, and worth your time.
+                    </p>
+                    <a href="{{ route('job-openings') }}" class="btn btn-primary btn-lg rounded-pill px-4 hirevo-cta-btn">
+                        <i class="uil uil-search me-1"></i> Search Jobs
+                    </a>
                 </div>
-                <div class="col-lg-6 text-lg-end">
-                    <a href="{{ route('job-openings') }}" class="btn btn-primary btn-lg rounded-pill px-4 hirevo-cta-btn"><i class="uil uil-briefcase-alt me-1"></i> Browse jobs</a>
+                <div class="col-lg-6 order-lg-1 text-center">
+                    <img src="{{ $siteImg('Image 2.PNG') }}" alt="Search jobs and explore roles that fit you" class="img-fluid hirevo-site-illustration" style="max-height: 280px;" loading="lazy" width="520" height="280">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- WHY HIREVO -->
+    <!-- CAREER PATH GUIDANCE + COMMUNITY + HIRING -->
     <section class="section">
         <div class="container">
-            <div class="row justify-content-center mb-4">
-                <div class="col-lg-6 text-center">
-                    <h2 class="h3 fw-bold mb-2">Why Hirevo</h2>
-                    <p class="text-muted mb-0">Own Your Next Career Move — skill-gap analysis, referral marketplace & job goals.</p>
+            <div class="row justify-content-center mb-2">
+                <div class="col-lg-8 text-center">
+                    <h2 class="h5 fw-bold text-uppercase text-muted mb-1" style="letter-spacing: 0.06em;">Why Hirevoo</h2>
+                    <p class="text-muted mb-0 small">Four ways we help — whether you’re starting out, choosing a path, staying in the loop, or hiring.</p>
                 </div>
             </div>
             <div class="row g-4">
-                <div class="col-md-6 col-lg-4">
-                    <div class="why-hirevo-card card border-0 h-100">
-                        <div class="card-body p-4">
-                            <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 52px; height: 52px;">
-                                <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                            </div>
-                            <h5 class="fw-600 mb-2">Skill gap analysis</h5>
-                            <p class="text-muted mb-0 small">Pick a job goal. We show match %, missing skills, and a learning path.</p>
+                <div class="col-lg-6">
+                    <div class="why-hirevo-card p-4 p-lg-5 h-100 d-flex flex-column">
+                        <div class="hirevo-value-card__media mb-3">
+                            <img src="{{ $siteImg('Image 1.PNG') }}" alt="Resume review, job search, networking, and growth" class="hirevo-value-card__img" loading="lazy" width="560" height="176">
+                        </div>
+                        <div class="hirevo-value-card__eyebrow">Community &amp; focus</div>
+                        <h3 class="h4 fw-bold mb-2">Built for people who are serious about their careers</h3>
+                        <p class="text-muted mb-3">
+                            Hirevoo is for students, freshers, and job seekers who want <span class="fw-semibold text-dark">clarity and direction</span> — not endless blind applications.
+                        </p>
+                        <ul class="hirevo-value-list mb-3">
+                            <li><strong class="text-dark">1000+</strong> candidates exploring roles and skill matches</li>
+                            <li>Resume-first mindset: know your gaps before you apply</li>
+                            <li>Regular job &amp; internship signals you can act on</li>
+                        </ul>
+                        <p class="small text-muted mb-0 mt-auto">Growing community — relevant updates, not noise.</p>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="why-hirevo-card p-4 p-lg-5 h-100 d-flex flex-column">
+                        <div class="hirevo-value-card__media mb-3">
+                            <img src="{{ $siteImg('Image 4.PNG') }}" alt="Plan your next step with a clear career focus" class="hirevo-value-card__img" loading="lazy" width="560" height="176">
+                        </div>
+                        <div class="hirevo-value-card__eyebrow">Career clarity</div>
+                        <h3 class="h4 fw-bold mb-2">Not sure what direction to take?</h3>
+                        <p class="text-muted mb-3">
+                            Choosing a path is easier when you can <span class="fw-semibold text-dark">compare roles, skills, and fit</span> instead of guessing from job titles alone.
+                        </p>
+                        <ul class="hirevo-value-list mb-4">
+                            <li>Browse job goals and see what each role expects</li>
+                            <li>Spot skill gaps before you invest weeks in the wrong role</li>
+                            <li>Move from “I’m confused” to “here’s my next step”</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <a href="{{ route('job-list') }}" class="btn btn-outline-primary rounded-pill px-4">Explore Career Paths</a>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="why-hirevo-card card border-0 h-100">
-                        <div class="card-body p-4">
-                            <div class="rounded-3 bg-success bg-opacity-10 text-success d-inline-flex align-items-center justify-content-center mb-3" style="width: 52px; height: 52px;">
-                                <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="m9 12 2 2 4-4"/></svg>
-                            </div>
-                            <h5 class="fw-600 mb-2">Referral marketplace</h5>
-                            <p class="text-muted mb-0 small">Get referral requests from verified employees. Premium from ₹999/month.</p>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-lg-6">
+                    <div class="why-hirevo-card p-4 p-lg-5 h-100 d-flex flex-column">
+                        <div class="hirevo-value-card__media mb-3 p-0 overflow-hidden">
+                            <img src="{{ $siteImg('headway-5QgIuuBxKwM-unsplash.jpg') }}" alt="Stay connected with opportunities and conversations that matter" class="hirevo-value-card__img hirevo-value-card__img--photo w-100" loading="lazy" width="560" height="160">
+                        </div>
+                        <div class="hirevo-value-card__eyebrow">Updates &amp; opportunities</div>
+                        <h3 class="h4 fw-bold mb-2">Stay connected with opportunities</h3>
+                        <p class="text-muted mb-3">
+                            Get <span class="fw-semibold text-dark">curated openings and useful career signals</span> — not a flood of irrelevant listings.
+                        </p>
+                        <ul class="hirevo-value-list mb-4">
+                            <li>Jobs, internships, and timely nudges in one place</li>
+                            <li><span class="fw-semibold text-dark">No spam</span> — only what helps you move forward</li>
+                            <li>Join to personalize what you hear about</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <a href="{{ route('register') }}" class="btn btn-primary rounded-pill px-4">Join Now</a>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="why-hirevo-card card border-0 h-100">
-                        <div class="card-body p-4">
-                            <div class="rounded-3 bg-info bg-opacity-10 text-info d-inline-flex align-items-center justify-content-center mb-3" style="width: 52px; height: 52px;">
-                                <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                            </div>
-                            <h5 class="fw-600 mb-2">EdTech lead bidding</h5>
-                            <p class="text-muted mb-0 small">Opt in for upskilling — EdTech partners bid for your lead.</p>
+                <div class="col-lg-6">
+                    <div class="why-hirevo-card p-4 p-lg-5 h-100 d-flex flex-column">
+                        <div class="hirevo-value-card__media mb-3">
+                            <img src="{{ $siteImg('Image 6.PNG') }}" alt="Source talent, review candidates, and hire with confidence" class="hirevo-value-card__img" loading="lazy" width="560" height="176">
+                        </div>
+                        <div class="hirevo-value-card__eyebrow">For employers</div>
+                        <h3 class="h4 fw-bold mb-2">Hiring made simple</h3>
+                        <p class="text-muted mb-3">
+                            Post roles and reach candidates who are <span class="fw-semibold text-dark">already preparing</span> — clearer profiles, fewer mismatched applicants.
+                        </p>
+                        <ul class="hirevo-value-list mb-4">
+                            <li>List jobs with clear requirements and work modes</li>
+                            <li>Review applications in one workflow</li>
+                            <li>Optional external apply link for your own ATS or site</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <a href="{{ route('employer.jobs.create') }}" class="btn btn-outline-primary rounded-pill px-4">Post a Job</a>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="text-center mt-5">
+                <h2 class="h3 fw-bold mb-2">Start taking your career seriously</h2>
+                <p class="text-muted mb-4" style="max-width: 760px; margin: 0 auto;">
+                    You don’t need to apply everywhere. You need to apply better.
+                    Hirevoo helps you do exactly that.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => route('resume.upload')]) }}" class="btn btn-primary rounded-pill px-4">Get Started</a>
+                    <a href="{{ route('job-openings') }}" class="btn btn-outline-primary rounded-pill px-4">Explore Opportunities</a>
+                </div>
+                <p class="text-muted small mt-3 mb-0">Careers don’t grow with random applications. They grow with clarity, preparation, and the right opportunities.</p>
             </div>
         </div>
     </section>

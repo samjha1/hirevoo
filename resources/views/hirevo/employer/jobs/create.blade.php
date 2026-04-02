@@ -4,6 +4,10 @@
 @section('header_title', 'Post a new job')
 
 @section('content')
+    @php
+        $salaryMinFloorInr = (int) config('hirevo.employer_salary_min_floor_inr', 150_000);
+        $salaryMinFloorLpaLabel = rtrim(rtrim(number_format($salaryMinFloorInr / 100000, 2), '0'), '.');
+    @endphp
     <div class="post-job-page">
         @if($errors->any())
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -77,12 +81,7 @@
                         @error('experience_years')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
-                    <div class="mb-4">
-                        <label for="required_skills" class="form-label fw-500">Skills required</label>
-                        <textarea class="form-control @error('required_skills') is-invalid @enderror" id="required_skills" name="required_skills" rows="3" placeholder="e.g. Laravel, PHP, MySQL, REST API">{{ old('required_skills') }}</textarea>
-                        <p class="small text-muted mt-1 mb-0">Add comma-separated skills. These are used in resume/profile match scoring.</p>
-                        @error('required_skills')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
+                    @include('hirevo.employer.jobs._skills-field', ['skillsValue' => old('required_skills')])
 
                     <div class="mb-4">
                         <label for="apply_link" class="form-label fw-500">External Apply Link <small class="text-muted">(Optional)</small></label>
@@ -193,9 +192,11 @@
                     </div>
 
                     <div class="mb-4" id="salary_amount_wrap">
-                        <label class="form-label fw-500">Salary amount <small class="text-muted">(optional)</small></label>
+                        <label class="form-label fw-500">Annual CTC (salary) <small class="text-muted">(optional)</small></label>
+                        <p class="small text-muted mb-2 mb-md-3">Enter amounts in <strong>₹ per annum</strong> (Indian rupees, yearly). <strong>LPA</strong> = Lakhs Per Annum (e.g. 6 LPA = ₹6,00,000 p.a.).</p>
                         <div class="row g-3">
                             <div class="col-md-6">
+                                <label for="salary_min" class="form-label small text-muted mb-1">Minimum (₹ p.a.)</label>
                                 <input type="number"
                                        class="form-control @error('salary_min') is-invalid @enderror"
                                        id="salary_min"
@@ -203,10 +204,11 @@
                                        min="0"
                                        step="1"
                                        value="{{ old('salary_min') }}"
-                                       placeholder="Minimum salary">
+                                       placeholder="e.g. 600000 for 6 LPA">
                                 @error('salary_min')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
+                                <label for="salary_max" class="form-label small text-muted mb-1">Maximum (₹ p.a.)</label>
                                 <input type="number"
                                        class="form-control @error('salary_max') is-invalid @enderror"
                                        id="salary_max"
@@ -214,10 +216,11 @@
                                        min="0"
                                        step="1"
                                        value="{{ old('salary_max') }}"
-                                       placeholder="Maximum salary">
+                                       placeholder="e.g. 900000 for 9 LPA">
                                 @error('salary_max')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
+                        <p class="small text-muted mt-1 mb-0" id="salary_floor-hint">For <strong>fixed</strong> or <strong>negotiable</strong> pay, minimum CTC must be at least ₹{{ number_format($salaryMinFloorInr) }} per annum ({{ $salaryMinFloorLpaLabel }} LPA).</p>
                         <p class="small text-muted mt-1 mb-0">Add salary if you want candidates to see it. If you select “Not disclosed”, you can leave this blank.</p>
                     </div>
 
@@ -385,22 +388,30 @@
             });
         })();
 
-        // Hide/disable salary_amount when pay_type is "not_disclosed".
+        // Hide/disable salary_amount when pay_type is "not_disclosed"; enforce min CTC floor for fixed/negotiable.
         (function () {
             var payType = document.getElementById('pay_type');
             var wrap = document.getElementById('salary_amount_wrap');
             var salaryMinInput = document.getElementById('salary_min');
             var salaryMaxInput = document.getElementById('salary_max');
+            var floorHint = document.getElementById('salary_floor-hint');
+            var salaryMinFloorInr = {{ $salaryMinFloorInr }};
             if (!payType || !wrap || !salaryMinInput || !salaryMaxInput) return;
 
             function toggleSalary() {
                 var isNotDisclosed = payType.value === 'not_disclosed';
+                var pay = payType.value;
+                var annualRules = pay === 'fixed' || pay === 'negotiable';
                 wrap.style.display = isNotDisclosed ? 'none' : '';
                 salaryMinInput.disabled = isNotDisclosed;
                 salaryMaxInput.disabled = isNotDisclosed;
                 if (isNotDisclosed) {
                     salaryMinInput.value = '';
                     salaryMaxInput.value = '';
+                }
+                salaryMinInput.min = isNotDisclosed ? '0' : (annualRules ? String(salaryMinFloorInr) : '0');
+                if (floorHint) {
+                    floorHint.style.display = annualRules ? '' : 'none';
                 }
             }
 
@@ -451,10 +462,18 @@
                 var joiningFee = getCheckedValue('joining_fee_required') === '1' ? 'Yes' : 'No';
                 var nightShift = document.getElementById('is_night_shift')?.checked ? 'Yes' : 'No';
 
+                function formatSalaryInrLpa(v) {
+                    var num = parseInt(v, 10);
+                    if (isNaN(num) || num <= 0) return '';
+                    var lpa = (num / 100000).toFixed(2).replace(/\.?0+$/, '');
+                    return '₹' + num.toLocaleString('en-IN') + ' p.a. (' + lpa + ' LPA)';
+                }
                 var salaryText = 'Not specified';
-                if (salaryMin && salaryMax) salaryText = salaryMin + ' - ' + salaryMax;
-                else if (salaryMin) salaryText = salaryMin;
-                else if (salaryMax) salaryText = salaryMax;
+                var a = formatSalaryInrLpa(salaryMin);
+                var b = formatSalaryInrLpa(salaryMax);
+                if (a && b) salaryText = a + ' – ' + b;
+                else if (a) salaryText = a;
+                else if (b) salaryText = b;
 
                 document.getElementById('preview_title').textContent = textOrDash(title);
                 document.getElementById('preview_department').textContent = selectedText('job_department');

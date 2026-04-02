@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EmployerJob;
 use App\Models\EmployerJobApplication;
 use App\Models\InterviewSchedule;
+use App\Notifications\ApplicationStatusChangedNotification;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
@@ -150,7 +151,18 @@ class ApplicationController extends Controller
         ]);
 
         // Move candidate to Interviewed stage when scheduling.
+        $previousStatus = $application->status;
         $application->update(['status' => EmployerJobApplication::STATUS_INTERVIEWED]);
+        $application->load(['employerJob.user.referrerProfile']);
+        $candidate = $application->user;
+        if ($candidate && $candidate->isCandidate()) {
+            $candidate->notify(new ApplicationStatusChangedNotification(
+                $application->fresh(['employerJob.user.referrerProfile']),
+                $previousStatus,
+                EmployerJobApplication::STATUS_INTERVIEWED,
+                $interview
+            ));
+        }
 
         // Best-effort notifications (won't break scheduling if mail isn't configured).
         try {
@@ -380,7 +392,21 @@ class ApplicationController extends Controller
             return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage applications.');
         }
         $valid = $request->validate(['status' => 'required|in:' . implode(',', array_keys(EmployerJobApplication::statusOptions()))]);
+        $previousStatus = $application->status;
+        if ($previousStatus === $valid['status']) {
+            return redirect()->back()->with('info', 'No change to status.');
+        }
         $application->update(['status' => $valid['status']]);
+        $application->load(['employerJob.user.referrerProfile']);
+        $candidate = $application->user;
+        if ($candidate && $candidate->isCandidate()) {
+            $candidate->notify(new ApplicationStatusChangedNotification(
+                $application->fresh(['employerJob.user.referrerProfile']),
+                $previousStatus,
+                $valid['status'],
+                null
+            ));
+        }
         return redirect()->back()->with('success', 'Application status updated.');
     }
 

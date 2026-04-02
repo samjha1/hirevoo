@@ -10,6 +10,9 @@
 @endpush
 
 @section('content')
+    @php
+        $siteImg = fn (string $file) => asset('images/webisteimages/' . rawurlencode($file));
+    @endphp
     <section class="section py-4">
         <div class="container">
             <nav class="mb-3" aria-label="breadcrumb">
@@ -19,10 +22,13 @@
                 </ol> -->
             </nav>
 
-            <div class="row align-items-end mb-4">
-                <div class="col-lg-6 mb-3 mb-lg-0">
+            <div class="row align-items-center mb-4">
+                <div class="col-lg-7 mb-3 mb-lg-0">
                     <h1 class="h4 fw-bold mb-1">Job Openings</h1>
                     <p class="text-muted mb-0 small">Browse and apply to jobs posted by employers. Filter by location, job type, and work mode.</p>
+                </div>
+                <div class="col-lg-5 text-center text-lg-end d-none d-md-block">
+                    <img src="{{ $siteImg('Image 2.PNG') }}" alt="Browse roles and apply with confidence" class="img-fluid hirevo-site-illustration" style="max-height: 140px;" loading="lazy" width="400" height="140">
                 </div>
             </div>
 

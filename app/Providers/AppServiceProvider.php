@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -16,8 +17,26 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Paginator::useBootstrap();
+        Paginator::useBootstrapFive();
         View::share('theme', config('hirevo.theme_path', 'theme'));
+
+        View::composer('layouts.app', function ($view) {
+            $navUnreadCount = 0;
+            $navNotifications = collect();
+            if (Auth::check() && Auth::user()->isCandidate()) {
+                $days = config('hirevo.notification_retention_days', 14);
+                $user = Auth::user();
+                $navUnreadCount = $user->unreadNotifications()
+                    ->where('created_at', '>=', now()->subDays($days))
+                    ->count();
+                $navNotifications = $user->notifications()
+                    ->where('created_at', '>=', now()->subDays($days))
+                    ->orderByDesc('created_at')
+                    ->limit(12)
+                    ->get();
+            }
+            $view->with('navUnreadCount', $navUnreadCount)->with('navNotifications', $navNotifications);
+        });
 
         View::composer('layouts.employer', function ($view) {
             $credits = 0;

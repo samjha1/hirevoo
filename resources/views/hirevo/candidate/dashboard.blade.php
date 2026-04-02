@@ -13,6 +13,7 @@
     }
 
     .apps-hero {
+        margin-top: 50px; /* match navbar height */
         background: #fff;
         border-bottom: 1px solid rgba(0,0,0,.06);
         padding: 1.75rem 0 1.5rem;
@@ -120,6 +121,7 @@
     .stat-icon.green  { background: rgba(16,185,129,.15); color: var(--hirevo-secondary); }
     .stat-icon.amber  { background: rgba(245,158,11,.15); color: #d97706; }
     .stat-icon.blue   { background: rgba(59,130,246,.12); color: #2563eb; }
+    .stat-icon i { font-size: 1.2rem; line-height: 1; }
     .stat-num { font-size: 1.25rem; font-weight: 700; line-height: 1; color: #0f172a; }
     .stat-lbl { font-size: .6875rem; color: #64748b; margin-top: .15rem; }
 
@@ -330,7 +332,53 @@
     .btn-outline-accent:hover { background: var(--hirevo-primary); color: #fff; }
     .btn-outline-accent:focus-visible { outline: 2px solid var(--hirevo-primary); outline-offset: 2px; }
 
-    .apps-section { margin-bottom: 2rem; }
+    .apps-section { margin-bottom: 2rem; scroll-margin-top: 88px; }
+
+    .apps-pagination-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+        padding-top: 0.25rem;
+    }
+    .apps-pagination-meta {
+        font-size: 0.8125rem;
+        color: #64748b;
+    }
+    .apps-pagination .pagination {
+        margin-bottom: 0;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.35rem;
+    }
+    .apps-pagination .page-link {
+        border-radius: 10px !important;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        color: var(--hirevo-primary, #0B1F3B);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        padding: 0.4rem 0.75rem;
+        min-width: 2.25rem;
+        text-align: center;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+    .apps-pagination .page-link:hover {
+        background: rgba(11, 31, 59, 0.06);
+        border-color: rgba(11, 31, 59, 0.15);
+        color: var(--hirevo-primary);
+    }
+    .apps-pagination .page-item.active .page-link {
+        background: var(--hirevo-primary);
+        border-color: var(--hirevo-primary);
+        color: #fff;
+    }
+    .apps-pagination .page-item.disabled .page-link {
+        opacity: 0.45;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .apps-pagination .page-link { transition: none; }
+    }
 
     .legend-bar {
         background: #fff;
@@ -363,6 +411,8 @@
         .stats-strip { grid-template-columns: 1fr 1fr; }
         .app-job-title { white-space: normal; }
     }
+
+    .apps-page { scroll-behavior: smooth; }
 </style>
 @endpush
 
@@ -391,40 +441,40 @@
                     </a>
                 </div>
 
-                {{-- Stats --}}
+                {{-- Stats (all-time totals, not current page) --}}
                 @php
-                    $totalApps      = $employerApplications->count() + $jobGoalApplications->count();
-                    $activeApps     = $employerApplications->whereIn('status', ['shortlisted','interviewed','offered'])->count();
-                    $hiredCount     = $employerApplications->where('status','hired')->count();
-                    $avgMatch       = $employerApplications->whereNotNull('job_match_score')->avg('job_match_score');
+                    $totalApps = $dashboardStats['total_apps'];
+                    $activeApps = $dashboardStats['active_reviews'];
+                    $hiredCount = $dashboardStats['hired_count'];
+                    $avgMatch = $dashboardStats['avg_match'];
                 @endphp
                 <div class="stats-strip">
                     <div class="stat-pill">
-                        <div class="stat-icon purple">📋</div>
+                        <div class="stat-icon purple"><i class="mdi mdi-clipboard-text-outline"></i></div>
                         <div>
                             <div class="stat-num">{{ $totalApps }}</div>
                             <div class="stat-lbl">Total applied</div>
                         </div>
                     </div>
                     <div class="stat-pill">
-                        <div class="stat-icon blue">🔍</div>
+                        <div class="stat-icon blue"><i class="mdi mdi-eye-outline"></i></div>
                         <div>
                             <div class="stat-num">{{ $activeApps }}</div>
-                            <div class="stat-lbl">Active reviews</div>
+                            <div class="stat-lbl">In progress</div>
                         </div>
                     </div>
                     <div class="stat-pill">
-                        <div class="stat-icon green">🎉</div>
+                        <div class="stat-icon green"><i class="mdi mdi-trophy-outline"></i></div>
                         <div>
                             <div class="stat-num">{{ $hiredCount }}</div>
-                            <div class="stat-lbl">Offers / Hired</div>
+                            <div class="stat-lbl">Hired</div>
                         </div>
                     </div>
                     <div class="stat-pill">
-                        <div class="stat-icon amber">⚡</div>
+                        <div class="stat-icon amber"><i class="mdi mdi-chart-donut"></i></div>
                         <div>
                             <div class="stat-num">{{ $avgMatch ? round($avgMatch) . '%' : '—' }}</div>
-                            <div class="stat-lbl">Avg match</div>
+                            <div class="stat-lbl">Avg job match</div>
                         </div>
                     </div>
                 </div>
@@ -449,19 +499,19 @@
                 @endif
 
                 {{-- ── Employer job applications ── --}}
-                <div class="apps-section">
+                <div class="apps-section" id="employer-apps">
                     <div class="section-header">
                         <div class="section-title-group">
                             <div class="section-dot"></div>
                             <h2 class="section-title">Job Applications</h2>
-                            @if($employerApplications->isNotEmpty())
-                                <span class="section-count">{{ $employerApplications->count() }}</span>
+                            @if($employerApplications->total() > 0)
+                                <span class="section-count">{{ $employerApplications->total() }}</span>
                             @endif
                         </div>
-                        <p class="section-desc d-none d-sm-block">Applications to company job openings via Hirevo</p>
+                        <p class="section-desc d-none d-sm-block">Roles you applied to on Hirevo</p>
                     </div>
 
-                    @if($employerApplications->isEmpty())
+                    @if($employerApplications->total() === 0)
                         <div class="empty-state">
                             <div class="empty-icon">💼</div>
                             <p class="empty-title">No applications yet</p>
@@ -530,23 +580,33 @@
                                 </div>
                             @endforeach
                         </div>
+                        <div class="apps-pagination-wrap">
+                            <p class="apps-pagination-meta mb-0">
+                                Showing {{ $employerApplications->firstItem() }}–{{ $employerApplications->lastItem() }} of {{ $employerApplications->total() }}
+                            </p>
+                            @if($employerApplications->hasPages())
+                                <div class="apps-pagination">
+                                    {{ $employerApplications->onEachSide(1)->links() }}
+                                </div>
+                            @endif
+                        </div>
                     @endif
                 </div>
 
                 {{-- ── Job goal applications ── --}}
-                <div class="apps-section">
+                <div class="apps-section" id="goal-apps">
                     <div class="section-header">
                         <div class="section-title-group">
                             <div class="section-dot green"></div>
                             <h2 class="section-title">Job Goal Applications</h2>
-                            @if($jobGoalApplications->isNotEmpty())
-                                <span class="section-count green-count">{{ $jobGoalApplications->count() }}</span>
+                            @if($jobGoalApplications->total() > 0)
+                                <span class="section-count green-count">{{ $jobGoalApplications->total() }}</span>
                             @endif
                         </div>
-                        <p class="section-desc d-none d-sm-block">Skill-based role applications via your job goals</p>
+                        <p class="section-desc d-none d-sm-block">Skill-based applications from your job goals</p>
                     </div>
 
-                    @if($jobGoalApplications->isEmpty())
+                    @if($jobGoalApplications->total() === 0)
                         <div class="empty-state">
                             <div class="empty-icon">🎯</div>
                             <p class="empty-title">No job goal applications yet</p>
@@ -605,6 +665,16 @@
                                 </div>
                             @endforeach
                         </div>
+                        <div class="apps-pagination-wrap">
+                            <p class="apps-pagination-meta mb-0">
+                                Showing {{ $jobGoalApplications->firstItem() }}–{{ $jobGoalApplications->lastItem() }} of {{ $jobGoalApplications->total() }}
+                            </p>
+                            @if($jobGoalApplications->hasPages())
+                                <div class="apps-pagination">
+                                    {{ $jobGoalApplications->onEachSide(1)->links() }}
+                                </div>
+                            @endif
+                        </div>
                     @endif
                 </div>
 
@@ -612,11 +682,11 @@
                 <div class="legend-bar">
                     <span class="legend-title">Status key</span>
                     <div class="legend-item"><span class="legend-dot" style="background:#94a3b8"></span> Applied</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Shortlisted</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Interviewed</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span> Offered</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span> Hired</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:var(--red)"></span> Rejected</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span> Shortlisted</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Interviewed</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#0B1F3B"></span> Offered</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#047857"></span> Hired</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Rejected</div>
                 </div>
 
             </div>

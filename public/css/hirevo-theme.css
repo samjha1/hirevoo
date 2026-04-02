@@ -1006,3 +1006,32 @@ img, video, iframe { max-width: 100%; height: auto; }
 .resume-btn i {
     transition: color 0.3s ease;
 }
+
+/* Site imagery (public/images/webisteimages) */
+.hirevo-site-illustration {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 1rem;
+    box-shadow: 0 12px 40px rgba(11, 31, 59, 0.1);
+}
+.hirevo-site-photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+.hirevo-how-it-works-img {
+    max-height: min(380px, 42vw);
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
+}
+@media (min-width: 992px) {
+    .hirevo-how-it-works-img {
+        max-height: 340px;
+    }
+}
+.hirevo-hero .hirevo-site-illustration.hirevo-hero-img {
+    filter: drop-shadow(0 16px 40px rgba(11, 31, 59, 0.12));
+}

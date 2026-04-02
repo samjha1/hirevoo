@@ -3,6 +3,9 @@
 @section('title', 'Pricing')
 
 @section('content')
+    @php
+        $siteImg = fn (string $file) => asset('images/webisteimages/' . rawurlencode($file));
+    @endphp
     <section class="section py-4">
         <div class="container">
             <nav class="mb-3" aria-label="breadcrumb">
@@ -13,11 +16,14 @@
             </nav>
 
             <div class="row justify-content-center">
-                <div class="col-lg-6">
-                    <div class="text-center mb-5">
+                <div class="col-lg-8">
+                    <div class="text-center mb-4">
                         <h6 class="sub-title">Pricing</h6>
                         <h2 class="fw-bold mb-3">Hirevo Plans</h2>
                         <p class="text-muted">Premium subscription for candidates. Referral requests & AI resume tools.</p>
+                    </div>
+                    <div class="rounded-4 overflow-hidden shadow-sm mb-5 mx-auto" style="max-width: 720px;">
+                        <img src="{{ $siteImg('kobu-agency-7okkFhxrxNw-unsplash.jpg') }}" alt="Focus on growth with the right tools" class="w-100 hirevo-site-photo" style="max-height: 200px; object-fit: cover; object-position: center;" loading="lazy" width="720" height="200">
                     </div>
                 </div>
             </div>

@@ -115,18 +115,63 @@
 
                         @else
                         <li class="nav-item">
-                            <a href="javascript:void(0)" class="nav-link hirevo-nav-icon position-relative" id="notification" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a href="javascript:void(0)" class="nav-link hirevo-nav-icon position-relative" id="notification" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
                                 <i class="mdi mdi-bell fs-20"></i>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">0</span>
+                                @if(($navUnreadCount ?? 0) > 0)
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">{{ $navUnreadCount > 9 ? '9+' : $navUnreadCount }}</span>
+                                @endif
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 p-0" aria-labelledby="notification">
-                                <div class="px-3 py-3 border-bottom bg-light">
-                                    <h6 class="mb-0">Notifications</h6>
-                                    <p class="text-muted small mb-0">You have 0 unread</p>
+                            <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 p-0 hirevo-notify-dropdown" style="min-width: 320px; max-width: 380px;">
+                                <div class="px-3 py-3 border-bottom bg-light d-flex align-items-center justify-content-between gap-2">
+                                    <div>
+                                        <h6 class="mb-0">Notifications</h6>
+                                        <p class="text-muted small mb-0">
+                                            @if(auth()->user()->isCandidate())
+                                                @if(($navUnreadCount ?? 0) > 0)
+                                                    {{ $navUnreadCount }} unread
+                                                @else
+                                                    You’re all caught up
+                                                @endif
+                                            @else
+                                                Account updates appear here when relevant
+                                            @endif
+                                        </p>
+                                    </div>
+                                    @if(auth()->user()->isCandidate() && ($navUnreadCount ?? 0) > 0)
+                                        <form action="{{ route('notifications.read-all') }}" method="post" class="mb-0">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-link text-decoration-none p-0 small">Mark all read</button>
+                                        </form>
+                                    @endif
                                 </div>
-                                <div class="p-2 text-center">
-                                    <a class="dropdown-item small text-primary" href="javascript:void(0)">View all</a>
+                                <div class="hirevo-notify-list" style="max-height: 320px; overflow-y: auto;">
+                                    @if(auth()->user()->isCandidate())
+                                        @forelse($navNotifications ?? [] as $note)
+                                            @php
+                                                $payload = is_array($note->data) ? $note->data : [];
+                                                $title = $payload['title'] ?? 'Update';
+                                                $body = $payload['body'] ?? '';
+                                            @endphp
+                                            <form action="{{ route('notifications.read', $note->id) }}" method="post" class="mb-0">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item text-start border-0 border-bottom rounded-0 py-3 px-3 w-100 {{ $note->read_at ? 'bg-transparent opacity-75' : 'bg-light bg-opacity-50' }}">
+                                                    <div class="fw-600 small text-dark">{{ $title }}</div>
+                                                    <div class="text-muted small mt-1" style="line-height: 1.35;">{{ \Illuminate\Support\Str::limit($body, 140) }}</div>
+                                                    <div class="text-muted mt-1" style="font-size: 0.7rem;">{{ $note->created_at->diffForHumans() }}</div>
+                                                </button>
+                                            </form>
+                                        @empty
+                                            <div class="text-muted small text-center py-4 px-3">No notifications yet. When an employer updates your application stage, you’ll see it here.</div>
+                                        @endforelse
+                                    @else
+                                        <div class="text-muted small text-center py-4 px-3">Candidate application alerts appear when you apply to jobs on Hirevo.</div>
+                                    @endif
                                 </div>
+                                @if(auth()->user()->isCandidate())
+                                    <div class="p-2 border-top bg-light text-center">
+                                        <a class="small text-primary text-decoration-none" href="{{ route('candidate.dashboard') }}">My applications</a>
+                                    </div>
+                                @endif
                             </div>
                         </li>
                         <li class="nav-item dropdown ms-2">
@@ -316,7 +361,7 @@
 {{--                                            <source srcset="{{ asset('images/hirevo-logo.png')}}" type="image/svg+xml">--}}
                                         </picture>
                                     </a>
-                                    <p class="hirevo-footer__tagline">Own Your Next Career Move. AI Career Intelligence, skill-gap analysis, referral marketplace & job goals.</p>
+                                    <p class="hirevo-footer__tagline">Careers don’t grow with random applications. They grow with clarity, preparation, and the right opportunities.</p>
                                     <p class="hirevo-footer__follow">Follow us</p>
                                     <ul class="hirevo-footer__social">
                                         <li><a href="#" aria-label="Facebook"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a></li>
@@ -331,6 +376,7 @@
                                     <ul class="hirevo-footer__links">
                                         <li><a href="{{ route('about') }}">About Us</a></li>
                                         <li><a href="{{ route('contact') }}">Contact Us</a></li>
+                                        <li><a href="{{ route('faq') }}">FAQ</a></li>
                                         <li><a href="{{ route('pricing') }}">Pricing</a></li>
                                     </ul>
                                 </div>
@@ -363,6 +409,9 @@
                                     <h5 class="hirevo-footer__heading">Support</h5>
                                     <ul class="hirevo-footer__links">
                                         <li><a href="{{ route('contact') }}">Contact Support</a></li>
+                                        <li><a href="{{ route('help') }}">Help Center</a></li>
+                                        <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
+                                        <li><a href="{{ route('terms') }}">Terms</a></li>
                                     </ul>
                                 </div>
                             </div>
