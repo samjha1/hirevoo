@@ -864,6 +864,7 @@
             });
         })();
     </script>
+    @include('partials.flash-auto-dismiss')
     @stack('scripts')
 </body>
 </html>

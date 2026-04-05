@@ -492,6 +492,7 @@
         });
     })();
     </script>
+    @include('partials.flash-auto-dismiss')
     @stack('scripts')
     @if($errors->has('company_name') || $errors->has('max_candidates'))
         <script>

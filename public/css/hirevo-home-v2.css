@@ -559,82 +559,381 @@
 .hirevo-home-page .hv2-list { margin:0; padding-left: 1.1rem; color: var(--hv2-muted); font-size: 0.9rem; }
 .hirevo-home-page .hv2-list li { margin-bottom: 0.4rem; }
 
-/* ─── Job goals section ───────────────────────────────── */
-.hirevo-home-page .job-goals-section { background: transparent !important; }
-.hirevo-home-page .job-goals-section .section-eyebrow {
-  background: #eef2ff; color: #4338ca; border: 1px solid rgba(99,102,241,0.2);
+/* ─── Career paths / job goals (bento-style) ──────────── */
+.hirevo-home-page .hv2-goals {
+  position: relative;
+  padding: clamp(3rem, 6vw, 5rem) 0;
+  overflow: hidden;
 }
-.hirevo-home-page .job-goals-section .section-title { color: var(--hv2-text); }
-.hirevo-home-page .job-goals-section .section-title span { color: var(--hv2-violet); }
-.hirevo-home-page .job-goals-section .section-subtitle { color: var(--hv2-muted); }
-
-.hirevo-home-page .trending-role-card {
-  position: relative; overflow: hidden; cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  background: #fff !important; border: 1.5px solid #e2e8f0 !important;
-  border-radius: 18px !important;
-  box-shadow: 0 2px 12px rgba(15,23,42,0.04);
+.hirevo-home-page .hv2-goals__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 12% 20%, rgba(99, 102, 241, 0.11) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 50% at 88% 75%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+    linear-gradient(180deg, #fafbfc 0%, #f1f5f9 50%, #fafbfc 100%);
+  pointer-events: none;
 }
-.hirevo-home-page .trending-role-card::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  opacity: 0; transition: opacity 0.28s ease; z-index: 0;
+.hirevo-home-page .hv2-goals__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.45;
+  pointer-events: none;
 }
-.hirevo-home-page .trending-role-card:hover::before { opacity: 1; }
-.hirevo-home-page .trending-role-card:hover {
-  transform: translateY(-6px) scale(1.02);
-  border-color: transparent !important;
-  box-shadow: 0 16px 40px rgba(99,102,241,0.24) !important;
+.hirevo-home-page .hv2-goals__orb--1 {
+  width: min(340px, 55vw);
+  height: min(340px, 55vw);
+  top: -8%;
+  right: -6%;
+  background: rgba(99, 102, 241, 0.35);
 }
-.hirevo-home-page .trending-role-card > * { position: relative; z-index: 1; }
-.hirevo-home-page .hirevo-role-icon {
-  width: 56px !important; height: 56px !important;
-  background: #eef2ff !important; border-radius: 14px !important;
-  transition: background 0.28s, box-shadow 0.28s;
+.hirevo-home-page .hv2-goals__orb--2 {
+  width: min(280px, 45vw);
+  height: min(280px, 45vw);
+  bottom: 5%;
+  left: -10%;
+  background: rgba(16, 185, 129, 0.28);
 }
-.hirevo-home-page .hirevo-role-icon svg { stroke: #6366f1 !important; }
-.hirevo-home-page .trending-role-card:hover .hirevo-role-icon {
-  background: rgba(255,255,255,0.2) !important;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+.hirevo-home-page .hv2-goals__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4338ca;
+  margin-bottom: 0.85rem;
+  padding: 0.35rem 0.9rem 0.35rem 0.65rem;
+  border-radius: var(--hv2-r-pill);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.22);
 }
-.hirevo-home-page .trending-role-card:hover .hirevo-role-icon svg { stroke: #fff !important; }
-.hirevo-home-page .trending-role-card h6 { color: var(--hv2-text) !important; }
-.hirevo-home-page .trending-role-card:hover h6 { color: #fff !important; }
-.hirevo-home-page .view-skills-text { color: var(--hv2-faint) !important; font-size: 0.78rem; }
-.hirevo-home-page .trending-role-card:hover .view-skills-text { color: rgba(255,255,255,0.82) !important; }
-.hirevo-home-page .arrow-badge { background: #f1f5f9 !important; }
-.hirevo-home-page .trending-role-card:hover .arrow-badge {
-  background: rgba(255,255,255,0.22) !important; transform: translateX(3px);
+.hirevo-home-page .hv2-goals__eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #10b981);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.55);
 }
-.hirevo-home-page .btn-view-all {
-  background: var(--hv2-text); color: #fff;
-  border: none; border-radius: var(--hv2-r-pill);
-  padding: 11px 28px; font-size: 0.875rem; font-weight: 600;
-  display: inline-flex; align-items: center; gap: 7px;
+.hirevo-home-page .hv2-goals__title {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.85rem, 4.2vw, 2.65rem);
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  color: var(--hv2-text);
+  margin-bottom: 1rem;
+}
+.hirevo-home-page .hv2-goals__title span {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hirevo-home-page .hv2-goals__lead {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--hv2-muted);
+  max-width: 36rem;
+  margin-bottom: 1.5rem;
+}
+.hirevo-home-page .hv2-goals__lead strong { color: var(--hv2-text); font-weight: 600; }
+.hirevo-home-page .hv2-goals__flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.35rem 0.5rem;
+}
+.hirevo-home-page .hv2-goals__flow-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 1rem 0.65rem 0.75rem;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--hv2-border);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+}
+.hirevo-home-page .hv2-goals__flow-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(16, 185, 129, 0.1));
+  color: #4f46e5;
+  font-size: 1.15rem;
+}
+.hirevo-home-page .hv2-goals__flow-step {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--hv2-faint);
+}
+.hirevo-home-page .hv2-goals__flow-label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--hv2-text);
+}
+.hirevo-home-page .hv2-goals__flow-join {
+  align-self: center;
+  width: 1.25rem;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.35), rgba(16, 185, 129, 0.35));
+  flex-shrink: 0;
+}
+@media (max-width: 575.98px) {
+  .hirevo-home-page .hv2-goals__flow { flex-direction: column; align-items: stretch; }
+  .hirevo-home-page .hv2-goals__flow-join {
+    width: 2px;
+    height: 0.75rem;
+    margin-left: 1.25rem;
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.35), rgba(16, 185, 129, 0.35));
+  }
+}
+.hirevo-home-page .hv2-goals__panel {
+  border-radius: var(--hv2-r-xl);
+  padding: 1.35rem 1.5rem;
+  background: linear-gradient(145deg, #0f172a 0%, #1e293b 55%, #134e4a 100%);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+  height: 100%;
+}
+.hirevo-home-page .hv2-goals__panel-kicker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(52, 211, 153, 0.95);
+  margin-bottom: 0.65rem;
+  display: block;
+}
+.hirevo-home-page .hv2-goals__panel-copy {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: rgba(226, 232, 240, 0.88);
+}
+.hirevo-home-page .hv2-goals__panel-copy strong { color: #fff; }
+.hirevo-home-page .hv2-goals__panel-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1.1rem;
+}
+.hirevo-home-page .hv2-goals__panel-tags span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.28rem 0.65rem;
+  border-radius: var(--hv2-r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+}
+.hirevo-home-page .hv2-goals__grid {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.hirevo-home-page .hv2-goals__grid::-webkit-scrollbar { height: 6px; }
+.hirevo-home-page .hv2-goals__grid::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 6px;
+}
+@media (min-width: 768px) {
+  .hirevo-home-page .hv2-goals__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem 1.15rem;
+    overflow: visible;
+    padding: 0;
+    scroll-snap-type: none;
+  }
+}
+@media (min-width: 1200px) {
+  .hirevo-home-page .hv2-goals__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .hirevo-home-page .hv2-goal-card--featured {
+    grid-column: span 2;
+    grid-row: span 1;
+    min-height: 200px;
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    grid-template-rows: auto auto 1fr auto;
+    column-gap: 1.25rem;
+    align-items: start;
+  }
+  .hirevo-home-page .hv2-goal-card--featured .hv2-goal-card__head {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .hirevo-home-page .hv2-goal-card--featured .hv2-goal-card__name {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 0;
+  }
+  .hirevo-home-page .hv2-goal-card--featured .hv2-goal-card__meta {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .hirevo-home-page .hv2-goal-card--featured .hv2-goal-card__cta {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    margin-top: 0.25rem;
+  }
+}
+.hirevo-home-page .hv2-goal-card {
+  position: relative;
+  flex: 0 0 min(300px, 86vw);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  padding: 1.15rem 1.2rem 1.25rem;
+  border-radius: 20px;
   text-decoration: none;
-  transition: background 0.2s, transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
-  box-shadow: 0 4px 16px rgba(15,23,42,0.15);
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--hv2-border);
+  border-top: 3px solid var(--hv2-goal-accent, #6366f1);
+  box-shadow: 0 4px 22px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease, border-color 0.25s ease;
 }
-.hirevo-home-page .btn-view-all:hover {
-  background: var(--hv2-violet); color: #fff;
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(99,102,241,0.3);
+@media (min-width: 768px) {
+  .hirevo-home-page .hv2-goal-card {
+    flex: none;
+    scroll-snap-align: unset;
+  }
 }
-
-/* ─── Role card entrance animation ───────────────────── */
-@keyframes hv2-cardFadeUp {
-  from { opacity:0; transform:translateY(18px); }
-  to   { opacity:1; transform:translateY(0); }
+.hirevo-home-page .hv2-goal-card__glow {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  top: -50px;
+  right: -40px;
+  border-radius: 50%;
+  opacity: 0.22;
+  filter: blur(28px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.35s ease;
 }
-.hirevo-home-page .role-col { animation: hv2-cardFadeUp 0.48s ease both; }
-.hirevo-home-page .role-col:nth-child(1) { animation-delay: 0.05s; }
-.hirevo-home-page .role-col:nth-child(2) { animation-delay: 0.1s; }
-.hirevo-home-page .role-col:nth-child(3) { animation-delay: 0.15s; }
-.hirevo-home-page .role-col:nth-child(4) { animation-delay: 0.2s; }
-.hirevo-home-page .role-col:nth-child(5) { animation-delay: 0.25s; }
-.hirevo-home-page .role-col:nth-child(6) { animation-delay: 0.3s; }
-.hirevo-home-page .role-col:nth-child(7) { animation-delay: 0.35s; }
-.hirevo-home-page .role-col:nth-child(8) { animation-delay: 0.4s; }
+.hirevo-home-page .hv2-goal-card:hover .hv2-goal-card__glow {
+  opacity: 0.38;
+  transform: scale(1.08);
+}
+.hirevo-home-page .hv2-goal-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.14);
+  border-color: rgba(15, 23, 42, 0.06);
+}
+.hirevo-home-page .hv2-goal-card--violet { --hv2-goal-accent: #6366f1; --hv2-goal-soft: rgba(99, 102, 241, 0.12); }
+.hirevo-home-page .hv2-goal-card--teal { --hv2-goal-accent: #059669; --hv2-goal-soft: rgba(16, 185, 129, 0.14); }
+.hirevo-home-page .hv2-goal-card--amber { --hv2-goal-accent: #d97706; --hv2-goal-soft: rgba(245, 158, 11, 0.18); }
+.hirevo-home-page .hv2-goal-card--coral { --hv2-goal-accent: #e11d48; --hv2-goal-soft: rgba(244, 63, 94, 0.12); }
+.hirevo-home-page .hv2-goal-card--indigo { --hv2-goal-accent: #4f46e5; --hv2-goal-soft: rgba(79, 70, 229, 0.12); }
+.hirevo-home-page .hv2-goal-card--emerald { --hv2-goal-accent: #10b981; --hv2-goal-soft: rgba(16, 185, 129, 0.15); }
+.hirevo-home-page .hv2-goal-card--sky { --hv2-goal-accent: #0284c7; --hv2-goal-soft: rgba(14, 165, 233, 0.14); }
+.hirevo-home-page .hv2-goal-card--fuchsia { --hv2-goal-accent: #c026d3; --hv2-goal-soft: rgba(217, 70, 239, 0.12); }
+.hirevo-home-page .hv2-goal-card .hv2-goal-card__glow { background: var(--hv2-goal-accent); }
+.hirevo-home-page .hv2-goal-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+.hirevo-home-page .hv2-goal-card__index {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--hv2-faint);
+}
+.hirevo-home-page .hv2-goal-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: var(--hv2-goal-accent);
+  background: var(--hv2-goal-soft);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s ease;
+}
+.hirevo-home-page .hv2-goal-card:hover .hv2-goal-card__icon {
+  transform: scale(1.06) rotate(-4deg);
+  background: var(--hv2-goal-soft);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+.hirevo-home-page .hv2-goal-card__name {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--hv2-text);
+  margin: 0 0 0.45rem;
+  letter-spacing: -0.02em;
+}
+.hirevo-home-page .hv2-goal-card__meta {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--hv2-muted);
+  margin: 0 0 0.85rem;
+  flex-grow: 1;
+}
+.hirevo-home-page .hv2-goal-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--hv2-goal-accent);
+  margin-top: auto;
+}
+.hirevo-home-page .hv2-goal-card__cta i {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hirevo-home-page .hv2-goal-card:hover .hv2-goal-card__cta i {
+  transform: translateX(4px);
+}
+.hirevo-home-page .hv2-goals__cta-all {
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35);
+}
+@keyframes hv2-goalsCardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card {
+  animation: hv2-goalsCardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card:nth-child(1) { animation-delay: 0.04s; }
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card:nth-child(2) { animation-delay: 0.08s; }
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card:nth-child(3) { animation-delay: 0.12s; }
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card:nth-child(4) { animation-delay: 0.16s; }
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card:nth-child(5) { animation-delay: 0.2s; }
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card:nth-child(6) { animation-delay: 0.24s; }
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card:nth-child(7) { animation-delay: 0.28s; }
+.hirevo-home-page .hv2-goals__grid .hv2-goal-card:nth-child(8) { animation-delay: 0.32s; }
+@media (prefers-reduced-motion: reduce) {
+  .hirevo-home-page .hv2-goals__grid .hv2-goal-card,
+  .hirevo-home-page .hv2-goal-card:hover,
+  .hirevo-home-page .hv2-goal-card__cta i,
+  .hirevo-home-page .hv2-goal-card__icon {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
 
 /* ─── Jobs strip ──────────────────────────────────────── */
 .hirevo-home-page .hv2-jobs-strip {

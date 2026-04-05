@@ -306,62 +306,120 @@
         </div>
     </section>
 
-    {{-- ═══════════════ POPULAR JOB GOALS ═══════════════ --}}
-    <section class="section pt-0 pb-5 job-goals-section">
-        <div class="container">
-            <div class="row justify-content-center mb-4">
-                <div class="col-lg-8 text-center hv2-reveal">
-                    <div class="section-eyebrow">
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><circle cx="5" cy="5" r="5"/></svg>
+    {{-- ═══════════════ CAREER PATHS / JOB GOALS ═══════════════ --}}
+    @php
+        $goalPalette = ['violet', 'teal', 'amber', 'coral', 'indigo', 'emerald', 'sky', 'fuchsia'];
+    @endphp
+    <section class="hv2-goals" id="career-paths" aria-labelledby="hv2-goals-heading">
+        <div class="hv2-goals__bg" aria-hidden="true"></div>
+        <div class="hv2-goals__orb hv2-goals__orb--1" aria-hidden="true"></div>
+        <div class="hv2-goals__orb hv2-goals__orb--2" aria-hidden="true"></div>
+        <div class="container position-relative">
+            <div class="row align-items-start g-4 g-lg-5 mb-4 mb-lg-5">
+                <div class="col-lg-7 hv2-reveal">
+                    <div class="hv2-goals__eyebrow">
+                        <span class="hv2-goals__eyebrow-dot" aria-hidden="true"></span>
                         Career paths
                     </div>
-                    <h2 class="section-title">Popular <span>job goals</span></h2>
-                    <p class="section-subtitle">Pick a role — we'll show skill expectations and gaps to close.</p>
+                    <h2 class="hv2-goals__title" id="hv2-goals-heading">
+                        Popular <span>job goals</span>
+                    </h2>
+                    <p class="hv2-goals__lead">
+                        Pick a role — we surface <strong>what employers expect</strong>, map it to your profile, and highlight <strong>gaps you can close</strong> with purpose (not guesswork).
+                    </p>
+                    <ul class="hv2-goals__flow list-unstyled mb-0" role="list">
+                        <li class="hv2-goals__flow-item">
+                            <span class="hv2-goals__flow-ico" aria-hidden="true"><i class="uil uil-briefcase-alt"></i></span>
+                            <span class="hv2-goals__flow-step">01</span>
+                            <span class="hv2-goals__flow-label">Choose a goal</span>
+                        </li>
+                        <li class="hv2-goals__flow-join" aria-hidden="true"></li>
+                        <li class="hv2-goals__flow-item">
+                            <span class="hv2-goals__flow-ico" aria-hidden="true"><i class="uil uil-chart-line"></i></span>
+                            <span class="hv2-goals__flow-step">02</span>
+                            <span class="hv2-goals__flow-label">See skill map</span>
+                        </li>
+                        <li class="hv2-goals__flow-join" aria-hidden="true"></li>
+                        <li class="hv2-goals__flow-item">
+                            <span class="hv2-goals__flow-ico" aria-hidden="true"><i class="uil uil-bolt-alt"></i></span>
+                            <span class="hv2-goals__flow-step">03</span>
+                            <span class="hv2-goals__flow-label">Close the gaps</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-lg-5 hv2-reveal hv2-reveal--right">
+                    <div class="hv2-goals__panel">
+                        <div class="hv2-goals__panel-row">
+                            <span class="hv2-goals__panel-kicker">Why it matters</span>
+                        </div>
+                        <p class="hv2-goals__panel-copy mb-0">
+                            Every card is a <strong>live skill blueprint</strong> — not a generic job title. Tap in to compare against your resume and move with a plan.
+                        </p>
+                        <div class="hv2-goals__panel-tags">
+                            <span>ATS-aware</span>
+                            <span>Skill gaps</span>
+                            <span>Role fit</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="row g-3 g-lg-4">
+
+            <div class="hv2-goals__grid hv2-reveal">
                 @forelse(($jobRoles ?? []) as $role)
-                    <div class="col-6 col-md-4 col-lg-3 role-col">
-                        <a href="{{ route('job-goal.show', $role) }}" class="text-decoration-none">
-                            <div class="trending-role-card p-4 h-100 text-center">
-                                <div class="hirevo-role-icon mb-3">
-                                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-                                        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-                                    </svg>
-                                </div>
-                                <h6 class="fw-600 mb-1">{{ $role->title }}</h6>
-                                <span class="view-skills-text">View skills <span class="arrow-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span></span>
+                    @php $pv = $goalPalette[$loop->index % count($goalPalette)]; @endphp
+                    <a href="{{ route('job-goal.show', $role) }}" class="hv2-goal-card hv2-goal-card--{{ $pv }} {{ $loop->first ? 'hv2-goal-card--featured' : '' }}">
+                        <span class="hv2-goal-card__glow" aria-hidden="true"></span>
+                        <div class="hv2-goal-card__head">
+                            <span class="hv2-goal-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                            <div class="hv2-goal-card__icon" aria-hidden="true">
+                                <i class="uil uil-briefcase-alt"></i>
                             </div>
-                        </a>
-                    </div>
+                        </div>
+                        <h3 class="hv2-goal-card__name">{{ $role->title }}</h3>
+                        @if(($role->required_skills_count ?? 0) > 0)
+                            <p class="hv2-goal-card__meta">{{ $role->required_skills_count }} {{ Str::plural('skill', $role->required_skills_count) }} mapped to this role</p>
+                        @else
+                            <p class="hv2-goal-card__meta">Explore expectations &amp; your fit</p>
+                        @endif
+                        <span class="hv2-goal-card__cta">
+                            Open goal
+                            <i class="uil uil-arrow-right"></i>
+                        </span>
+                    </a>
                 @empty
                     @foreach(['Data Analyst'=>'chart','Software Engineer'=>'code','Product Manager'=>'bag','UI/UX Designer'=>'pen'] as $label=>$kind)
-                        <div class="col-6 col-md-4 col-lg-3 role-col">
-                            <a href="{{ route('job-list') }}" class="text-decoration-none">
-                                <div class="trending-role-card p-4 h-100 text-center">
-                                    <div class="hirevo-role-icon mb-3">
-                                        @if($kind==='chart')
-                                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-                                        @elseif($kind==='code')
-                                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                                        @elseif($kind==='pen')
-                                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                                        @else
-                                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-                                        @endif
-                                    </div>
-                                    <h6 class="fw-600 mb-1">{{ $label }}</h6>
-                                    <span class="view-skills-text">View skills <span class="arrow-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span></span>
+                        @php $pv = $goalPalette[$loop->index % count($goalPalette)]; @endphp
+                        <a href="{{ route('job-list') }}" class="hv2-goal-card hv2-goal-card--{{ $pv }} {{ $loop->first ? 'hv2-goal-card--featured' : '' }}">
+                            <span class="hv2-goal-card__glow" aria-hidden="true"></span>
+                            <div class="hv2-goal-card__head">
+                                <span class="hv2-goal-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                                <div class="hv2-goal-card__icon" aria-hidden="true">
+                                    @if($kind === 'chart')
+                                        <i class="uil uil-chart-bar"></i>
+                                    @elseif($kind === 'code')
+                                        <i class="uil uil-laptop"></i>
+                                    @elseif($kind === 'pen')
+                                        <i class="uil uil-pen"></i>
+                                    @else
+                                        <i class="uil uil-briefcase-alt"></i>
+                                    @endif
                                 </div>
-                            </a>
-                        </div>
+                            </div>
+                            <h3 class="hv2-goal-card__name">{{ $label }}</h3>
+                            <p class="hv2-goal-card__meta">Browse all goals &amp; skill tracks</p>
+                            <span class="hv2-goal-card__cta">
+                                Explore
+                                <i class="uil uil-arrow-right"></i>
+                            </span>
+                        </a>
                     @endforeach
                 @endforelse
             </div>
-            <div class="text-center mt-4 hv2-reveal">
-                <a href="{{ route('job-list') }}" class="btn-view-all">
+
+            <div class="text-center mt-5 pt-lg-2 hv2-reveal">
+                <a href="{{ route('job-list') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg hv2-goals__cta-all">
+                    <i class="uil uil-apps"></i>
                     View all job goals
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </a>
             </div>
         </div>

@@ -22,7 +22,11 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $jobRoles = JobRole::where('is_active', true)->orderBy('title')->limit(8)->get();
+        $jobRoles = JobRole::where('is_active', true)
+            ->withCount('requiredSkills')
+            ->orderBy('title')
+            ->limit(8)
+            ->get();
         return view('hirevo.index', compact('jobRoles'));
     }
 
@@ -168,7 +172,7 @@ class HomeController extends Controller
             $query->where('work_location_type', $request->get('work_location_type'));
         }
 
-        $jobs = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $jobs = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
         $appliedIds = auth()->check()
             ? EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all()
             : [];
@@ -185,6 +189,20 @@ class HomeController extends Controller
             ->sort()
             ->values()
             ->all();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('hirevo.partials.employer-job-cards', [
+                    'jobs' => $jobs,
+                    'appliedIds' => $appliedIds,
+                ])->render(),
+                'next_page_url' => $jobs->nextPageUrl(),
+                'has_more' => $jobs->hasMorePages(),
+                'from' => $jobs->firstItem(),
+                'to' => $jobs->lastItem(),
+                'total' => $jobs->total(),
+            ]);
+        }
 
         return view('hirevo.job-openings', compact(
             'jobs', 'appliedIds', 'searchQuery', 'searchLocation',
