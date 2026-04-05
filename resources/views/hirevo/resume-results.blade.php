@@ -20,7 +20,7 @@
     --rr-card-hover-shadow: 0 16px 48px rgba(15,23,42,0.13);
     --rr-radius: 1.25rem;
     --rr-radius-sm: 0.85rem;
-    --navbar-h: 68px;
+    --navbar-h: 72px;
 }
 
 /* ─── Page Base ─────────────────────────────────────────────── */

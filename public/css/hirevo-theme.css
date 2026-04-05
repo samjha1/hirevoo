@@ -34,7 +34,7 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid rgba(15, 23, 42, 0.07);
     box-shadow: 0 1px 0 rgba(15, 23, 42, 0.05);
-    min-height: 68px;
+    min-height: 72px;
     padding-top: 0;
     padding-bottom: 0;
     transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
@@ -54,19 +54,25 @@
     margin-left: 0;
     gap: 0.15rem;
 }
-/* Logo — clean compact size */
+@media (min-width: 992px) {
+    /* Shift main nav right of the logo — not flush to the far edge (me-auto still fills space before actions). */
+    .hirevo-navbar .hirevo-nav-links {
+        margin-left: clamp(2.25rem, 5vw, 4.5rem);
+    }
+}
+/* Logo — readable size in the bar */
 .hirevo-navbar .navbar-brand .hirevo-logo {
-    height: 38px !important;
-    min-height: 38px;
-    max-width: 148px !important;
+    height: 46px !important;
+    min-height: 46px;
+    max-width: 188px !important;
     width: auto;
     object-fit: contain;
 }
 @media (min-width: 768px) {
-    .hirevo-navbar .navbar-brand .hirevo-logo { height: 40px !important; max-width: 160px !important; }
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 50px !important; max-width: 205px !important; }
 }
 @media (min-width: 992px) {
-    .hirevo-navbar .navbar-brand .hirevo-logo { height: 42px !important; max-width: 170px !important; }
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 52px !important; max-width: 220px !important; }
 }
 
 /* Nav links — underline-slide hover */
@@ -340,9 +346,9 @@ textarea,
     .employer-sidebar .sidebar-brand .hirevo-logo { max-height: none !important; }
 }
 
-/* Prevent navbar overlapping content (fixed navbar 68px) */
+/* Prevent navbar overlapping content (fixed navbar matches .hirevo-navbar min-height) */
 body .main-content {
-    padding-top: 68px !important;
+    padding-top: 72px !important;
 }
 body .page-content {
     padding-top: 0 !important;
@@ -353,10 +359,10 @@ section.bg-auth {
     padding-bottom: 4rem !important;
 }
 @media (max-width: 991.98px) {
-    body .main-content { padding-top: 68px !important; }
+    body .main-content { padding-top: 72px !important; }
 }
 @media (max-width: 575.98px) {
-    body .main-content { padding-top: 68px !important; }
+    body .main-content { padding-top: 72px !important; }
     section.bg-auth {
         padding-top: 0.5rem !important;
         padding-bottom: 2rem !important;

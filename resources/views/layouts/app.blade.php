@@ -44,7 +44,7 @@
                 <a class="navbar-brand hirevo-nav-brand d-flex align-items-center" href="{{ route('home') }}">
                     <picture>
                         <source srcset="{{ asset('images/12575-2.svg') }}" type="image/svg+xml">
-                        <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo" width="192" height="58">
+                        <img src="{{ asset('images/hirevo-logo.png') }}" alt="Hirevo" class="hirevo-logo" width="220" height="66">
                     </picture>
                 </a>
                 <button class="navbar-toggler hirevo-nav-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-label="Toggle navigation">
