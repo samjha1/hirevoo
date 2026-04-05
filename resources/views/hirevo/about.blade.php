@@ -73,7 +73,7 @@
             <div class="text-center mt-4">
                 <p class="text-muted mb-3">Because one right opportunity can change everything — and we believe more people deserve access to that.</p>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => route('resume.upload')]) }}" class="btn btn-primary rounded-pill px-4">Start with your resume</a>
+                    <a href="{{ route('resume.upload') }}" class="btn btn-primary rounded-pill px-4">Start with your resume</a>
                     <a href="{{ route('job-openings') }}" class="btn btn-outline-primary rounded-pill px-4">Browse jobs</a>
                 </div>
             </div>

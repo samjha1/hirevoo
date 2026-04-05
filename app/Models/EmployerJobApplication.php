@@ -26,6 +26,17 @@ class EmployerJobApplication extends Model
         ];
     }
 
+    public static function noticePeriodOptions(): array
+    {
+        return [
+            'immediate' => 'Immediate',
+            '15_days'   => '15 days',
+            '30_days'   => '30 days',
+            '60_days'   => '60 days',
+            '90_days'   => '90 days',
+        ];
+    }
+
     protected $table = 'employer_job_applications';
 
     protected $fillable = [
@@ -33,11 +44,20 @@ class EmployerJobApplication extends Model
         'user_id',
         'resume_id',
         'cover_message',
+        'notice_period',
+        'info_accurate_confirmed_at',
         'status',
         'ats_score',
         'job_match_score',
         'job_match_explanation',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'info_accurate_confirmed_at' => 'datetime',
+        ];
+    }
 
     public function employerJob(): BelongsTo
     {

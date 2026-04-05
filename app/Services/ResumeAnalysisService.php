@@ -6,6 +6,7 @@ use App\Models\CandidateProfile;
 use App\Models\JobRole;
 use App\Models\JobRequiredSkill;
 use App\Models\Resume;
+use Illuminate\Support\Str;
 use Smalot\PdfParser\Parser as PdfParser;
 
 class ResumeAnalysisService
@@ -29,6 +30,291 @@ class ResumeAnalysisService
             }
         }
         return '';
+    }
+
+    /**
+     * Best-effort name, email, and phone from resume text (AI + regex fallbacks).
+     *
+     * @return array{name: ?string, email: ?string, phone: ?string}
+     */
+    public function extractContactIdentityFromText(string $text): array
+    {
+        $name = null;
+        $email = null;
+        $phone = null;
+
+        if ($this->gptService->isAvailable() && trim($text) !== '') {
+            $data = $this->gptService->extractProfileFromResume($text);
+            if (is_array($data)) {
+                if (! empty($data['full_name'])) {
+                    $name = Str::limit(trim((string) $data['full_name']), 255, '');
+                }
+                if (! empty($data['email']) && filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+                    $email = strtolower(trim((string) $data['email']));
+                }
+                if (! empty($data['phone'])) {
+                    $phone = $this->normalizePhoneCandidate((string) $data['phone']);
+                }
+            }
+        }
+
+        if ($email === null || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $email = $this->extractFirstEmailFromText($text);
+        }
+        if ($phone === null || $phone === '') {
+            $phone = $this->extractFirstPhoneFromText($text);
+        }
+        if ($name === null || trim($name) === '') {
+            $name = $this->guessNameFromResumeLines($text);
+        }
+        if (($name === null || trim($name) === '') && $email) {
+            $name = $this->deriveDisplayNameFromEmail($email);
+        }
+        if ($name !== null) {
+            $name = Str::limit(trim($name), 255, '');
+        }
+
+        return [
+            'name' => $name !== null && $name !== '' ? $name : null,
+            'email' => $email,
+            'phone' => $phone,
+        ];
+    }
+
+    /**
+     * True if the string is safe to use as a registration email (extracted or user-supplied fallback).
+     */
+    public function isRecognizedRegistrationEmail(?string $email): bool
+    {
+        if ($email === null) {
+            return false;
+        }
+        $email = strtolower(trim($email));
+
+        return $email !== '' && $this->isPlausibleContactEmail($email);
+    }
+
+    /**
+     * Find a plausible contact email in noisy PDF-extracted text (line breaks, extra spaces, labels).
+     */
+    protected function extractFirstEmailFromText(string $text): ?string
+    {
+        $text = $this->scrubExtractedPdfText($text);
+        if ($text === '') {
+            return null;
+        }
+
+        foreach ($this->collectEmailCandidatesFromText($text) as $candidate) {
+            if ($this->isPlausibleContactEmail($candidate)) {
+                return strtolower($candidate);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Clean common PDF-to-text artifacts so emails and labels match reliably.
+     */
+    protected function scrubExtractedPdfText(string $text): string
+    {
+        $text = str_replace("\xC2\xAD", '', $text);
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? '';
+        $text = preg_replace('/\x{00A0}/u', ' ', $text) ?? '';
+
+        return trim($text);
+    }
+
+    /**
+     * Ordered candidates: higher-confidence patterns first.
+     *
+     * @return list<string>
+     */
+    protected function collectEmailCandidatesFromText(string $text): array
+    {
+        $ordered = [];
+        $seen = [];
+        $add = function (?string $e) use (&$ordered, &$seen): void {
+            $e = strtolower(trim((string) $e));
+            if ($e === '' || isset($seen[$e])) {
+                return;
+            }
+            $seen[$e] = true;
+            $ordered[] = $e;
+        };
+
+        // mailto: links
+        if (preg_match_all('#mailto:\s*([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})#i', $text, $m)) {
+            foreach ($m[1] as $raw) {
+                $add($this->compactEmailString($raw));
+            }
+        }
+
+        // "Email:" / "E-mail:" style lines (PDF often keeps these on one line)
+        if (preg_match_all(
+            '/(?:^|[\s\-–—|])(?:e[\s.\-]*mail|correo|contact)\s*[:\s]\s*([^\s<>"\']+@[^\s<>"\']+)/iu',
+            $text,
+            $m
+        )) {
+            foreach ($m[1] as $raw) {
+                $add($this->compactEmailString($raw));
+            }
+        }
+
+        // Emails with spaces around @ or dots (common PDF extraction)
+        if (preg_match_all(
+            '/[A-Za-z0-9._%+\-]+\s*@\s*[A-Za-z0-9.\-]+\s*(?:\.\s*)+[A-Za-z]{2,}/',
+            $text,
+            $m
+        )) {
+            foreach ($m[0] as $raw) {
+                $add($this->compactEmailString($raw));
+            }
+        }
+
+        // Standard contiguous tokens
+        if (preg_match_all('/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/', $text, $m)) {
+            foreach ($m[0] as $raw) {
+                $add(trim($raw));
+            }
+        }
+
+        // Newlines often split "user@" and "domain.com" — join lines then re-scan
+        $oneLine = preg_replace('/\s+/u', ' ', $text) ?? '';
+        if (preg_match_all(
+            '/[A-Za-z0-9._%+\-]+\s*@\s*[A-Za-z0-9.\-]+\s*(?:\.\s*)+[A-Za-z]{2,}/',
+            $oneLine,
+            $m
+        )) {
+            foreach ($m[0] as $raw) {
+                $add($this->compactEmailString($raw));
+            }
+        }
+
+        if (preg_match_all('/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/', $oneLine, $m)) {
+            foreach ($m[0] as $raw) {
+                $add(trim($raw));
+            }
+        }
+
+        // Aggressive: remove all whitespace and look for user@host.tld pattern
+        $squashed = preg_replace('/\s+/u', '', $text) ?? '';
+        if (preg_match_all('/[A-Za-z0-9._%+\-]{1,64}@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/', $squashed, $m)) {
+            foreach ($m[0] as $raw) {
+                $add($raw);
+            }
+        }
+
+        return $ordered;
+    }
+
+    protected function compactEmailString(string $raw): string
+    {
+        $s = strtolower(trim($raw));
+        $s = preg_replace('/\s+/', '', $s) ?? '';
+
+        return trim($s, '.,;:<>"\'()[]');
+    }
+
+    protected function isPlausibleContactEmail(string $email): bool
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || ! str_contains($email, '@')) {
+            return false;
+        }
+
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return ! $this->isDisposableOrPlaceholderEmail($email);
+        }
+
+        // Slightly looser check when filter_var rejects IDN or rare local parts
+        if (preg_match('/^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/', $email)) {
+            return ! $this->isDisposableOrPlaceholderEmail($email);
+        }
+
+        return false;
+    }
+
+    protected function isDisposableOrPlaceholderEmail(string $email): bool
+    {
+        $lower = strtolower($email);
+        if (str_contains($lower, 'example.com') || str_contains($lower, 'test@test') || str_contains($lower, 'yourmail') || str_contains($lower, 'email.com')) {
+            return true;
+        }
+        if (preg_match('/^(no-?reply|donotreply|privacy)@/i', $lower)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function extractFirstPhoneFromText(string $text): ?string
+    {
+        $patterns = [
+            '/\+?\d{1,3}[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}(?:[\s.-]?\d{2,5})?/',
+            '/\(\d{3}\)\s*\d{3}[\s.-]?\d{4}/',
+            '/\b\d{3}[\s.-]?\d{3}[\s.-]?\d{4}\b/',
+        ];
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $text, $m)) {
+                $normalized = $this->normalizePhoneCandidate($m[0]);
+                if ($normalized !== null && $normalized !== '') {
+                    return $normalized;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected function normalizePhoneCandidate(string $raw): ?string
+    {
+        $t = trim(preg_replace('/[^\d+()\s.-]/', '', $raw) ?? '');
+        $digits = preg_replace('/\D/', '', $t) ?? '';
+        if (strlen($digits) < 10) {
+            return null;
+        }
+
+        return Str::limit(preg_replace('/\s+/', ' ', $t) ?? '', 30, '');
+    }
+
+    protected function guessNameFromResumeLines(string $text): ?string
+    {
+        $lines = preg_split("/\r\n|\r|\n/", $text) ?: [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || mb_strlen($line) > 120) {
+                continue;
+            }
+            if (str_contains($line, '@') || preg_match('#https?://#i', $line)) {
+                continue;
+            }
+            if (preg_match('#^\d[\d\s().+/-]{8,}$#', $line)) {
+                continue;
+            }
+            if (preg_match('/^[A-Za-z\x{00C0}-\x{024F}][A-Za-z\x{00C0}-\x{024F}\s.\'-]{1,100}$/u', $line)) {
+                $words = preg_split('/\s+/', $line) ?: [];
+                $words = array_values(array_filter($words, fn ($w) => $w !== ''));
+                if (count($words) >= 2 && count($words) <= 6) {
+                    return $line;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected function deriveDisplayNameFromEmail(string $email): string
+    {
+        $local = strstr($email, '@', true) ?: $email;
+        $local = str_replace(['.', '_', '-'], ' ', $local);
+        $local = preg_replace('/\d+/', '', $local) ?? '';
+        $local = trim(preg_replace('/\s+/', ' ', $local) ?? '');
+        if ($local === '') {
+            return 'Candidate';
+        }
+
+        return Str::title($local);
     }
 
     /**
@@ -185,13 +471,13 @@ class ResumeAnalysisService
         $skills = null;
 
         if ($useGpt) {
-            $summary = $this->gptService->getResumeSummary($text);
-            $scoreData = $this->gptService->getResumeScoreAndExplanation($text);
-            if ($scoreData !== null) {
-                $score = $scoreData['score'];
-                $explanation = $scoreData['explanation'];
+            $bundle = $this->gptService->getResumeAnalysisBundle($text);
+            if ($bundle !== null) {
+                $summary = $bundle['summary'];
+                $score = $bundle['score'];
+                $explanation = $bundle['explanation'];
+                $skills = $bundle['skills'] !== [] ? $bundle['skills'] : null;
             }
-            $skills = $this->gptService->extractSkills($text);
         }
 
         if ($score === null) {
@@ -219,60 +505,12 @@ class ResumeAnalysisService
 
         $resume->refresh();
 
-        if ($this->gptService->isAvailable()) {
-            $this->fillProfileFromResumeText($resume->user_id, $text);
-        } else {
-            $this->fillProfileFromResumeFallback($resume);
-        }
-
         return $resume;
     }
 
     /**
-     * Fill candidate profile from resume text using GPT. Called after analyzeResume when GPT is available.
-     */
-    public function fillProfileFromResumeText(int $userId, string $text): void
-    {
-        $user = \App\Models\User::find($userId);
-        if (! $user || ! $user->isCandidate()) {
-            return;
-        }
-
-        $data = $this->gptService->extractProfileFromResume($text);
-        if (! $data) {
-            $this->fillProfileFromResumeFallback(\App\Models\Resume::where('user_id', $userId)->orderByDesc('created_at')->first());
-            return;
-        }
-
-        if (! empty($data['phone'])) {
-            $user->update(['phone' => $data['phone']]);
-        }
-
-        $profile = $user->candidateProfile ?? new CandidateProfile(['user_id' => $user->id]);
-        if (! empty($data['headline'])) {
-            $profile->headline = $data['headline'];
-        }
-        if (! empty($data['education'])) {
-            $profile->education = $data['education'];
-        }
-        if (isset($data['experience_years']) && $data['experience_years'] !== null) {
-            $profile->experience_years = $data['experience_years'];
-        }
-        if (! empty($data['skills'])) {
-            $profile->skills = $data['skills'];
-        }
-        if (! empty($data['location'])) {
-            $profile->location = $data['location'];
-        }
-        if (! empty($data['expected_salary'])) {
-            $profile->expected_salary = $data['expected_salary'];
-        }
-        $profile->save();
-    }
-
-    /**
-     * Fill profile from resume stored data (no GPT): skills from extracted_skills, headline from ai_summary.
-     * Ensures profile columns get data even when OpenAI is not configured.
+     * Fill profile from resume stored data (no GPT): skills from extracted_skills, headline from ai_summary,
+     * plus light regex hints from raw PDF text (phone, education line, location).
      */
     public function fillProfileFromResumeFallback(Resume $resume): void
     {
@@ -287,6 +525,19 @@ class ResumeAnalysisService
         $profile = $user->candidateProfile ?? new CandidateProfile(['user_id' => $user->id]);
         $changed = false;
 
+        $path = storage_path('app/'.$resume->file_path);
+        $text = '';
+        if (is_readable($path)) {
+            $text = $this->extractTextFromFile($path, $resume->mime_type ?? 'application/pdf');
+        }
+
+        if ($text !== '' && trim((string) ($user->phone ?? '')) === '') {
+            $phone = $this->extractFirstPhoneFromText($text);
+            if ($phone !== null && $phone !== '') {
+                $user->update(['phone' => Str::limit($phone, 30, '')]);
+            }
+        }
+
         $skills = $resume->extracted_skills;
         if (is_array($skills) && count($skills) > 0) {
             $skillStr = implode(', ', array_map(fn ($s) => is_string($s) ? trim($s) : '', $skills));
@@ -298,7 +549,7 @@ class ResumeAnalysisService
         }
 
         $summary = $resume->ai_summary;
-        if (is_string($summary) && trim($summary) !== '') {
+        if (is_string($summary) && trim($summary) !== '' && trim((string) ($profile->headline ?? '')) === '') {
             $firstLine = trim(explode("\n", $summary)[0]);
             $headline = mb_strlen($firstLine) > 120 ? mb_substr($firstLine, 0, 117) . '...' : $firstLine;
             if ($headline !== '') {
@@ -307,9 +558,87 @@ class ResumeAnalysisService
             }
         }
 
+        if ($text !== '' && trim((string) ($profile->education ?? '')) === '') {
+            $edu = $this->guessEducationLineFromText($text);
+            if ($edu !== null) {
+                $profile->education = $edu;
+                $changed = true;
+            }
+        }
+
+        if ($text !== '' && trim((string) ($profile->location ?? '')) === '') {
+            $loc = $this->guessLocationLineFromText($text);
+            if ($loc !== null) {
+                $profile->location = Str::limit($loc, 255, '');
+                $changed = true;
+            }
+        }
+
         if ($changed) {
             $profile->save();
         }
+    }
+
+    protected function guessEducationLineFromText(string $text): ?string
+    {
+        $snippet = mb_substr($text, 0, 8000);
+        $lines = preg_split("/\r\n|\r|\n/", $snippet) ?: [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || mb_strlen($line) > 220) {
+                continue;
+            }
+            if (preg_match('/\b(B\.?\s*Tech|M\.?\s*Tech|Bachelor|Master|Ph\.?\s*D|MBA|B\.?\s*E|M\.?\s*E|B\.?\s*Sc|M\.?\s*Sc|B\.?\s*A|M\.?\s*A|Diploma|B\.?\s*Com|B\.?Arch)\b/ui', $line)) {
+                return mb_substr($line, 0, 255);
+            }
+        }
+
+        return null;
+    }
+
+    protected function guessLocationLineFromText(string $text): ?string
+    {
+        $snippet = mb_substr($text, 0, 4000);
+        $lines = preg_split("/\r\n|\r|\n/", $snippet) ?: [];
+        $pattern = '/\b(Mumbai|Delhi|Bangalore|Bengaluru|Hyderabad|Pune|Chennai|Kolkata|Noida|Gurgaon|Ahmedabad|Jaipur|India|USA|United States|UK|London|Canada|Singapore|Dubai)\b/iu';
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || mb_strlen($line) > 150) {
+                continue;
+            }
+            if (str_contains($line, '@') || preg_match('#https?://#i', $line)) {
+                continue;
+            }
+            if (preg_match($pattern, $line)) {
+                return $line;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Copy AI summary into bio when bio is still empty (no GPT profile extract).
+     */
+    public function fillProfileBioFromResumeSummary(Resume $resume): void
+    {
+        $user = $resume->user;
+        if (! $user || ! $user->isCandidate()) {
+            return;
+        }
+
+        $summary = $resume->ai_summary;
+        if (! is_string($summary) || trim($summary) === '') {
+            return;
+        }
+
+        $profile = $user->candidateProfile ?? new CandidateProfile(['user_id' => $user->id]);
+        if ($profile->bio_summary !== null && trim((string) $profile->bio_summary) !== '') {
+            return;
+        }
+
+        $profile->bio_summary = mb_strlen($summary) > 2500 ? mb_substr($summary, 0, 2497).'...' : $summary;
+        $profile->save();
     }
 
     protected function fallbackSummary(string $text): string

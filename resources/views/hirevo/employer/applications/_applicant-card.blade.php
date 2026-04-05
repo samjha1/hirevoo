@@ -43,24 +43,24 @@
                     </form>
                 </div>
                 <p class="text-muted small mb-2">
-                    @if($profile && $profile->experience_years !== null)
-                        <span>{{ $profile->experience_years }} yrs</span>
-                        @if($profile->expected_salary)
-                            <span class="ms-2">{{ $profile->expected_salary }}</span>
-                        @endif
-                        @if($profile->location)
-                            <span class="ms-2">{{ $profile->location }}</span>
-                        @endif
-                    @else
-                        @if($profile && $profile->expected_salary)
-                            <span>{{ $profile->expected_salary }}</span>
-                        @endif
-                        @if($profile && $profile->location)
-                            <span class="ms-2">{{ $profile->location }}</span>
-                        @endif
-                        @if(!$profile)
-                            <span>{{ $user->email }}</span>
-                        @endif
+                    @if($profile && $profile->formattedTotalExperience())
+                        <span>{{ $profile->formattedTotalExperience() }}</span>
+                    @endif
+                    @if($profile && $profile->formattedExpectedSalary())
+                        <span class="ms-2">{{ $profile->formattedExpectedSalary() }}</span>
+                    @elseif($profile && $profile->expected_salary)
+                        <span class="ms-2">{{ $profile->expected_salary }}</span>
+                    @endif
+                    @if($profile && $profile->preferred_job_location)
+                        <span class="ms-2">{{ $profile->preferred_job_location }}</span>
+                    @elseif($profile && $profile->location)
+                        <span class="ms-2">{{ $profile->location }}</span>
+                    @endif
+                    @if($app->notice_period)
+                        <span class="ms-2">Notice: {{ \App\Models\EmployerJobApplication::noticePeriodOptions()[$app->notice_period] ?? $app->notice_period }}</span>
+                    @endif
+                    @if(!$profile)
+                        <span>{{ $user->email }}</span>
                     @endif
                 </p>
 
@@ -72,8 +72,20 @@
                     <p class="applicant-detail mb-1"><span class="detail-label">Education</span><br>{{ $profile->education }}</p>
                 @endif
 
+                @if($profile && $profile->current_company)
+                    <p class="applicant-detail mb-1"><span class="detail-label">Company</span><br>{{ $profile->current_company }}</p>
+                @endif
+
                 @if($profile && $profile->location)
-                    <p class="applicant-detail mb-1"><span class="detail-label">Pref. Location</span><br>{{ $profile->location }}</p>
+                    <p class="applicant-detail mb-1"><span class="detail-label">Current location</span><br>{{ $profile->location }}</p>
+                @endif
+
+                @if($profile && $profile->preferred_job_location)
+                    <p class="applicant-detail mb-1"><span class="detail-label">Preferred location</span><br>{{ $profile->preferred_job_location }}</p>
+                @endif
+
+                @if($profile && $profile->linkedin_url)
+                    <p class="applicant-detail mb-1"><span class="detail-label">LinkedIn</span><br><a href="{{ $profile->linkedin_url }}" target="_blank" rel="noopener" class="text-break">{{ $profile->linkedin_url }}</a></p>
                 @endif
 
                 @if(count($skillsList) > 0)

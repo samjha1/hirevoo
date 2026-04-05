@@ -81,7 +81,10 @@
                         @error('experience_years')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
-                    @include('hirevo.employer.jobs._skills-field', ['skillsValue' => old('required_skills')])
+                    @include('hirevo.employer.jobs._skills-field', [
+                        'skillsValue' => old('required_skills'),
+                        'selectedDepartment' => old('job_department', ''),
+                    ])
 
                     <div class="mb-4">
                         <label for="apply_link" class="form-label fw-500">External Apply Link <small class="text-muted">(Optional)</small></label>
@@ -255,9 +258,15 @@
                 <div class="card-body p-4">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                         <h5 class="card-title mb-0 fw-600">Job description</h5>
-                        <button type="button" class="btn btn-link btn-sm text-primary p-0 text-decoration-none" id="generate-ai-btn">
-                            <i class="mdi mdi-auto-fix me-1"></i>Generate with AI
-                        </button>
+                        @if(!empty($aiDescriptionAvailable))
+                            <button type="button" class="btn btn-link btn-sm text-primary p-0 text-decoration-none" id="generate-ai-btn">
+                                <i class="mdi mdi-auto-fix me-1"></i>Generate with AI
+                            </button>
+                        @else
+                            <span class="small text-muted" title="Your site admin can add OpenRouter or OpenAI keys to enable this.">
+                                <i class="mdi mdi-information-outline me-1"></i>AI helper unavailable — write the description below
+                            </span>
+                        @endif
                     </div>
                     <p class="text-muted small mb-3">Write the role overview, responsibilities, and requirements.</p>
                     <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="8" placeholder="About the role, key responsibilities, required skills...">{{ old('description') }}</textarea>

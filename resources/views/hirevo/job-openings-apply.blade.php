@@ -135,37 +135,112 @@
                                 @endif
 
                                 <div class="mb-4">
-                                    <h6 class="text-muted small text-uppercase mb-3">Profile details</h6>
+                                    <h6 class="text-muted small text-uppercase mb-3">Basic details</h6>
                                     <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="full_name" class="form-label">Full name <span class="text-danger">*</span></label>
+                                            <input type="text" name="full_name" id="full_name" class="form-control @error('full_name') is-invalid @enderror" value="{{ old('full_name', auth()->user()->name ?? '') }}" autocomplete="name" required>
+                                            @error('full_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                            <p class="text-muted small mt-1 mb-0">Prefilled from your profile; you can edit if needed.</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="apply_email" class="form-label">Email address</label>
+                                            <input type="email" class="form-control bg-light" id="apply_email" value="{{ auth()->user()->email ?? '' }}" readonly autocomplete="email">
+                                            <p class="text-muted small mt-1 mb-0">Shown for confirmation. To change your email, update your account settings.</p>
+                                        </div>
                                         <div class="col-md-6">
                                             <label for="phone" class="form-label">Phone <span class="text-danger">*</span></label>
                                             <input type="text" name="phone" id="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="10-digit mobile" required>
                                             @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="linkedin_url" class="form-label">LinkedIn profile URL</label>
+                                            <input type="text" name="linkedin_url" id="linkedin_url" class="form-control @error('linkedin_url') is-invalid @enderror" value="{{ old('linkedin_url', $profile?->linkedin_url ?? '') }}" placeholder="https://www.linkedin.com/in/your-profile">
+                                            @error('linkedin_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-12">
                                             <label for="headline" class="form-label">Current role / Headline <span class="text-danger">*</span></label>
                                             <input type="text" name="headline" id="headline" class="form-control @error('headline') is-invalid @enderror" value="{{ old('headline', $profile?->headline ?? '') }}" placeholder="e.g. Business Intelligence Analyst" required>
                                             @error('headline')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
-                                        <div class="col-12">
+                                        <div class="col-md-6">
+                                            <label for="current_company" class="form-label">Current company / organisation</label>
+                                            <input type="text" name="current_company" id="current_company" class="form-control @error('current_company') is-invalid @enderror" value="{{ old('current_company', $profile?->current_company ?? '') }}" placeholder="e.g. Acme Corp">
+                                            @error('current_company')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+                                        <div class="col-md-6">
                                             <label for="education" class="form-label">Education <span class="text-danger">*</span></label>
-                                            <input type="text" name="education" id="education" class="form-control @error('education') is-invalid @enderror" value="{{ old('education', $profile?->education ?? '') }}" placeholder="e.g. BE/B.Tech, College Name" required>
+                                            @php $eduVal = old('education', $profile?->education); @endphp
+                                            <select name="education" id="education" class="form-select @error('education') is-invalid @enderror" required>
+                                                <option value="" disabled {{ $eduVal === null || $eduVal === '' || ! in_array($eduVal, $educationDegrees, true) ? 'selected' : '' }}>Select qualification</option>
+                                                @foreach($educationDegrees as $deg)
+                                                    <option value="{{ $deg }}" {{ (string) $eduVal === (string) $deg ? 'selected' : '' }}>{{ $deg }}</option>
+                                                @endforeach
+                                            </select>
+                                            <p class="text-muted small mt-1 mb-0">If your exact degree is not listed, choose the closest option or &ldquo;Other&rdquo;.</p>
                                             @error('education')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-md-4">
                                             <label for="experience_years" class="form-label">Experience (years) <span class="text-danger">*</span></label>
-                                            <input type="number" name="experience_years" id="experience_years" class="form-control @error('experience_years') is-invalid @enderror" value="{{ old('experience_years', $profile?->experience_years ?? '') }}" min="0" max="50" placeholder="0" required>
+                                            <input type="number" name="experience_years" id="experience_years" class="form-control @error('experience_years') is-invalid @enderror" value="{{ old('experience_years', $profile?->experience_years ?? '0') }}" min="0" max="50" required>
                                             @error('experience_years')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-md-4">
-                                            <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                                            <label for="experience_months" class="form-label">Experience (months) <span class="text-danger">*</span></label>
+                                            <input type="number" name="experience_months" id="experience_months" class="form-control @error('experience_months') is-invalid @enderror" value="{{ old('experience_months', $profile?->experience_months ?? '0') }}" min="0" max="11" required>
+                                            @error('experience_months')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                            <p class="text-muted small mt-1 mb-0">e.g. 2 years + 6 months</p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="notice_period" class="form-label">Notice period <span class="text-danger">*</span></label>
+                                            <select name="notice_period" id="notice_period" class="form-select @error('notice_period') is-invalid @enderror" required>
+                                                <option value="" disabled {{ old('notice_period') ? '' : 'selected' }}>Select notice period</option>
+                                                @foreach($noticePeriods as $val => $label)
+                                                    <option value="{{ $val }}" {{ old('notice_period') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('notice_period')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="current_salary" class="form-label">Current salary / CTC</label>
+                                            <input type="text" name="current_salary" id="current_salary" class="form-control @error('current_salary') is-invalid @enderror" value="{{ old('current_salary', $profile?->current_salary ?? '') }}" placeholder="e.g. 8 LPA (optional)">
+                                            @error('current_salary')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Expected salary <span class="text-danger">*</span></label>
+                                            <div class="row g-2">
+                                                <div class="col-5">
+                                                    <select name="expected_salary_currency" class="form-select @error('expected_salary_currency') is-invalid @enderror" aria-label="Currency" required>
+                                                        @foreach($salaryCurrencies as $cur)
+                                                            <option value="{{ $cur }}" {{ old('expected_salary_currency', $profile?->expected_salary_currency ?? 'INR') === $cur ? 'selected' : '' }}>{{ $cur }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('expected_salary_currency')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                                </div>
+                                                <div class="col-7">
+                                                    <input type="text" name="expected_salary" id="expected_salary" class="form-control @error('expected_salary') is-invalid @enderror" value="{{ old('expected_salary', $profile?->expected_salary ?? '') }}" placeholder="Amount" required>
+                                                    @error('expected_salary')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="btn-group" role="group" aria-label="Expected salary period">
+                                                        <input type="radio" class="btn-check" name="expected_salary_period" id="exp_per_annum" value="per_annum" {{ old('expected_salary_period', $profile?->expected_salary_period ?? 'per_annum') === 'per_annum' ? 'checked' : '' }} required>
+                                                        <label class="btn btn-outline-secondary btn-sm" for="exp_per_annum">Per annum</label>
+                                                        <input type="radio" class="btn-check" name="expected_salary_period" id="exp_per_month" value="per_month" {{ old('expected_salary_period', $profile?->expected_salary_period ?? 'per_annum') === 'per_month' ? 'checked' : '' }}>
+                                                        <label class="btn btn-outline-secondary btn-sm" for="exp_per_month">Per month</label>
+                                                    </div>
+                                                    @error('expected_salary_period')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="location" class="form-label">Location (current) <span class="text-danger">*</span></label>
                                             <input type="text" name="location" id="location" class="form-control @error('location') is-invalid @enderror" value="{{ old('location', $profile?->location ?? '') }}" placeholder="e.g. Gurgaon" required>
                                             @error('location')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
-                                        <div class="col-md-4">
-                                            <label for="expected_salary" class="form-label">Expected salary <span class="text-danger">*</span></label>
-                                            <input type="text" name="expected_salary" id="expected_salary" class="form-control @error('expected_salary') is-invalid @enderror" value="{{ old('expected_salary', $profile?->expected_salary ?? '') }}" placeholder="e.g. 4.7 L" required>
-                                            @error('expected_salary')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        <div class="col-md-6">
+                                            <label for="preferred_job_location" class="form-label">Preferred job location <span class="text-danger">*</span></label>
+                                            <input type="text" name="preferred_job_location" id="preferred_job_location" class="form-control @error('preferred_job_location') is-invalid @enderror" value="{{ old('preferred_job_location', $profile?->preferred_job_location ?? $profile?->location ?? '') }}" placeholder="Where you are open to working" required>
+                                            @error('preferred_job_location')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="col-12">
                                             <label for="skills" class="form-label">Skills (comma-separated) <span class="text-danger">*</span></label>
@@ -198,6 +273,21 @@
                                     <div>
                                         <label for="cover_message" class="form-label">Cover message (optional)</label>
                                         <textarea name="cover_message" id="cover_message" class="form-control" rows="3" placeholder="Why are you a good fit?">{{ old('cover_message') }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4 pt-2 border-top">
+                                    <h6 class="text-muted small text-uppercase mb-3">Consent &amp; submit</h6>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input @error('info_accurate') is-invalid @enderror" type="checkbox" name="info_accurate" id="info_accurate" value="1" {{ old('info_accurate') ? 'checked' : '' }} required>
+                                        <label class="form-check-label" for="info_accurate">
+                                            I confirm the information provided is accurate to the best of my knowledge. <span class="text-danger">*</span>
+                                        </label>
+                                        @error('info_accurate')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="alert alert-light border small mb-0" role="note">
+                                        <p class="mb-2 fw-600 text-dark">How we use your data for this application</p>
+                                        <p class="mb-0 text-muted">Hirevo shares the details on this form and your attached resume <strong>only with the employer who posted this job</strong>, so they can review and process your application. We do not sell your personal data for marketing. Your account credentials and general platform use remain covered by our usual privacy terms.</p>
                                     </div>
                                 </div>
 

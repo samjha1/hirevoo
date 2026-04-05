@@ -54,8 +54,12 @@ class JobController extends Controller
         }
 
         $companyName = $profile->company_name ?? '';
+        $gpt = app(GptService::class);
 
-        return view('hirevo.employer.jobs.create', ['companyName' => $companyName]);
+        return view('hirevo.employer.jobs.create', [
+            'companyName' => $companyName,
+            'aiDescriptionAvailable' => $gpt->isAvailable(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -175,7 +179,12 @@ class JobController extends Controller
             return redirect()->route('employer.dashboard')->with('info', 'Your account must be approved to manage jobs.');
         }
 
-        return view('hirevo.employer.jobs.edit', ['job' => $job]);
+        $gpt = app(GptService::class);
+
+        return view('hirevo.employer.jobs.edit', [
+            'job' => $job,
+            'aiDescriptionAvailable' => $gpt->isAvailable(),
+        ]);
     }
 
     public function update(Request $request, EmployerJob $job): RedirectResponse
@@ -383,18 +392,40 @@ class JobController extends Controller
             return response()->json(['error' => 'Job title is required'], 422);
         }
 
-        $gpt = new GptService();
+        $gpt = app(GptService::class);
         if (! $gpt->isAvailable()) {
-            return response()->json(['error' => 'AI service is not configured'], 503);
+            return response()->json([
+                'error' => 'AI description is not set up on this site. Write the job description in the box below.',
+            ], 503);
         }
 
         $description = $gpt->generateJobDescription($title);
         if ($description === null) {
-            $message = $gpt->getLastError() ?: 'Could not generate description. Check OPENAI_API_KEY in .env.';
-            return response()->json(['error' => $message], 502);
+            return response()->json([
+                'error' => $this->friendlyEmployerAiMessage($gpt->getLastError()),
+            ], 502);
         }
 
         return response()->json(['description' => $description]);
+    }
+
+    /**
+     * Avoid exposing .env / operator jargon in employer-facing JSON.
+     */
+    private function friendlyEmployerAiMessage(?string $raw): string
+    {
+        if ($raw === null || trim($raw) === '') {
+            return 'Could not generate a description. Write it below or try again later.';
+        }
+        $lower = mb_strtolower($raw);
+        if (str_contains($lower, 'no ai api keys') || str_contains($lower, 'openai_api_key') || str_contains($lower, 'openrouter')) {
+            return 'AI could not run (configuration or rate limits). Write the job description below, or try again later.';
+        }
+        if (str_contains($lower, '429') || str_contains($lower, 'rate limit') || str_contains($lower, 'busy')) {
+            return 'AI is busy right now. Write the description below or try again in a minute.';
+        }
+
+        return 'Could not generate a description. Write it below or try again later.';
     }
 
     private function normalizeSkillsInput(?string $skills): ?array

@@ -9,28 +9,31 @@ use App\Models\JobRole;
 use App\Models\Lead;
 use App\Models\Resume;
 use App\Models\SkillAnalysis;
-use App\Models\UpskillOpportunity;
+use App\Services\CandidateProfileFillerFromResume;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class ResumeController extends Controller
 {
     public function __construct(
         protected ResumeAnalysisService $resumeAnalysis,
-        protected GptService $gptService
+        protected GptService $gptService,
+        protected CandidateProfileFillerFromResume $profileFiller
     ) {}
 
     public function showUploadForm(): View|RedirectResponse
     {
-        if (! auth()->check()) {
-            return redirect()->route('login', ['redirect' => url('/resume/upload')]);
+        if (auth()->check()) {
+            $user = auth()->user();
+            if (! $user->isCandidate()) {
+                return redirect()->route('home')->with('info', 'Resume upload is for candidates.');
+            }
         }
-        if (! auth()->user()->isCandidate()) {
-            return redirect()->route('home')->with('info', 'Resume upload is for candidates.');
-        }
+
         return view('hirevo.resume-upload');
     }
 
@@ -49,6 +52,8 @@ class ResumeController extends Controller
             return redirect()->route('home');
         }
 
+        set_time_limit((int) config('hirevo.resume_analysis_time_limit', 180));
+
         $file = $request->file('resume');
         $path = $file->store('resumes', 'local');
         if ($path === false) {
@@ -66,11 +71,31 @@ class ResumeController extends Controller
 
         $this->resumeAnalysis->analyzeResume($resume);
 
+        $profileFilled = $this->profileFiller->fill($user);
+
+        $user->refresh();
+        $user->syncCandidateProfileCompletion();
+
+        if ($request->input('return_to') === 'profile') {
+            return redirect()->route('profile')
+                ->with(
+                    'success',
+                    $profileFilled
+                        ? 'Resume uploaded and analysed. Your profile was filled from the file — review all sections and save.'
+                        : 'Resume uploaded and analysed. We saved basic details from your file; complete any missing sections on your profile.'
+                );
+        }
+
         return redirect()->route('resume.results', $resume)
-            ->with('success', 'Resume analyzed successfully. View your ATS score and recommended jobs below.');
+            ->with(
+                'success',
+                $profileFilled
+                    ? 'Resume analyzed successfully. Your profile was updated from the file. View your ATS score and jobs below.'
+                    : 'Resume analyzed successfully. View your ATS score and recommended jobs below.'
+            );
     }
 
-    public function results(Resume $resume): View|RedirectResponse
+    public function results(Resume $resume, Request $request): View|RedirectResponse
     {
         if ($resume->user_id !== auth()->id()) {
             abort(403);
@@ -80,18 +105,70 @@ class ResumeController extends Controller
         $recommendedEmployerJobs = $this->getRecommendedEmployerJobs($resume);
         $appliedJobIds = JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all();
         $appliedEmployerJobIds = EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all();
-        $upskillOpportunities = UpskillOpportunity::active()->orderBy('sort_order')->get();
-        $userSkillsForUpskill = array_map('strtolower', $resume->getExtractedSkillsList());
+
+        $kind = $request->query('kind', 'all');
+        if (! in_array($kind, ['all', 'employer', 'goal'], true)) {
+            $kind = 'all';
+        }
+
+        $mergedAll = $this->buildMergedResumeMatches($recommendedEmployerJobs, $recommendedJobGoals);
+        $totals = [
+            'all' => count($mergedAll),
+            'employer' => count(array_filter($mergedAll, fn ($e) => $e['kind'] === 'employer')),
+            'goal' => count(array_filter($mergedAll, fn ($e) => $e['kind'] === 'goal')),
+        ];
+
+        $filtered = match ($kind) {
+            'employer' => array_values(array_filter($mergedAll, fn ($e) => $e['kind'] === 'employer')),
+            'goal' => array_values(array_filter($mergedAll, fn ($e) => $e['kind'] === 'goal')),
+            default => $mergedAll,
+        };
+
+        $perPage = 9;
+        $totalFiltered = count($filtered);
+        $lastPage = max(1, (int) ceil($totalFiltered / $perPage));
+        $page = min($lastPage, max(1, (int) $request->query('matches_page', 1)));
+        $items = array_slice($filtered, ($page - 1) * $perPage, $perPage);
+
+        $matchesPaginator = new LengthAwarePaginator(
+            $items,
+            $totalFiltered,
+            $perPage,
+            $page,
+            [
+                'path' => route('resume.results', $resume),
+                'pageName' => 'matches_page',
+            ]
+        );
+        $matchesPaginator->appends(['kind' => $kind]);
 
         return view('hirevo.resume-results', [
             'resume' => $resume,
-            'recommendedJobGoals' => $recommendedJobGoals,
-            'recommendedEmployerJobs' => $recommendedEmployerJobs,
             'appliedJobIds' => $appliedJobIds,
             'appliedEmployerJobIds' => $appliedEmployerJobIds,
-            'upskillOpportunities' => $upskillOpportunities,
-            'userSkillsForUpskill' => $userSkillsForUpskill,
+            'matchesPaginator' => $matchesPaginator,
+            'resumeMatchKind' => $kind,
+            'resumeMatchTotals' => $totals,
         ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $recommendedEmployerJobs
+     * @param  array<int, array<string, mixed>>  $recommendedJobGoals
+     * @return list<array{kind: string, match: int, payload: array<string, mixed>}>
+     */
+    protected function buildMergedResumeMatches(array $recommendedEmployerJobs, array $recommendedJobGoals): array
+    {
+        $merged = [];
+        foreach ($recommendedEmployerJobs as $item) {
+            $merged[] = ['kind' => 'employer', 'match' => (int) ($item['match_percentage'] ?? 0), 'payload' => $item];
+        }
+        foreach ($recommendedJobGoals as $item) {
+            $merged[] = ['kind' => 'goal', 'match' => (int) ($item['match_percentage'] ?? 0), 'payload' => $item];
+        }
+        usort($merged, fn ($a, $b) => $b['match'] <=> $a['match']);
+
+        return array_values($merged);
     }
 
     /**
@@ -168,7 +245,8 @@ class ResumeController extends Controller
             ];
         }
         usort($scored, fn ($a, $b) => $b['match_percentage'] <=> $a['match_percentage']);
-        return array_slice($scored, 0, 8);
+
+        return $scored;
     }
 
     /**
@@ -220,6 +298,7 @@ class ResumeController extends Controller
         }
 
         usort($scored, fn ($a, $b) => $b['match_percentage'] <=> $a['match_percentage']);
-        return array_slice($scored, 0, 12);
+
+        return $scored;
     }
 }

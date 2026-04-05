@@ -27,93 +27,181 @@
 .nav-link-resume { color: var(--hirevo-secondary) !important; }
 .nav-link-resume:hover, .navbar .nav-link.nav-link-resume.active { color: var(--hirevo-primary) !important; }
 
-/* ========== Navbar (Thicker Modern Version) ========== */
+/* ========== Navbar — Premium Glassmorphism ========== */
 .hirevo-navbar {
-    background: #fff !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    min-height: 88px;              /* Increased height */
-    padding-top: 0.75rem;          /* More vertical space */
-    padding-bottom: 0.75rem;
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.05);
+    min-height: 68px;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+/* On scroll — elevated feel */
+.hirevo-navbar.nav-scrolled {
+    background: rgba(255, 255, 255, 0.97) !important;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.1) !important;
+    border-color: rgba(15, 23, 42, 0.09) !important;
 }
 .hirevo-navbar .hirevo-nav-brand {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-    margin-right: 4rem;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-right: 2.5rem;
 }
 .hirevo-navbar .hirevo-nav-links {
     margin-left: 0;
+    gap: 0.15rem;
 }
+/* Logo — clean compact size */
 .hirevo-navbar .navbar-brand .hirevo-logo {
-    height: 58px !important;
-    min-height: 58px;
-    max-width: 215px !important;
+    height: 38px !important;
+    min-height: 38px;
+    max-width: 148px !important;
     width: auto;
     object-fit: contain;
 }
 @media (min-width: 768px) {
-    .hirevo-navbar .navbar-brand .hirevo-logo { height: 62px !important; max-width: 240px !important; }
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 40px !important; max-width: 160px !important; }
 }
 @media (min-width: 992px) {
-    .hirevo-navbar .navbar-brand .hirevo-logo { height: 68px !important; max-width: 265px !important; }
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 42px !important; max-width: 170px !important; }
 }
+
+/* Nav links — underline-slide hover */
 .hirevo-nav-links .nav-link {
-    font-size: 0.9375rem;
+    font-size: 0.9rem;
     font-weight: 500;
-    color: #334155 !important;
-    padding: 0.5rem 0.75rem !important;
-    border-radius: 8px;
-    transition: color 0.15s ease, background 0.15s ease;
+    color: #475569 !important;
+    padding: 0.5rem 0.65rem !important;
+    border-radius: 0;
+    position: relative;
+    transition: color 0.18s ease;
 }
-.hirevo-nav-links .nav-link:hover {
-    color: var(--hirevo-primary) !important;
-    background: rgba(11, 31, 59, 0.04);
+.hirevo-nav-links .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 50%; right: 50%;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #10b981);
+    border-radius: 2px;
+    transition: left 0.22s ease, right 0.22s ease;
 }
+.hirevo-nav-links .nav-link:hover { color: #0f172a !important; }
+.hirevo-nav-links .nav-link:hover::after,
+.hirevo-nav-links .nav-link.active::after { left: 10%; right: 10%; }
 .hirevo-nav-links .nav-link.active {
-    color: var(--hirevo-primary) !important;
+    color: #0f172a !important;
     font-weight: 600;
 }
+/* Resume Score pill */
+.hirevo-nav-links .nav-link-resume {
+    background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(99,102,241,0.08));
+    border: 1px solid rgba(16,185,129,0.28);
+    border-radius: 100px !important;
+    color: #059669 !important;
+    padding: 0.35rem 0.9rem !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin: 0 0.2rem;
+}
+.hirevo-nav-links .nav-link-resume::after { display: none; }
+.hirevo-nav-links .nav-link-resume:hover,
+.hirevo-nav-links .nav-link-resume.active {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+
+/* Login link */
 .hirevo-nav-login {
+    font-size: 0.9rem !important;
     font-weight: 500 !important;
     color: #475569 !important;
     padding: 0.4rem 0.75rem !important;
+    transition: color 0.18s;
 }
-.hirevo-nav-login:hover { color: var(--hirevo-primary) !important; }
+.hirevo-nav-login:hover { color: #0f172a !important; }
+
+/* Employers link */
 .hirevo-nav-employers {
+    font-size: 0.875rem !important;
     font-weight: 500 !important;
     color: #475569 !important;
     padding: 0.4rem 0.75rem !important;
+    border: 1px solid rgba(15,23,42,0.14);
+    border-radius: 100px;
+    transition: all 0.18s;
 }
-.hirevo-nav-employers:hover { color: var(--hirevo-primary) !important; }
+.hirevo-nav-employers:hover {
+    color: #0f172a !important;
+    border-color: rgba(15,23,42,0.28);
+    background: rgba(15,23,42,0.03);
+}
+
+/* Sign up — gradient pill */
 .hirevo-btn-signup {
-    background: var(--hirevo-primary) !important;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
     color: #fff !important;
     font-weight: 600;
-    font-size: 0.9rem;
-    padding: 0.45rem 1.1rem;
-    border-radius: 10px;
+    font-size: 0.875rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 100px;
     border: none;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+    letter-spacing: 0.01em;
 }
 .hirevo-btn-signup:hover {
     color: #fff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(11, 31, 59, 0.25);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.42);
 }
+.hirevo-btn-signup:active { transform: scale(0.98); }
+
+/* Icon button (notifications) */
 .hirevo-nav-icon {
     color: #64748b !important;
     padding: 0.5rem !important;
+    border-radius: 10px;
+    transition: color 0.18s, background 0.18s;
 }
-.hirevo-nav-icon:hover { color: var(--hirevo-primary) !important; }
+.hirevo-nav-icon:hover {
+    color: #0f172a !important;
+    background: rgba(15,23,42,0.05);
+}
+
+/* User avatar button */
 .hirevo-nav-user {
     color: inherit !important;
     padding: 0.35rem 0.5rem !important;
     border-radius: 10px;
+    transition: background 0.18s;
 }
-.hirevo-nav-user:hover { background: rgba(0, 0, 0, 0.04) !important; }
-.hirevo-nav-toggler { padding: 0.5rem; color: var(--hirevo-primary) !important; }
-.hirevo-navbar .dropdown-menu { margin-top: 0.35rem; }
-.hirevo-navbar .dropdown-item { padding: 0.5rem 1rem; }
+.hirevo-nav-user:hover { background: rgba(0, 0, 0, 0.05) !important; }
+
+/* Hamburger */
+.hirevo-nav-toggler { padding: 0.5rem; color: #334155 !important; }
+.hirevo-nav-toggler:focus { box-shadow: none; }
+
+/* Dropdown */
+.hirevo-navbar .dropdown-menu {
+    margin-top: 0.5rem;
+    border: 1px solid rgba(15,23,42,0.1);
+    box-shadow: 0 12px 36px rgba(15,23,42,0.12);
+    border-radius: 14px;
+    padding: 0.5rem;
+}
+.hirevo-navbar .dropdown-item {
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #334155;
+    transition: background 0.15s, color 0.15s;
+}
+.hirevo-navbar .dropdown-item:hover { background: #f1f5f9; color: #0f172a; }
+
 /* Mobile: stacked nav actions and link spacing + ensure text is visible */
 @media (max-width: 991.98px) {
     .hirevo-navbar .navbar-collapse {
@@ -150,8 +238,13 @@
     .hirevo-navbar .navbar-collapse .hirevo-nav-icon {
         color: #64748b !important;
     }
-    .hirevo-nav-links .nav-item { border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
-    .hirevo-nav-links .nav-link { padding: 0.65rem 0.75rem !important; }
+    .hirevo-nav-links .nav-item { border-bottom: 1px solid rgba(0, 0, 0, 0.04); }
+    .hirevo-nav-links .nav-link { padding: 0.7rem 0.75rem !important; }
+    .hirevo-nav-links .nav-link::after { display: none; }
+    .hirevo-nav-links .nav-link-resume {
+        border-radius: 8px !important;
+        margin: 0.25rem 0;
+    }
     .hirevo-nav-actions {
         flex-direction: row;
         flex-wrap: wrap;
@@ -161,7 +254,8 @@
         margin-top: 0.5rem;
     }
     .hirevo-nav-actions .nav-item.ms-2 { margin-left: 0 !important; }
-    .hirevo-btn-signup { width: 100%; justify-content: center; }
+    .hirevo-btn-signup { width: 100%; justify-content: center; border-radius: 12px !important; }
+    .hirevo-nav-employers { border-radius: 8px !important; }
 }
 /* Style switcher: hide by default for cleaner look */
 #style-switcher { display: none !important; }
@@ -219,13 +313,9 @@ textarea,
     font-family: var(--hirevo-font);
 }
 
-/* Logo – responsive sizes */
-.navbar-brand .hirevo-logo {
-    height: 76px !important;
-    width: auto;
-    max-width: 240px;
-}
-/* Employer sidebar: width fills column; height follows aspect ratio (see layouts/employer.blade.php). */
+/* Logo – navbar logo is controlled by .hirevo-navbar rules above.
+   These rules apply only to non-navbar contexts (auth, sidebar). */
+/* Employer sidebar: width fills column; height follows aspect ratio */
 .employer-sidebar .sidebar-brand .hirevo-logo {
     height: auto !important;
     width: 100% !important;
@@ -235,28 +325,24 @@ textarea,
     object-position: left center;
 }
 .bg-auth .hirevo-logo {
-    height: 58px !important;
+    height: 44px !important;
     width: auto;
-    max-width: 215px;
+    max-width: 180px;
 }
 @media (min-width: 576px) {
-    .navbar-brand .hirevo-logo { height: 86px !important; max-width: 265px; }
-    .bg-auth .hirevo-logo { height: 68px !important; max-width: 265px; }
+    .bg-auth .hirevo-logo { height: 48px !important; max-width: 200px; }
 }
 @media (min-width: 768px) {
-    .navbar-brand .hirevo-logo { height: 105px !important; max-width: 310px; }
     .employer-sidebar .sidebar-brand .hirevo-logo { max-height: none !important; }
-    .bg-auth .hirevo-logo { height: 86px !important; max-width: 335px; }
+    .bg-auth .hirevo-logo { height: 52px !important; max-width: 220px; }
 }
 @media (min-width: 992px) {
-    .navbar-brand .hirevo-logo { height: 132px !important; max-width: 385px; }
     .employer-sidebar .sidebar-brand .hirevo-logo { max-height: none !important; }
-    .bg-auth .hirevo-logo { height: 98px !important; max-width: 360px; }
 }
 
-/* Prevent navbar overlapping content (fixed navbar only; minimal gap below nav) */
+/* Prevent navbar overlapping content (fixed navbar 68px) */
 body .main-content {
-    padding-top: 66px !important;
+    padding-top: 68px !important;
 }
 body .page-content {
     padding-top: 0 !important;
@@ -267,14 +353,10 @@ section.bg-auth {
     padding-bottom: 4rem !important;
 }
 @media (max-width: 991.98px) {
-    body .main-content {
-        padding-top: 66px !important;
-    }
+    body .main-content { padding-top: 68px !important; }
 }
 @media (max-width: 575.98px) {
-    body .main-content {
-        padding-top: 66px !important;
-    }
+    body .main-content { padding-top: 68px !important; }
     section.bg-auth {
         padding-top: 0.5rem !important;
         padding-bottom: 2rem !important;

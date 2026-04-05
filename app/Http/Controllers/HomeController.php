@@ -11,9 +11,11 @@ use App\Models\Resume;
 use App\Models\UpskillOpportunity;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
+use App\Support\CandidateOnboarding;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -58,7 +60,7 @@ class HomeController extends Controller
 
         $primaryResume = null;
         $matchingJobGoals = [];
-        $upskillOpportunities = [];
+        $upskillOpportunities = collect();
         $appliedJobIds = [];
         $userSkillsForUpskill = [];
 
@@ -161,7 +163,7 @@ class HomeController extends Controller
             $query->where('job_type', $request->get('job_type'));
         }
 
-        $validWorkTypes = ['On-site', 'remote', 'hybrid'];
+        $validWorkTypes = ['office', 'remote', 'hybrid'];
         if ($request->filled('work_location_type') && in_array($request->get('work_location_type'), $validWorkTypes, true)) {
             $query->where('work_location_type', $request->get('work_location_type'));
         }
@@ -199,6 +201,12 @@ class HomeController extends Controller
             return redirect()->route('job-openings')->with('info', 'Only candidates can apply.');
         }
         if (auth()->check()) {
+            if (auth()->user()->isCandidate()) {
+                $onboarding = CandidateOnboarding::redirectIfIncomplete(auth()->user());
+                if ($onboarding !== null) {
+                    return $onboarding;
+                }
+            }
             $exists = EmployerJobApplication::where('employer_job_id', $job->id)->where('user_id', auth()->id())->exists();
             if ($exists) {
                 return redirect()->route('job-openings')->with('info', 'You have already applied for this job.');
@@ -210,7 +218,13 @@ class HomeController extends Controller
         $user = auth()->user();
         $resumes = $user->resumes()->orderByDesc('created_at')->get();
         $profile = $user->candidateProfile;
-        return view('hirevo.job-openings-apply', compact('job', 'resumes', 'profile'));
+        $educationDegrees = CandidateProfile::educationDegreeValues();
+        $salaryCurrencies = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'CAD', 'AUD'];
+        $noticePeriods = EmployerJobApplication::noticePeriodOptions();
+
+        return view('hirevo.job-openings-apply', compact(
+            'job', 'resumes', 'profile', 'educationDegrees', 'salaryCurrencies', 'noticePeriods'
+        ));
     }
 
     public function storeEmployerJobApply(Request $request, EmployerJob $job): RedirectResponse
@@ -221,29 +235,47 @@ class HomeController extends Controller
         if (! auth()->user()->isCandidate()) {
             return redirect()->route('job-openings');
         }
+        $onboarding = CandidateOnboarding::redirectIfIncomplete(auth()->user());
+        if ($onboarding !== null) {
+            return $onboarding;
+        }
         $exists = EmployerJobApplication::where('employer_job_id', $job->id)->where('user_id', auth()->id())->exists();
         if ($exists) {
             return redirect()->route('job-openings')->with('info', 'You have already applied for this job.');
         }
+        $noticeKeys = array_keys(EmployerJobApplication::noticePeriodOptions());
         $validated = $request->validate([
-            'resume_id'        => ['required', 'integer', 'exists:resumes,id'],
-            'cover_message'    => ['nullable', 'string', 'max:2000'],
-            'phone'            => ['required', 'string', 'max:20'],
-            'headline'         => ['required', 'string', 'max:255'],
-            'education'        => ['required', 'string', 'max:500'],
-            'experience_years' => ['required', 'integer', 'min:0', 'max:50'],
-            'skills'           => ['required', 'string', 'max:2000'],
-            'location'         => ['required', 'string', 'max:255'],
-            'expected_salary'  => ['required', 'string', 'max:100'],
+            'full_name'                 => ['required', 'string', 'max:255'],
+            'resume_id'                 => ['required', 'integer', 'exists:resumes,id'],
+            'cover_message'             => ['nullable', 'string', 'max:2000'],
+            'phone'                     => ['required', 'string', 'max:20'],
+            'headline'                  => ['required', 'string', 'max:255'],
+            'current_company'           => ['nullable', 'string', 'max:255'],
+            'education'                 => ['required', 'string', Rule::in(CandidateProfile::educationDegreeValues())],
+            'experience_years'          => ['required', 'integer', 'min:0', 'max:50'],
+            'experience_months'         => ['required', 'integer', 'min:0', 'max:11'],
+            'current_salary'            => ['nullable', 'string', 'max:120'],
+            'skills'                    => ['required', 'string', 'max:2000'],
+            'location'                  => ['required', 'string', 'max:255'],
+            'preferred_job_location'    => ['required', 'string', 'max:255'],
+            'expected_salary'           => ['required', 'string', 'max:100'],
+            'expected_salary_currency'  => ['required', 'string', 'max:8'],
+            'expected_salary_period'    => ['required', Rule::in(['per_annum', 'per_month'])],
+            'linkedin_url'              => ['nullable', 'string', 'max:500'],
+            'notice_period'             => ['required', 'string', Rule::in($noticeKeys)],
+            'info_accurate'             => ['accepted'],
         ], [
             'resume_id.required' => 'Please attach a resume before submitting.',
             'phone.required' => 'Phone number is required.',
             'headline.required' => 'Current role / headline is required.',
             'education.required' => 'Education is required.',
             'experience_years.required' => 'Experience is required.',
+            'experience_months.required' => 'Experience (months) is required.',
             'skills.required' => 'Skills are required.',
-            'location.required' => 'Location is required.',
+            'location.required' => 'Current location is required.',
+            'preferred_job_location.required' => 'Preferred job location is required.',
             'expected_salary.required' => 'Expected salary is required.',
+            'info_accurate.accepted' => 'Please confirm that your information is accurate.',
         ]);
         $user = auth()->user();
         $resume = Resume::where('user_id', $user->id)->find($validated['resume_id']);
@@ -251,22 +283,46 @@ class HomeController extends Controller
             return back()->withErrors(['resume_id' => 'Selected resume does not belong to your account.'])->withInput();
         }
 
-        $user->update(['phone' => $validated['phone']]);
+        $linkedinUrl = $validated['linkedin_url'] ?? null;
+        if (is_string($linkedinUrl) && ($linkedinUrl = trim($linkedinUrl)) !== '') {
+            if (! preg_match('#^https?://#i', $linkedinUrl)) {
+                $linkedinUrl = 'https://'.$linkedinUrl;
+            }
+            if (! filter_var($linkedinUrl, FILTER_VALIDATE_URL)) {
+                return back()->withErrors(['linkedin_url' => 'Please enter a valid LinkedIn URL.'])->withInput();
+            }
+        } else {
+            $linkedinUrl = null;
+        }
+
+        $user->update([
+            'name'  => $validated['full_name'],
+            'phone' => $validated['phone'],
+        ]);
         $profile = $user->candidateProfile ?? new CandidateProfile(['user_id' => $user->id]);
         $profile->headline = $validated['headline'];
+        $profile->current_company = $validated['current_company'] ?: null;
         $profile->education = $validated['education'];
         $profile->experience_years = (int) $validated['experience_years'];
+        $profile->experience_months = (int) $validated['experience_months'];
         $profile->skills = $validated['skills'];
         $profile->location = $validated['location'];
+        $profile->preferred_job_location = $validated['preferred_job_location'];
+        $profile->linkedin_url = $linkedinUrl;
+        $profile->current_salary = $validated['current_salary'] ?: null;
         $profile->expected_salary = $validated['expected_salary'];
+        $profile->expected_salary_currency = $validated['expected_salary_currency'];
+        $profile->expected_salary_period = $validated['expected_salary_period'];
         $profile->save();
 
         $application = EmployerJobApplication::create([
-            'employer_job_id' => $job->id,
-            'user_id'         => $user->id,
-            'resume_id'       => (int) $validated['resume_id'],
-            'cover_message'   => $request->cover_message ? trim($request->cover_message) : null,
-            'status'          => 'applied',
+            'employer_job_id'            => $job->id,
+            'user_id'                    => $user->id,
+            'resume_id'                  => (int) $validated['resume_id'],
+            'cover_message'              => $request->cover_message ? trim($request->cover_message) : null,
+            'notice_period'              => $validated['notice_period'],
+            'info_accurate_confirmed_at' => now(),
+            'status'                     => 'applied',
         ]);
 
         // Store ATS score and job match score for employer view
@@ -288,8 +344,8 @@ class HomeController extends Controller
             if ($profile->education) {
                 $parts[] = 'Education: ' . $profile->education;
             }
-            if ($profile->experience_years !== null) {
-                $parts[] = 'Experience: ' . $profile->experience_years . ' years';
+            if ($profile->experience_years !== null || $profile->experience_months) {
+                $parts[] = 'Experience: ' . ($profile->formattedTotalExperience() ?? '');
             }
             if ($profile->skills) {
                 $parts[] = 'Skills: ' . (is_array($profile->skills) ? implode(', ', $profile->skills) : $profile->skills);
@@ -341,7 +397,7 @@ class HomeController extends Controller
         if ($applyLink !== '') {
             return redirect()
                 ->route('job-openings.apply.external-redirect', $job)
-                ->with('success', 'Application saved. Redirecting you to the employer’s website to complete your application.')
+                ->with('success', 'Application saved. The employer’s apply page will open in a new tab.')
                 ->with('apply_link', $applyLink);
         }
 

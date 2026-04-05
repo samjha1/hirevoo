@@ -88,21 +88,81 @@
                     <h5 class="fw-700 mb-3">Candidate Profile</h5>
 
                     <div class="mb-2">
+                        <div class="text-muted small">Email</div>
+                        <div class="fw-600"><a href="mailto:{{ $candidate->email }}">{{ $candidate->email ?? '—' }}</a></div>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="text-muted small">Phone</div>
+                        <div class="fw-600">{{ $candidate->phone ?? '—' }}</div>
+                    </div>
+
+                    @if($profile?->linkedin_url)
+                        <div class="mb-2">
+                            <div class="text-muted small">LinkedIn</div>
+                            <div class="fw-600 text-break"><a href="{{ $profile->linkedin_url }}" target="_blank" rel="noopener">{{ $profile->linkedin_url }}</a></div>
+                        </div>
+                    @endif
+
+                    <div class="mb-2">
                         <div class="text-muted small">Headline</div>
                         <div class="fw-600">{{ $profile?->headline ?? '—' }}</div>
                     </div>
 
+                    @if($profile?->current_company)
+                        <div class="mb-2">
+                            <div class="text-muted small">Current company</div>
+                            <div class="fw-600">{{ $profile->current_company }}</div>
+                        </div>
+                    @endif
+
                     <div class="mb-2">
-                        <div class="text-muted small">Experience</div>
+                        <div class="text-muted small">Education</div>
+                        <div class="fw-600">{{ $profile?->education ?? '—' }}</div>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="text-muted small">Total experience</div>
                         <div class="fw-600">
-                            {{ $profile?->experience_years !== null ? $profile->experience_years . ' yrs' : '—' }}
+                            {{ $profile?->formattedTotalExperience() ?? '—' }}
                         </div>
                     </div>
 
                     <div class="mb-2">
-                        <div class="text-muted small">Preferred Location</div>
+                        <div class="text-muted small">Notice period (at application)</div>
+                        <div class="fw-600">
+                            {{ \App\Models\EmployerJobApplication::noticePeriodOptions()[$application->notice_period] ?? ($application->notice_period ?? '—') }}
+                        </div>
+                    </div>
+
+                    @if($profile?->current_salary)
+                        <div class="mb-2">
+                            <div class="text-muted small">Current salary / CTC</div>
+                            <div class="fw-600">{{ $profile->current_salary }}</div>
+                        </div>
+                    @endif
+
+                    <div class="mb-2">
+                        <div class="text-muted small">Expected salary</div>
+                        <div class="fw-600">{{ $profile?->formattedExpectedSalary() ?? ($profile?->expected_salary ?? '—') }}</div>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="text-muted small">Location (current)</div>
                         <div class="fw-600">{{ $profile?->location ?? '—' }}</div>
                     </div>
+
+                    <div class="mb-2">
+                        <div class="text-muted small">Preferred job location</div>
+                        <div class="fw-600">{{ $profile?->preferred_job_location ?? '—' }}</div>
+                    </div>
+
+                    @if($application->info_accurate_confirmed_at)
+                        <div class="mb-2">
+                            <div class="text-muted small">Candidate confirmation</div>
+                            <div class="fw-600 small">Declared information accurate · {{ $application->info_accurate_confirmed_at->format('d M Y, H:i') }}</div>
+                        </div>
+                    @endif
 
                     <div class="mb-3">
                         <div class="text-muted small">Skills</div>

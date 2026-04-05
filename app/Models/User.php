@@ -17,6 +17,7 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
+        'candidate_profile_completed_at',
     ];
 
     protected $hidden = [
@@ -29,6 +30,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'candidate_profile_completed_at' => 'datetime',
         ];
     }
 
@@ -85,5 +87,40 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * Set candidate_profile_completed_at when required profile fields are present (or clear when not).
+     */
+    public function syncCandidateProfileCompletion(): void
+    {
+        if (! $this->isCandidate()) {
+            return;
+        }
+
+        $this->load('candidateProfile');
+        $p = $this->candidateProfile;
+        if (! $p) {
+            $this->forceFill(['candidate_profile_completed_at' => null])->saveQuietly();
+
+            return;
+        }
+
+        $complete = $this->phone
+            && $p->headline
+            && $p->skills
+            && $p->location
+            && $p->education
+            && $p->experience_years !== null;
+
+        if ($complete && ! $this->candidate_profile_completed_at) {
+            $this->forceFill(['candidate_profile_completed_at' => now()])->saveQuietly();
+
+            return;
+        }
+
+        if (! $complete && $this->candidate_profile_completed_at) {
+            $this->forceFill(['candidate_profile_completed_at' => null])->saveQuietly();
+        }
     }
 }

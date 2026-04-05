@@ -8,6 +8,8 @@ use App\Http\Controllers\Employer\CreditsController as EmployerCreditsController
 use App\Http\Controllers\Employer\DashboardController as EmployerDashboardController;
 use App\Http\Controllers\Employer\JobController as EmployerJobController;
 use App\Http\Controllers\Employer\ProfileController as EmployerProfileController;
+use App\Http\Controllers\Auth\SetPasswordController;
+use App\Http\Controllers\GuestResumeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\CandidateDashboardController;
@@ -26,20 +28,27 @@ Route::post('/sign-out', [LoginController::class, 'logout'])->name('logout');
 Route::get('/sign-up', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/sign-up', [RegisterController::class, 'register']);
 
+// Guest resume upload (no login required)
+Route::get('/resume/upload', [ResumeController::class, 'showUploadForm'])->name('resume.upload');
+Route::post('/resume/guest-upload', [GuestResumeController::class, 'upload'])->name('resume.guest-upload');
+
+// Password setup (from welcome email link)
+Route::get('/set-password', [SetPasswordController::class, 'show'])->name('auth.set-password');
+Route::post('/set-password', [SetPasswordController::class, 'store'])->name('auth.set-password.store');
+
 Route::get('/auth/google/redirect', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 Route::get('/auth/microsoft/redirect', [SocialAuthController::class, 'redirectToMicrosoft'])->name('auth.microsoft.redirect');
 Route::get('/auth/microsoft/callback', [SocialAuthController::class, 'handleMicrosoftCallback'])->name('auth.microsoft.callback');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
     Route::get('/dashboard', [CandidateDashboardController::class, 'index'])->name('candidate.dashboard');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/fill-from-resume', [ProfileController::class, 'fillFromResume'])->name('profile.fill-from-resume');
-    Route::get('/resume/upload', [ResumeController::class, 'showUploadForm'])->name('resume.upload');
-    Route::post('/resume/upload', [ResumeController::class, 'upload']);
+    Route::post('/resume/upload', [ResumeController::class, 'upload'])->name('resume.upload.store');
     Route::get('/resume/{resume}/results', [ResumeController::class, 'results'])->name('resume.results');
     Route::post('/resume/lead', [ResumeController::class, 'createLead'])->name('resume.lead');
     Route::post('/leads/upskill-contact', [LeadController::class, 'storeUpskillContact'])->name('leads.upskill-contact');

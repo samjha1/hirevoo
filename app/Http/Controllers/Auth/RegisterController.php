@@ -66,6 +66,8 @@ class RegisterController extends Controller
             return redirect(route('employer.dashboard'));
         }
 
-        return redirect(route('home'));
+        return redirect()
+            ->route('profile')
+            ->with('info', 'Welcome! Complete your profile first — then upload your resume to unlock job matching and applications.');
     }
 }

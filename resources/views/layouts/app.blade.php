@@ -77,9 +77,8 @@
                         @endauth
                         @guest
                             <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Home</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ route('job-list') }}">Job Goals</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('job-openings') }}">Jobs</a></li>
-                            <li class="nav-item"><a class="nav-link nav-link-resume {{ request()->routeIs('resume.*') ? 'active' : '' }}" href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => url('/resume/upload')]) }}">Resume Score</a></li>
+                            <li class="nav-item"><a class="nav-link nav-link-resume {{ request()->routeIs('resume.*') ? 'active' : '' }}" href="{{ route('resume.upload') }}">Resume Score</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('pricing') }}">Pricing</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('about') }}">About</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">Contact</a></li>
@@ -87,8 +86,6 @@
                         @auth
                         @if(!auth()->user()->isReferrer() && !auth()->user()->isAdmin())
                             <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Home</a></li>
-                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('candidate.dashboard') ? 'active' : '' }}" href="{{ route('candidate.dashboard') }}">My Applications</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ route('job-list') }}">Job Goals</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('job-openings') }}">Jobs</a></li>
                             <li class="nav-item"><a class="nav-link nav-link-resume {{ request()->routeIs('resume.*') ? 'active' : '' }}" href="{{ route('resume.upload') }}">Resume Score</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('pricing') }}">Pricing</a></li>
@@ -167,11 +164,6 @@
                                         <div class="text-muted small text-center py-4 px-3">Candidate application alerts appear when you apply to jobs on Hirevo.</div>
                                     @endif
                                 </div>
-                                @if(auth()->user()->isCandidate())
-                                    <div class="p-2 border-top bg-light text-center">
-                                        <a class="small text-primary text-decoration-none" href="{{ route('candidate.dashboard') }}">My applications</a>
-                                    </div>
-                                @endif
                             </div>
                         </li>
                         <li class="nav-item dropdown ms-2">
@@ -187,7 +179,6 @@
                                 @elseif(auth()->user()->isAdmin())
                                     <li><a class="dropdown-item" href="{{ route('profile') }}">My Profile</a></li>
                                 @else
-                                    <li><a class="dropdown-item" href="{{ route('candidate.dashboard') }}">My Applications</a></li>
                                     <li><a class="dropdown-item" href="{{ route('profile') }}">My Profile</a></li>
                                 @endif
                                 <li><hr class="dropdown-divider"></li>
@@ -387,7 +378,7 @@
                                     <ul class="hirevo-footer__links">
                                         <li><a href="{{ route('job-list') }}">Job Goals</a></li>
                                         <li><a href="{{ route('job-openings') }}">Job Openings</a></li>
-                                        <li><a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => url('/resume/upload')]) }}">Resume Score</a></li>
+                                        <li><a href="{{ route('resume.upload') }}">Resume Score</a></li>
                                     </ul>
                                 </div>
                             </div>

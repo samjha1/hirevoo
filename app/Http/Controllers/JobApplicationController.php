@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\CandidateOnboarding;
 use App\Models\JobApplication;
 use App\Models\JobRole;
 use App\Models\Resume;
@@ -21,6 +22,11 @@ class JobApplicationController extends Controller
         }
         if (! auth()->user()->isCandidate()) {
             return redirect()->route('job-goal.show', $jobRole)->with('info', 'Only candidates can apply.');
+        }
+
+        $onboarding = CandidateOnboarding::redirectIfIncomplete(auth()->user());
+        if ($onboarding !== null) {
+            return $onboarding;
         }
 
         $existing = JobApplication::where('user_id', auth()->id())->where('job_role_id', $jobRole->id)->first();
@@ -70,6 +76,11 @@ class JobApplicationController extends Controller
 
         if (! auth()->user()->isCandidate()) {
             return redirect()->route('job-goal.show', $jobRole);
+        }
+
+        $onboarding = CandidateOnboarding::redirectIfIncomplete(auth()->user());
+        if ($onboarding !== null) {
+            return $onboarding;
         }
 
         $existing = JobApplication::where('user_id', auth()->id())->where('job_role_id', $jobRole->id)->first();

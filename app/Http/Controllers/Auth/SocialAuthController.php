@@ -125,11 +125,27 @@ class SocialAuthController extends Controller
 
     protected function redirectAfterLogin(): RedirectResponse
     {
+        $user = Auth::user();
         $redirect = session('oauth_intended_redirect');
         $this->clearOAuthSession();
+
+        if ($user && $user->isCandidate()) {
+            if (! $user->candidate_profile_completed_at) {
+                return redirect()
+                    ->route('profile')
+                    ->with('info', 'Complete your profile first — then upload your resume to continue.');
+            }
+            if (! $user->resumes()->exists()) {
+                return redirect()
+                    ->route('resume.upload')
+                    ->with('info', 'Upload your resume so we can analyse it and match you to roles.');
+            }
+        }
+
         if ($redirect) {
             return redirect()->to($redirect);
         }
-        return redirect()->intended(route('home'));
+
+        return redirect()->intended($user && $user->isCandidate() ? route('candidate.dashboard') : route('home'));
     }
 }

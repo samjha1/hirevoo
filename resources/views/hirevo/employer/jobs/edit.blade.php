@@ -42,22 +42,7 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="job_department" class="form-label fw-500">Job department <span class="text-danger">*</span></label>
-                        <select class="form-select @error('job_department') is-invalid @enderror" id="job_department" name="job_department" required>
-                            <option value="">Select department</option>
-                            <option value="Sales" {{ old('job_department', $job->job_department) === 'Sales' ? 'selected' : '' }}>Sales</option>
-                            <option value="Marketing" {{ old('job_department', $job->job_department) === 'Marketing' ? 'selected' : '' }}>Marketing</option>
-                            <option value="Human Resources" {{ old('job_department', $job->job_department) === 'Human Resources' ? 'selected' : '' }}>Human Resources</option>
-                            <option value="Finance" {{ old('job_department', $job->job_department) === 'Finance' ? 'selected' : '' }}>Finance</option>
-                            <option value="Engineering" {{ old('job_department', $job->job_department) === 'Engineering' ? 'selected' : '' }}>Engineering</option>
-                            <option value="Operations" {{ old('job_department', $job->job_department) === 'Operations' ? 'selected' : '' }}>Operations</option>
-                            <option value="Customer Support" {{ old('job_department', $job->job_department) === 'Customer Support' ? 'selected' : '' }}>Customer Support</option>
-                            <option value="Legal" {{ old('job_department', $job->job_department) === 'Legal' ? 'selected' : '' }}>Legal</option>
-                            <option value="Other" {{ old('job_department', $job->job_department) === 'Other' ? 'selected' : '' }}>Other</option>
-                        </select>
-                        @error('job_department')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
+                    @include('hirevo.employer.jobs._department-field', ['selectedDepartment' => $job->job_department ?? ''])
 
                     <div class="mb-4">
                         <label for="title" class="form-label fw-500">Job title / Designation <span class="text-danger">*</span></label>
@@ -66,7 +51,10 @@
                         @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
-                    @include('hirevo.employer.jobs._skills-field', ['skillsValue' => old('required_skills', $skillsDefault)])
+                    @include('hirevo.employer.jobs._skills-field', [
+                        'skillsValue' => old('required_skills', $skillsDefault),
+                        'selectedDepartment' => $job->job_department ?? '',
+                    ])
 
                     <div class="mb-4">
                         <label for="apply_link" class="form-label fw-500">External Apply Link <small class="text-muted">(Optional)</small></label>
@@ -246,9 +234,15 @@
                 <div class="card-body p-4">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                         <h5 class="card-title mb-0 fw-600">Job description</h5>
-                        <button type="button" class="btn btn-link btn-sm text-primary p-0 text-decoration-none" id="generate-ai-btn">
-                            <i class="mdi mdi-auto-fix me-1"></i>Regenerate with AI
-                        </button>
+                        @if(!empty($aiDescriptionAvailable))
+                            <button type="button" class="btn btn-link btn-sm text-primary p-0 text-decoration-none" id="generate-ai-btn">
+                                <i class="mdi mdi-auto-fix me-1"></i>Regenerate with AI
+                            </button>
+                        @else
+                            <span class="small text-muted" title="Your site admin can add OpenRouter or OpenAI keys to enable this.">
+                                <i class="mdi mdi-information-outline me-1"></i>AI helper unavailable — edit the description below
+                            </span>
+                        @endif
                     </div>
                     <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="8">{{ old('description', $job->description) }}</textarea>
                     @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror

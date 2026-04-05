@@ -1,5 +1,9 @@
 @php
     $skillPresetGroups = config('hirevo.employer_job_skill_presets', []);
+    $deptSkillMap = config('hirevo.employer_job_department_skill_groups', []);
+    $initialDept = old('job_department', $selectedDepartment ?? '');
+    $initialAllowed = $deptSkillMap[$initialDept] ?? null;
+    $showAllInitially = $initialDept === '' || $initialDept === 'Other' || $initialAllowed === null || (is_array($initialAllowed) && count($initialAllowed) === 0);
     $allPresetValues = [];
     foreach ($skillPresetGroups as $skills) {
         foreach ($skills as $s) {
@@ -9,11 +13,16 @@
 @endphp
 <div class="mb-4" id="hirevo-skills-field">
     <label class="form-label fw-500">Skills &amp; certifications</label>
-    <p class="small text-muted mb-2">Select <strong>one or more</strong> presets below and/or add extra skills in the box. Used for candidate matching and certification paths.</p>
+    <p class="small text-muted mb-2">Select <strong>one or more</strong> presets below and/or add extra skills in the box. Used for candidate matching.</p>
+    <p class="small text-primary mb-2 fw-500" id="hirevo-skills-dept-hint" role="status"></p>
 
     <div class="border rounded p-3 bg-light mb-3" style="max-height: 320px; overflow-y: auto;">
         @foreach($skillPresetGroups as $groupTitle => $skills)
-            <div class="mb-3 @if($loop->last) mb-0 @endif">
+            @php
+                $visibleInitially = $showAllInitially || (is_array($initialAllowed) && in_array($groupTitle, $initialAllowed, true));
+            @endphp
+            <div class="hirevo-skill-group mb-3 @if($loop->last) mb-0 @endif {{ $visibleInitially ? '' : 'd-none' }}"
+                 data-group-key="{{ $groupTitle }}">
                 <h6 class="small text-muted fw-600 mb-2">{{ $groupTitle }}</h6>
                 <div class="row g-2">
                     @foreach($skills as $skill)
@@ -43,15 +52,19 @@
               maxlength="2000"
               placeholder="e.g. AWS, Python, SQL — presets sync here; you can edit or add more.">{{ $skillsValue }}</textarea>
     @error('required_skills')<div class="invalid-feedback">{{ $message }}</div>@enderror
-    <p class="small text-muted mt-1 mb-0">Checkboxes update this list; you can still type custom skills.</p>
+    <p class="small text-muted mt-1 mb-0">Checkboxes update this list; hidden categories stay saved if already selected.</p>
 
     <script>
         (function () {
             window.__hirevoSkillPresets = @json($allPresetValues);
+            window.__hirevoDeptSkillGroups = @json($deptSkillMap);
             var root = document.getElementById('hirevo-skills-field');
             if (!root) return;
             var ta = document.getElementById('required_skills');
+            var hint = document.getElementById('hirevo-skills-dept-hint');
+            var deptSel = document.getElementById('job_department');
             var presetList = window.__hirevoSkillPresets || [];
+            var deptMap = window.__hirevoDeptSkillGroups || {};
             if (!ta || !presetList.length) return;
 
             var presetSet = {};
@@ -92,6 +105,29 @@
                 });
             }
 
+            function applyDepartmentSkillFilter() {
+                var dept = deptSel ? (deptSel.value || '') : '';
+                var allowed = deptMap[dept];
+                var showAll = !dept || dept === 'Other' || !allowed || !allowed.length;
+                root.querySelectorAll('.hirevo-skill-group').forEach(function (wrap) {
+                    var key = wrap.getAttribute('data-group-key');
+                    var show = showAll || allowed.indexOf(key) !== -1;
+                    wrap.classList.toggle('d-none', !show);
+                });
+                if (hint) {
+                    if (!dept) {
+                        hint.textContent = 'Choose a job department to narrow suggested skill categories.';
+                        hint.className = 'small text-muted mb-2 fw-500';
+                    } else if (showAll) {
+                        hint.textContent = 'All skill categories are shown for this department.';
+                        hint.className = 'small text-muted mb-2 fw-500';
+                    } else {
+                        hint.textContent = 'Showing categories relevant to ' + dept + '. Scroll to see all listed skills; your summary below keeps every skill you selected.';
+                        hint.className = 'small text-primary mb-2 fw-500';
+                    }
+                }
+            }
+
             root.querySelectorAll('.skill-preset-cb').forEach(function (cb) {
                 cb.addEventListener('change', rebuildFromCheckboxes);
             });
@@ -101,6 +137,10 @@
                 ta._hirevoSyncT = setTimeout(syncCheckboxesFromTextarea, 200);
             });
             syncCheckboxesFromTextarea();
+            applyDepartmentSkillFilter();
+            if (deptSel) {
+                deptSel.addEventListener('change', applyDepartmentSkillFilter);
+            }
         })();
     </script>
 </div>

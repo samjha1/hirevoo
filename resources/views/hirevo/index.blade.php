@@ -3,714 +3,631 @@
 @section('title', 'Home')
 
 @push('styles')
-<style>
-    .hero-badge { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
-    .hirevo-hero-title { font-size: clamp(1.75rem, 5vw, 2.75rem); }
-    @media (min-width: 768px) { .hirevo-hero-title { font-size: clamp(2rem, 4vw, 3.25rem); } }
-    .hero-search-card { border-radius: 16px; box-shadow: 0 8px 32px rgba(11, 31, 59, 0.12); overflow: visible; }
-    .hero-search-card .form-control, .hero-search-card .form-select { border: none; padding: 0.85rem 1rem; font-size: 1rem; }
-    .hero-search-card .form-control:focus { box-shadow: none; }
-    /* Ensure country dropdown (Choices.js) is visible and on top */
-    .hero-search-card .choices { position: relative; z-index: 30; }
-    .hero-search-card .choices__list--dropdown { z-index: 50; min-width: 180px; width: auto !important; }
-    /* Fix dropdown options: show full text in one line, no letter stacking */
-    .hero-search-card .choices__list--dropdown .choices__item--choice,
-    .hero-search-card .choices__list--dropdown .choices__item { display: block !important; white-space: nowrap !important; word-break: normal !important; word-spacing: normal; letter-spacing: normal; }
-    .hero-search-card .choices__inner { min-width: 0; }
-    /* Prevent flex from shrinking dropdown so letters don't stack */
-    .hero-search-card .choices__list .choices__item { width: 100%; box-sizing: border-box; }
-    .hero-search-card .btn-search { padding: 0.85rem 1.5rem; font-weight: 600; border-radius: 0 12px 12px 0; background: var(--hirevo-primary); border-color: var(--hirevo-primary); box-shadow: 0 2px 8px rgba(11, 31, 59, 0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .hero-search-card .btn-search:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(11, 31, 59, 0.35); }
-    .resume-hero-card { border-radius: 20px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(11, 31, 59, 0.04) 100%); border: 1px solid rgba(16, 185, 129, 0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .resume-hero-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15); }
-    .resume-hero-card .resume-cta-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: linear-gradient(135deg, #10B981, #059669); color: #fff; }
-    .trending-role-card { border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); transition: all 0.2s ease; }
-    .trending-role-card:hover { border-color: var(--hirevo-primary); box-shadow: 0 8px 24px rgba(11, 31, 59, 0.08); }
-    .why-hirevo-card { border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); transition: all 0.2s ease; }
-    .why-hirevo-card:hover { border-color: rgba(11, 31, 59, 0.15); box-shadow: 0 8px 28px rgba(11, 31, 59, 0.1); }
-    .hirevo-value-card__eyebrow { font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: #64748b; margin-bottom: 0.5rem; }
-    .hirevo-value-card__media { border-radius: 12px; background: linear-gradient(180deg, rgba(11, 31, 59, 0.04) 0%, rgba(255,255,255,0) 100%); padding: 0.75rem; }
-    .hirevo-value-card__img { max-height: 176px; width: 100%; object-fit: contain; object-position: center bottom; display: block; margin: 0 auto; }
-    .hirevo-value-card__img--photo { object-fit: cover; object-position: center; border-radius: 10px; max-height: 160px; }
-    .hirevo-value-list { margin: 0; padding-left: 1.1rem; color: #64748b; font-size: 0.9rem; }
-    .hirevo-value-list li { margin-bottom: 0.35rem; }
-    .hirevo-value-list li:last-child { margin-bottom: 0; }
-</style>
+<link rel="stylesheet" href="{{ asset('css/hirevo-home-v2.css') }}">
 @endpush
 
 @section('content')
-    @php
-        $siteImg = fn (string $file) => asset('images/webisteimages/' . rawurlencode($file));
-    @endphp
-    <!-- HERO - Apna-style -->
-    <section class="hirevo-hero position-relative" id="home">
+<div class="hirevo-home-page">
+    @php $siteImg = fn(string $f) => asset('images/webisteimages/' . rawurlencode($f)); @endphp
+
+    {{-- ═══════════════ HERO ═══════════════ --}}
+    <section class="hv2-hero" id="home">
+        <div class="hv2-hero__bg"   aria-hidden="true"></div>
+        <div class="hv2-hero__grid" aria-hidden="true"></div>
+        <div class="hv2-hero__orb"  aria-hidden="true"></div>
+        <div class="hv2-hero__orb2" aria-hidden="true"></div>
         <div class="container position-relative">
-            <div class="row align-items-center min-vh-50 py-5">
-                <div class="col-lg-7">
-                    <span class="hero-badge text-primary mb-3 d-inline-block">Built for students & freshers</span>
-                    <h1 class="hirevo-hero-title fw-bold mb-3 lh-tight">Own Your Next <span class="text-primary">Career Move</span></h1>
-                    <p class="lead text-muted mb-4" style="max-width: 560px;">
-                        Finding the right job shouldn’t feel confusing or random.
-                        We help you understand where you stand, what to improve, and where real opportunities exist.
+            <div class="row align-items-center g-5">
+
+                {{-- Left copy --}}
+                <div class="col-lg-6">
+                    <div class="hv2-badge">
+                        <span class="hv2-badge-dot" aria-hidden="true"></span>
+                        Built for students &amp; freshers
+                    </div>
+                    <h1 class="hv2-display">
+                        Get <span class="hv2-accent">clarity.</span><br>
+                        Land the <span class="hv2-teal">right</span> role.
+                    </h1>
+                    <p class="hv2-lead">
+                        Stop applying blindly. Hirevo shows where your profile stands,
+                        <strong>what to improve</strong>, and <strong>real roles</strong> that fit —
+                        so every application counts.
                     </p>
                     <div class="d-flex flex-wrap gap-2 mb-4">
-                        <a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => route('resume.upload')]) }}" class="btn btn-primary rounded-pill px-4">
-                            Get Started
+                        <a href="{{ route('resume.upload') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg">
+                            Analyse my resume free <i class="uil uil-arrow-right"></i>
                         </a>
-                        <a href="{{ route('job-openings') }}" class="btn btn-outline-primary rounded-pill px-4">
-                            Explore Opportunities
+                        <a href="{{ route('job-openings') }}" class="hv2-btn hv2-btn--ghost hv2-btn-lg">
+                            Explore openings
                         </a>
                     </div>
-                    <form action="{{ route('job-list') }}" method="GET" class="mb-0">
-                        <div class="hero-search-card bg-white d-flex flex-column flex-md-row align-stretch rounded-3 border">
-                            <div class="flex-grow-1 d-flex align-items-center border-end">
-                                <i class="uil uil-briefcase-alt text-muted ms-3 fs-20"></i>
-                                <input type="search" name="q" class="form-control border-0 rounded-0" placeholder="Job goal e.g. Data Analyst, Developer..." id="job-title">
+
+                    <div class="hv2-search-wrap">
+                        <form action="{{ route('job-list') }}" method="GET" class="mb-0">
+                            <div class="hv2-search-bar">
+                                <div class="hv2-search-field flex-grow-1">
+                                    <i class="uil uil-briefcase-alt" aria-hidden="true"></i>
+                                    <input type="search" name="q" class="form-control border-0 rounded-0 shadow-none"
+                                           placeholder="Job goal e.g. Data Analyst, Developer…"
+                                           id="job-title" autocomplete="off">
+                                </div>
+                                <div class="hv2-search-field" style="min-width:140px;">
+                                    <i class="uil uil-map-marker d-none d-md-inline" aria-hidden="true"></i>
+                                    <select class="form-select border-0 rounded-0 shadow-none flex-grow-1"
+                                            name="location" id="choices-single-location" aria-label="Location">
+                                        <option value="IN">India</option>
+                                        <option value="US">United States</option>
+                                        <option value="GB">United Kingdom</option>
+                                        <option value="AE">UAE</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-search d-flex align-items-center justify-content-center gap-1">
+                                    <i class="uil uil-search"></i> Find job goals
+                                </button>
                             </div>
-                            <div class="d-flex align-items-center" style="min-width: 140px;">
-                                <i class="uil uil-map-marker text-muted ms-3 fs-20 d-none d-md-inline"></i>
-                                <select class="form-select border-0 rounded-0 flex-grow-1" name="location" id="choices-single-location" aria-label="Location">
-                                    <option value="IN">India</option>
-                                    <option value="US">United States</option>
-                                    <option value="GB">United Kingdom</option>
-                                    <option value="AE">UAE</option>
-                                </select>
+                        </form>
+                        <p class="small mt-2 mb-0" style="color:var(--hv2-faint);">
+                            Unsure where to start? Upload your resume — we'll map skills and gaps in minutes.
+                        </p>
+                    </div>
+
+                    <div class="hv2-trust-row">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="hv2-trust-avatars" aria-hidden="true">
+                                <div class="hv2-trust-av" style="background:linear-gradient(135deg,#6C63FF,#9d97ff);color:#fff;">HV</div>
+                                <div class="hv2-trust-av" style="background:linear-gradient(135deg,#00D4AA,#00F5C8);color:#0A0A14;">CV</div>
+                                <div class="hv2-trust-av" style="background:linear-gradient(135deg,#FF6B6B,#ff9b9b);color:#fff;">JR</div>
+                                <div class="hv2-trust-av" style="background:linear-gradient(135deg,#FFB347,#ffd080);color:#0A0A14;">SK</div>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-search flex-shrink-0"><i class="uil uil-search me-1"></i> Find Jobs</button>
+                            <div class="hv2-trust-copy"><strong>Resume-first</strong> clarity for early talent</div>
                         </div>
-                    </form>
-                    <p class="small text-muted mt-2 mb-0">If you’re unsure where to start, begin with your resume.</p>
+                    </div>
                 </div>
-                <div class="col-lg-5 text-center mt-5 mt-lg-0">
-                    <img src="{{ asset($theme.'/assets/images/process-02.png') }}" alt="Career growth" class="img-fluid hirevo-hero-img" width="520" height="400" fetchpriority="high" decoding="async">
+
+                {{-- Right visual card --}}
+                <div class="col-lg-6">
+                    <div class="hv2-visual d-none d-lg-block">
+                        <div class="position-relative">
+                            <div class="hv2-card-main">
+                                <div class="hv2-ring-row">
+                                    <div class="hv2-ring" id="heroRing">
+                                        <span id="heroRingNum">0%</span>
+                                    </div>
+                                    <div class="hv2-ring-info">
+                                        <p>Your skill match snapshot</p>
+                                        <span>After resume analysis · job goals aligned</span>
+                                        <div class="hv2-pill-tag">Strong profile direction</div>
+                                    </div>
+                                </div>
+                                <div class="hv2-mini-label">Skill signals (example)</div>
+                                <div class="hv2-bar-row">
+                                    <span class="hv2-bar-name">Core skills</span>
+                                    <div class="hv2-bar-track">
+                                        <div class="hv2-bar-fill hv2-anim-bar" style="background:var(--hv2-teal);" data-w="88"></div>
+                                    </div>
+                                    <span class="hv2-bar-pct">88%</span>
+                                </div>
+                                <div class="hv2-bar-row">
+                                    <span class="hv2-bar-name">Role fit</span>
+                                    <div class="hv2-bar-track">
+                                        <div class="hv2-bar-fill hv2-anim-bar" style="background:var(--hv2-violet);" data-w="72"></div>
+                                    </div>
+                                    <span class="hv2-bar-pct">72%</span>
+                                </div>
+                                <div class="hv2-bar-row">
+                                    <span class="hv2-bar-name">Gaps to close</span>
+                                    <div class="hv2-bar-track">
+                                        <div class="hv2-bar-fill hv2-anim-bar" style="background:var(--hv2-amber);" data-w="34"></div>
+                                    </div>
+                                    <span class="hv2-bar-pct" style="color:var(--hv2-amber);">↑</span>
+                                </div>
+                            </div>
+                            <div class="hv2-float hv2-float-tr">
+                                <span style="font-size:1.15rem">📈</span>
+                                <div>
+                                    <strong style="color:var(--hv2-text);font-size:0.78rem;">Match score updated</strong><br>
+                                    <span style="color:var(--hv2-faint);font-size:0.68rem;">After resume refresh</span>
+                                </div>
+                            </div>
+                            <div class="hv2-float hv2-float-bl hv2-float--2">
+                                <span style="font-size:1.15rem">🎯</span>
+                                <div>
+                                    <strong style="color:var(--hv2-text);font-size:0.78rem;">New job goals found</strong><br>
+                                    <span style="color:var(--hv2-faint);font-size:0.68rem;">Based on your skills</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-lg-none text-center mt-3">
+                        <img src="{{ asset($theme.'/assets/images/process-02.png') }}" alt="" class="img-fluid opacity-75" style="max-height:220px;" loading="lazy" width="400" height="300">
+                    </div>
                 </div>
+
             </div>
         </div>
     </section>
 
-    <!-- RESUME ANALYSIS -->
-    <section class="py-4 py-lg-5">
+    {{-- ═══════════════ SOCIAL-PROOF TICKER ═══════════════ --}}
+    <div class="hv2-ticker">
+        <div class="hv2-ticker-track">
+            {{-- Items duplicated for seamless loop --}}
+            @foreach([
+                ['✅','Resume scored in 2 min'],['🎯','Skills mapped to real roles'],['📈','ATS score explained'],
+                ['🚀','Job goals matched instantly'],['🔍','Gaps identified clearly'],['💼','Live openings explored'],
+                ['✅','Resume scored in 2 min'],['🎯','Skills mapped to real roles'],['📈','ATS score explained'],
+                ['🚀','Job goals matched instantly'],['🔍','Gaps identified clearly'],['💼','Live openings explored'],
+            ] as [$icon, $text])
+                <div class="hv2-ticker-item"><span>{{ $icon }}</span>{{ $text }}</div>
+            @endforeach
+        </div>
+    </div>
+
+    {{-- ═══════════════ RESUME CTA ═══════════════ --}}
+    <section class="hv2-section hv2-section--tight">
         <div class="container">
-            <a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => route('resume.upload')]) }}" class="text-decoration-none text-dark d-block">
-                <div class="resume-hero-card p-4 p-lg-5">
+            <div class="hv2-reveal">
+                <a href="{{ route('resume.upload') }}" class="hv2-resume-card">
                     <div class="row align-items-center g-4">
-                        <div class="col-lg-7">
+                        <div class="col-lg-8">
                             <div class="d-flex flex-column flex-md-row align-items-md-center gap-4">
-                                <div class="resume-cta-icon flex-shrink-0 mx-auto mx-md-0">
+                                <div class="hv2-resume-icon mx-auto mx-md-0">
                                     <i class="uil uil-file-search-alt"></i>
                                 </div>
-                                <div class="flex-grow-1 text-center text-md-start">
-                                    <h3 class="h4 fw-bold mb-2">Start with your resume</h3>
-                                    <p class="text-muted mb-0">
-                                        Before applying more, know if your profile is actually working for you.
-                                        Upload your resume and get a clear idea of where you stand. <span class="fw-semibold">Takes less than 2 minutes.</span>
+                                <div class="text-center text-md-start">
+                                    <h2 class="h4 fw-bold mb-2" style="color:var(--hv2-text);">Start with your resume</h2>
+                                    <p class="mb-0" style="color:var(--hv2-muted);max-width:36rem;">
+                                        Know if your profile is working <em>before</em> you apply more.
+                                        Upload once — see strengths, gaps, and direction.
+                                        <strong style="color:var(--hv2-text);">Under two minutes. No account needed.</strong>
                                     </p>
                                 </div>
                             </div>
                             <div class="mt-4 text-center text-md-start">
-                                @auth
-                                    <span class="btn resume-btn btn-lg rounded-pill px-4">
-                                        <i class="uil uil-file-upload me-1"></i> Upload Resume
-                                    </span>
-                                @else
-                                    <span class="btn resume-btn btn-lg rounded-pill px-4">
-                                        <i class="uil uil-file-upload me-1"></i> Upload Your Resume
-                                    </span>
-                                @endauth
+                                <span class="hv2-btn hv2-btn--teal hv2-btn-lg" style="pointer-events:none;">
+                                    <i class="uil uil-upload"></i> Upload resume free
+                                </span>
                             </div>
                         </div>
-                        <div class="col-lg-5 text-center">
-                            <img src="{{ $siteImg('Image 3.PNG') }}" alt="Skill insights and job matches tailored to your profile" class="img-fluid hirevo-site-illustration mx-auto" style="max-height: 240px;" loading="lazy" width="400" height="260">
+                        <div class="col-lg-4 text-center">
+                            <img src="{{ $siteImg('Image 3.PNG') }}" alt="" class="img-fluid" style="max-height:200px;" loading="lazy" width="400" height="260">
                         </div>
                     </div>
-                </div>
-            </a>
+                </a>
+            </div>
         </div>
     </section>
 
-    <!-- HOW IT WORKS -->
-    <section class="section pt-2 pb-0">
+    {{-- ═══════════════ HOW IT WORKS ═══════════════ --}}
+    <section class="hv2-section hv2-section--surface">
         <div class="container">
-            <div class="row justify-content-center mb-4">
-                <div class="col-lg-8 text-center">
-                    <h2 class="h3 fw-bold mb-2">How Hirevoo works</h2>
-                    <p class="text-muted mb-0">Clarity first. Then direction. Then smarter applications.</p>
-                </div>
+            <div class="text-center mb-5 hv2-reveal">
+                <div class="hv2-eyebrow hv2-eyebrow--pill hv2-eyebrow--violet">How it works</div>
+                <h2 class="hv2-display mt-3" style="font-size:clamp(1.75rem,3vw,2.55rem);">
+                    Three steps to <span class="hv2-teal">career-ready.</span>
+                </h2>
+                <p class="hv2-lead mx-auto text-center mb-0" style="max-width:40rem;">
+                    Clarity first. Then direction. Then smarter applications — no guesswork.
+                </p>
             </div>
-            <div class="row justify-content-center mb-4">
-                <div class="col-lg-10 text-center">
-                    <img src="{{ $siteImg('Image 5.PNG') }}" alt="From your profile to the right role: search, match, and succeed" class="img-fluid hirevo-site-illustration hirevo-how-it-works-img" loading="lazy" width="920" height="320">
+            <div class="hv2-steps">
+                <div class="hv2-step hv2-reveal hv2-reveal-d1">
+                    <span class="hv2-step-num" aria-hidden="true">01</span>
+                    <div class="hv2-step-icon hv2-step-icon--v">🔬</div>
+                    <h3>Know your real profile</h3>
+                    <p>Upload your resume — we map skills, surface gaps, and benchmark you against realistic role expectations.</p>
                 </div>
-            </div>
-            <div class="row g-3 g-lg-4">
-                <div class="col-md-4">
-                    <div class="why-hirevo-card p-4 h-100">
-                        <div class="d-flex align-items-center gap-3 mb-2">
-                            <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style="width:44px;height:44px;">
-                                <strong>1</strong>
-                            </div>
-                            <h3 class="h6 fw-700 mb-0">Understand your profile</h3>
-                        </div>
-                        <p class="text-muted mb-0">Upload your resume and see where you stand.</p>
-                    </div>
+                <div class="hv2-step hv2-reveal hv2-reveal-d2">
+                    <span class="hv2-step-num" aria-hidden="true">02</span>
+                    <div class="hv2-step-icon hv2-step-icon--t">🎯</div>
+                    <h3>See what fits</h3>
+                    <p>Explore job goals and openings with context: what each role needs and how your profile compares right now.</p>
                 </div>
-                <div class="col-md-4">
-                    <div class="why-hirevo-card p-4 h-100">
-                        <div class="d-flex align-items-center gap-3 mb-2">
-                            <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style="width:44px;height:44px;">
-                                <strong>2</strong>
-                            </div>
-                            <h3 class="h6 fw-700 mb-0">Identify what’s missing</h3>
-                        </div>
-                        <p class="text-muted mb-0">Get clarity on skills, roles, and direction.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="why-hirevo-card p-4 h-100">
-                        <div class="d-flex align-items-center gap-3 mb-2">
-                            <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style="width:44px;height:44px;">
-                                <strong>3</strong>
-                            </div>
-                            <h3 class="h6 fw-700 mb-0">Apply smarter</h3>
-                        </div>
-                        <p class="text-muted mb-0">Focus on opportunities that actually match you.</p>
-                    </div>
+                <div class="hv2-step hv2-reveal hv2-reveal-d3">
+                    <span class="hv2-step-num" aria-hidden="true">03</span>
+                    <div class="hv2-step-icon hv2-step-icon--a">🚀</div>
+                    <h3>Apply smarter</h3>
+                    <p>Focus on opportunities that match — fewer cold applications, better use of your time and energy.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- DIFFERENTIATION + VALUE -->
-    <section class="section pt-4">
+    {{-- ═══════════════ PAIN + DIFFERENTIATION ═══════════════ --}}
+    <section class="hv2-section">
         <div class="container">
-            <div class="row g-4 align-items-stretch">
-                <div class="col-lg-6">
-                    <div class="why-hirevo-card p-4 p-lg-5 h-100">
-                        <h2 class="h4 fw-bold mb-2">Not just another job platform</h2>
-                        <p class="text-muted mb-0">
-                            Most platforms focus on quantity. <span class="fw-semibold">We focus on clarity.</span>
-                            Instead of pushing you to apply more, we help you understand what actually works for your profile and where you should focus.
+            <div class="hv2-pain-grid">
+                <div class="hv2-reveal hv2-reveal--left">
+                    <div class="hv2-eyebrow" style="color:var(--hv2-coral);">The problem</div>
+                    <h2 class="hv2-statement mb-4">You're not <em>unqualified.</em><br>You're under-guided.</h2>
+                    <p class="hv2-lead mb-4">
+                        Most platforms push volume.
+                        <strong>Hirevo pushes clarity</strong> — so you know what to fix, what to learn, and where to aim.
+                    </p>
+                    <a href="{{ route('resume.upload') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg">
+                        Fix this for me <i class="uil uil-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="hv2-pain-list hv2-reveal hv2-reveal--right">
+                    <div class="hv2-pain-item">
+                        <div class="hv2-pain-ico" aria-hidden="true">📭</div>
+                        <div>
+                            <strong>Too many applications, too little signal</strong>
+                            <span>Applying everywhere without match data burns time and confidence.</span>
+                        </div>
+                    </div>
+                    <div class="hv2-pain-item">
+                        <div class="hv2-pain-ico" aria-hidden="true">🗺️</div>
+                        <div>
+                            <strong>"Which role is actually for me?"</strong>
+                            <span>Job titles hide skill reality — we map roles to what you bring.</span>
+                        </div>
+                    </div>
+                    <div class="hv2-pain-item">
+                        <div class="hv2-pain-ico" aria-hidden="true">🔍</div>
+                        <div>
+                            <strong>Rejected without knowing why</strong>
+                            <span>ATS and skill mismatches filter you out early — we show what to address.</span>
+                        </div>
+                    </div>
+                    <div class="hv2-pain-item">
+                        <div class="hv2-pain-ico" aria-hidden="true">✨</div>
+                        <div>
+                            <strong>Not just another job board</strong>
+                            <span>We focus on preparation and fit — not endless scrolling listings.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-5 pt-lg-4">
+                <div class="col-lg-6 hv2-reveal hv2-reveal-d1">
+                    <div class="hv2-card h-100">
+                        <h2 class="h4 mb-3">Not just another job platform</h2>
+                        <p class="mb-0" style="color:var(--hv2-muted);">
+                            Instead of pushing you to apply more, we help you understand
+                            <strong style="color:var(--hv2-text);">what works for your profile</strong> and where to focus.
                         </p>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="why-hirevo-card p-4 p-lg-5 h-100">
-                        <h2 class="h4 fw-bold mb-3">What you actually get</h2>
-                        <ul class="text-muted mb-0 ps-3">
+                <div class="col-lg-6 hv2-reveal hv2-reveal-d2">
+                    <div class="hv2-card h-100">
+                        <h2 class="h4 mb-3">What you actually get</h2>
+                        <ul class="hv2-list mb-0">
                             <li>Better visibility for your profile</li>
                             <li>Clear direction on what to improve</li>
                             <li>Access to relevant opportunities</li>
                             <li>Support in becoming job-ready</li>
                         </ul>
-                        <p class="small text-muted mt-3 mb-0">Focus on quality, not quantity.</p>
+                        <p class="small mt-3 mb-0" style="color:var(--hv2-faint);">Focus on quality, not quantity.</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SHAPE -->
-    <div class="position-relative">
-        <div class="shape">
-            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="1440" height="150" preserveaspectratio="none" viewbox="0 0 1440 220">
-                <path d="M 0,213 C 288,186.4 1152,106.6 1440,80L1440 250L0 250z" fill="rgba(255, 255, 255, 1)"></path>
-            </svg>
-        </div>
-    </div>
-
-    <!-- POPULAR JOB GOALS - Apna trending style -->
-    <!-- <section class="section pt-0">
+    {{-- ═══════════════ POPULAR JOB GOALS ═══════════════ --}}
+    <section class="section pt-0 pb-5 job-goals-section">
         <div class="container">
             <div class="row justify-content-center mb-4">
-                <div class="col-lg-8 text-center">
-                    <h2 class="h3 fw-bold mb-2">Popular job goals</h2>
-                    <p class="text-muted mb-0">Pick a role — we'll show your skill match and gaps to fill.</p>
+                <div class="col-lg-8 text-center hv2-reveal">
+                    <div class="section-eyebrow">
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><circle cx="5" cy="5" r="5"/></svg>
+                        Career paths
+                    </div>
+                    <h2 class="section-title">Popular <span>job goals</span></h2>
+                    <p class="section-subtitle">Pick a role — we'll show skill expectations and gaps to close.</p>
                 </div>
             </div>
             <div class="row g-3 g-lg-4">
                 @forelse(($jobRoles ?? []) as $role)
-                <div class="col-6 col-md-4 col-lg-3">
-                    <a href="{{ route('job-goal.show', $role) }}" class="text-decoration-none text-dark">
-                        <div class="trending-role-card p-4 h-100 text-center">
-                            <div class="hirevo-role-icon rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
-                                <i class="uim uim-bag fs-20"></i>
+                    <div class="col-6 col-md-4 col-lg-3 role-col">
+                        <a href="{{ route('job-goal.show', $role) }}" class="text-decoration-none">
+                            <div class="trending-role-card p-4 h-100 text-center">
+                                <div class="hirevo-role-icon mb-3">
+                                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                                    </svg>
+                                </div>
+                                <h6 class="fw-600 mb-1">{{ $role->title }}</h6>
+                                <span class="view-skills-text">View skills <span class="arrow-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span></span>
                             </div>
-                            <h6 class="fw-600 mb-1">{{ $role->title }}</h6>
-                            <span class="small text-muted">View skills →</span>
-                        </div>
-                    </a>
-                </div>
+                        </a>
+                    </div>
                 @empty
-                <div class="col-6 col-md-4 col-lg-3">
-                    <a href="{{ route('job-list') }}" class="text-decoration-none text-dark">
-                        <div class="trending-role-card p-4 h-100 text-center">
-                            <div class="hirevo-role-icon rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
-                                <i class="uim uim-layers-alt fs-20"></i>
-                            </div>
-                            <h6 class="fw-600 mb-1">Data Analyst</h6>
-                            <span class="small text-muted">View skills →</span>
+                    @foreach(['Data Analyst'=>'chart','Software Engineer'=>'code','Product Manager'=>'bag','UI/UX Designer'=>'pen'] as $label=>$kind)
+                        <div class="col-6 col-md-4 col-lg-3 role-col">
+                            <a href="{{ route('job-list') }}" class="text-decoration-none">
+                                <div class="trending-role-card p-4 h-100 text-center">
+                                    <div class="hirevo-role-icon mb-3">
+                                        @if($kind==='chart')
+                                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                                        @elseif($kind==='code')
+                                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                        @elseif($kind==='pen')
+                                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                        @else
+                                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                                        @endif
+                                    </div>
+                                    <h6 class="fw-600 mb-1">{{ $label }}</h6>
+                                    <span class="view-skills-text">View skills <span class="arrow-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span></span>
+                                </div>
+                            </a>
                         </div>
-                    </a>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <a href="{{ route('job-list') }}" class="text-decoration-none text-dark">
-                        <div class="trending-role-card p-4 h-100 text-center">
-                            <div class="hirevo-role-icon rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
-                                <i class="uim uim-airplay fs-20"></i>
-                            </div>
-                            <h6 class="fw-600 mb-1">Software Engineer</h6>
-                            <span class="small text-muted">View skills →</span>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <a href="{{ route('job-list') }}" class="text-decoration-none text-dark">
-                        <div class="trending-role-card p-4 h-100 text-center">
-                            <div class="hirevo-role-icon rounded-3 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
-                                <i class="uim uim-bag fs-20"></i>
-                            </div>
-                            <h6 class="fw-600 mb-1">Product Manager</h6>
-                            <span class="small text-muted">View skills →</span>
-                        </div>
-                    </a>
-                </div>
+                    @endforeach
                 @endforelse
             </div>
-            <div class="text-center mt-4">
-                <a href="{{ route('job-list') }}" class="btn btn-outline-primary rounded-pill px-4">View all job goals <i class="uil uil-arrow-right ms-1"></i></a>
-            </div>
-        </div>
-    </section> -->
-    <style>
-.job-goals-section {
-    background: #fff;
-    position: relative;
-}
-
-.job-goals-section .section-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #6366f1;
-    background: #eef2ff;
-    padding: 4px 12px;
-    border-radius: 100px;
-    margin-bottom: 10px;
-}
-
-.job-goals-section .section-title {
-    font-size: 1.6rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: #0f172a;
-    line-height: 1.2;
-}
-
-.job-goals-section .section-title span {
-    color: #6366f1;
-}
-
-.job-goals-section .section-subtitle {
-    font-size: 0.9rem;
-    color: #64748b;
-    margin-top: 6px;
-}
-
-/* Card */
-.trending-role-card {
-    background: #fff;
-    border: 1.5px solid #e8eaf0;
-    border-radius: 16px;
-    transition: all 0.25s ease;
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
-}
-
-.trending-role-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    z-index: 0;
-}
-
-.trending-role-card:hover {
-    border-color: transparent;
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px -4px rgba(99, 102, 241, 0.25);
-}
-
-.trending-role-card:hover::before {
-    opacity: 1;
-}
-
-.trending-role-card > * {
-    position: relative;
-    z-index: 1;
-}
-
-/* Icon */
-.hirevo-role-icon {
-    width: 56px !important;
-    height: 56px !important;
-    min-width: 56px;
-    min-height: 56px;
-    background: #eef2ff !important;
-    border-radius: 14px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: background 0.25s;
-    flex-shrink: 0;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.hirevo-role-icon svg {
-    width: 26px !important;
-    height: 26px !important;
-    min-width: 26px;
-    min-height: 26px;
-    color: #6366f1;
-    stroke: #6366f1;
-    transition: color 0.25s, stroke 0.25s;
-    display: block;
-}
-
-.trending-role-card:hover .hirevo-role-icon {
-    background: rgba(255,255,255,0.22) !important;
-}
-
-.trending-role-card:hover .hirevo-role-icon svg {
-    color: #fff !important;
-    stroke: #fff !important;
-}
-
-/* Text */
-.trending-role-card h6 {
-    color: #0f172a;
-    font-weight: 700;
-    font-size: 0.875rem;
-    letter-spacing: -0.01em;
-    transition: color 0.25s;
-}
-
-.trending-role-card:hover h6 {
-    color: #fff;
-}
-
-.trending-role-card .view-skills-text {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: color 0.25s;
-}
-
-.trending-role-card:hover .view-skills-text {
-    color: rgba(255,255,255,0.8);
-}
-
-.trending-role-card .arrow-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    background: #f1f5f9;
-    border-radius: 50%;
-    transition: background 0.25s, transform 0.25s;
-}
-
-.trending-role-card:hover .arrow-badge {
-    background: rgba(255,255,255,0.25);
-    transform: translateX(2px);
-}
-
-/* View all btn */
-.btn-view-all {
-    background: #0f172a;
-    color: #fff;
-    border: none;
-    border-radius: 100px;
-    padding: 10px 24px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.2s, transform 0.2s;
-    text-decoration: none;
-}
-
-.btn-view-all:hover {
-    background: #6366f1;
-    color: #fff;
-    transform: translateY(-2px);
-}
-
-/* stagger animation */
-@keyframes cardFadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.role-col { animation: cardFadeUp 0.4s ease both; }
-.role-col:nth-child(1) { animation-delay: 0.05s; }
-.role-col:nth-child(2) { animation-delay: 0.10s; }
-.role-col:nth-child(3) { animation-delay: 0.15s; }
-.role-col:nth-child(4) { animation-delay: 0.20s; }
-.role-col:nth-child(5) { animation-delay: 0.25s; }
-.role-col:nth-child(6) { animation-delay: 0.30s; }
-.role-col:nth-child(7) { animation-delay: 0.35s; }
-.role-col:nth-child(8) { animation-delay: 0.40s; }
-</style>
-
-<section class="section pt-0 job-goals-section">
-    <div class="container">
-        <div class="row justify-content-center mb-4">
-            <div class="col-lg-8 text-center">
-                <div class="section-eyebrow">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
-                    Career Paths
-                </div>
-                <h2 class="section-title">Popular <span>job goals</span></h2>
-                <p class="section-subtitle">Pick a role — we'll show your skill match and gaps to fill.</p>
-            </div>
-        </div>
-
-        <div class="row g-3 g-lg-4">
-            @forelse(($jobRoles ?? []) as $role)
-            <div class="col-6 col-md-4 col-lg-3 role-col">
-                <a href="{{ route('job-goal.show', $role) }}" class="text-decoration-none">
-                    <div class="trending-role-card p-4 h-100 text-center">
-                        <div class="hirevo-role-icon mb-3">
-                            <svg width="26" height="26" fill="none" stroke="#6366f1" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-                            </svg>
-                        </div>
-                        <h6 class="fw-600 mb-1">{{ $role->title }}</h6>
-                        <span class="view-skills-text">
-                            View skills
-                            <span class="arrow-badge">
-                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                            </span>
-                        </span>
-                    </div>
+            <div class="text-center mt-4 hv2-reveal">
+                <a href="{{ route('job-list') }}" class="btn-view-all">
+                    View all job goals
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </a>
             </div>
-            @empty
-            <div class="col-6 col-md-4 col-lg-3 role-col">
-                <a href="{{ route('job-list') }}" class="text-decoration-none">
-                    <div class="trending-role-card p-4 h-100 text-center">
-                        <div class="hirevo-role-icon mb-3">
-                            <svg width="26" height="26" fill="none" stroke="#6366f1" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-                            </svg>
-                        </div>
-                        <h6 class="fw-600 mb-1">Data Analyst</h6>
-                        <span class="view-skills-text">
-                            View skills
-                            <span class="arrow-badge">
-                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                            </span>
-                        </span>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 role-col">
-                <a href="{{ route('job-list') }}" class="text-decoration-none">
-                    <div class="trending-role-card p-4 h-100 text-center">
-                        <div class="hirevo-role-icon mb-3">
-                            <svg width="26" height="26" fill="none" stroke="#6366f1" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-                            </svg>
-                        </div>
-                        <h6 class="fw-600 mb-1">Software Engineer</h6>
-                        <span class="view-skills-text">
-                            View skills
-                            <span class="arrow-badge">
-                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                            </span>
-                        </span>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3 role-col">
-                <a href="{{ route('job-list') }}" class="text-decoration-none">
-                    <div class="trending-role-card p-4 h-100 text-center">
-                        <div class="hirevo-role-icon mb-3">
-                            <svg width="26" height="26" fill="none" stroke="#6366f1" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-                            </svg>
-                        </div>
-                        <h6 class="fw-600 mb-1">Product Manager</h6>
-                        <span class="view-skills-text">
-                            View skills
-                            <span class="arrow-badge">
-                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                            </span>
-                        </span>
-                    </div>
-                </a>
-            </div>
-            @endforelse
         </div>
+    </section>
 
-        <div class="text-center mt-4">
-            <a href="{{ route('job-list') }}" class="btn-view-all">
-                View all job goals
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
-        </div>
-    </div>
-</section>
-
-    <!-- JOB SEARCH -->
-    <section class="section bg-light py-5">
+    {{-- ═══════════════ LIVE OPENINGS STRIP ═══════════════ --}}
+    <section class="hv2-section hv2-jobs-strip hv2-section--tight">
         <div class="container">
             <div class="row align-items-center g-4">
-                <div class="col-lg-6 order-lg-2">
-                    <h2 class="h3 fw-bold mb-2">Find opportunities that actually match you</h2>
-                    <p class="text-muted mb-4">
-                        Instead of applying everywhere, focus on roles that make sense for your profile.
-                        We help you discover jobs that are relevant, practical, and worth your time.
+                <div class="col-lg-6 order-lg-2 hv2-reveal hv2-reveal--right">
+                    <div class="hv2-eyebrow hv2-eyebrow--pill hv2-eyebrow--violet">Live openings</div>
+                    <h2 class="hv2-display mt-3" style="font-size:clamp(1.6rem,2.8vw,2.25rem);">
+                        Find work that <span class="hv2-accent">fits</span> your profile
+                    </h2>
+                    <p class="hv2-lead">
+                        Employer-posted roles you can explore and apply to — with the same clarity mindset, not spray-and-pray.
                     </p>
-                    <a href="{{ route('job-openings') }}" class="btn btn-primary btn-lg rounded-pill px-4 hirevo-cta-btn">
-                        <i class="uil uil-search me-1"></i> Search Jobs
+                    <a href="{{ route('job-openings') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg">
+                        <i class="uil uil-search"></i> Browse job openings
                     </a>
                 </div>
-                <div class="col-lg-6 order-lg-1 text-center">
-                    <img src="{{ $siteImg('Image 2.PNG') }}" alt="Search jobs and explore roles that fit you" class="img-fluid hirevo-site-illustration" style="max-height: 280px;" loading="lazy" width="520" height="280">
+                <div class="col-lg-6 order-lg-1 text-center hv2-reveal hv2-reveal--left">
+                    <img src="{{ $siteImg('Image 2.PNG') }}" alt="" class="img-fluid" style="max-height:260px;" loading="lazy" width="520" height="280">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CAREER PATH GUIDANCE + COMMUNITY + HIRING -->
-    <section class="section">
+    {{-- ═══════════════ STATS ═══════════════ --}}
+    <div class="hv2-stats" id="hv2-stats-strip">
+        <div class="hv2-stat-cell">
+            <div class="hv2-stat-num" data-count="1000" data-suffix="+">1000+</div>
+            <div class="hv2-stat-label">Candidates exploring matches</div>
+        </div>
+        <div class="hv2-stat-cell">
+            <div class="hv2-stat-num">2 min</div>
+            <div class="hv2-stat-label">Typical resume check</div>
+        </div>
+        <div class="hv2-stat-cell">
+            <div class="hv2-stat-num">Goals</div>
+            <div class="hv2-stat-label">Skills mapped per role</div>
+        </div>
+        <div class="hv2-stat-cell">
+            <div class="hv2-stat-num">24/7</div>
+            <div class="hv2-stat-label">Explore at your pace</div>
+        </div>
+    </div>
+
+    {{-- ═══════════════ WHY HIREVO ═══════════════ --}}
+    <section class="hv2-section">
         <div class="container">
-            <div class="row justify-content-center mb-2">
-                <div class="col-lg-8 text-center">
-                    <h2 class="h5 fw-bold text-uppercase text-muted mb-1" style="letter-spacing: 0.06em;">Why Hirevoo</h2>
-                    <p class="text-muted mb-0 small">Four ways we help — whether you’re starting out, choosing a path, staying in the loop, or hiring.</p>
-                </div>
+            <div class="text-center mb-5 hv2-reveal">
+                <div class="hv2-eyebrow" style="letter-spacing:0.08em;">Why Hirevo</div>
+                <p class="hv2-lead mx-auto text-center mb-0" style="max-width:34rem;">
+                    For learners, job seekers, and employers — one platform, clearer outcomes.
+                </p>
             </div>
             <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="why-hirevo-card p-4 p-lg-5 h-100 d-flex flex-column">
-                        <div class="hirevo-value-card__media mb-3">
-                            <img src="{{ $siteImg('Image 1.PNG') }}" alt="Resume review, job search, networking, and growth" class="hirevo-value-card__img" loading="lazy" width="560" height="176">
-                        </div>
-                        <div class="hirevo-value-card__eyebrow">Community &amp; focus</div>
-                        <h3 class="h4 fw-bold mb-2">Built for people who are serious about their careers</h3>
-                        <p class="text-muted mb-3">
-                            Hirevoo is for students, freshers, and job seekers who want <span class="fw-semibold text-dark">clarity and direction</span> — not endless blind applications.
+                <div class="col-lg-6 hv2-reveal hv2-reveal-d1">
+                    <div class="hv2-card h-100 d-flex flex-column">
+                        <img src="{{ $siteImg('Image 1.PNG') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
+                        <div class="small fw-bold text-uppercase mb-2" style="color:#a5a0ff;letter-spacing:0.08em;">Community &amp; focus</div>
+                        <h3 class="h4 mb-2">Built for people serious about careers</h3>
+                        <p style="color:var(--hv2-muted);" class="mb-3">
+                            Students and freshers who want <strong style="color:var(--hv2-text);">direction</strong>, not endless blind applications.
                         </p>
-                        <ul class="hirevo-value-list mb-3">
-                            <li><strong class="text-dark">1000+</strong> candidates exploring roles and skill matches</li>
-                            <li>Resume-first mindset: know your gaps before you apply</li>
-                            <li>Regular job &amp; internship signals you can act on</li>
+                        <ul class="hv2-list mb-3">
+                            <li><strong style="color:var(--hv2-text);">1000+</strong> candidates exploring roles and skill matches</li>
+                            <li>Resume-first: know gaps before you apply</li>
+                            <li>Job &amp; internship signals you can act on</li>
                         </ul>
-                        <p class="small text-muted mb-0 mt-auto">Growing community — relevant updates, not noise.</p>
+                        <p class="small mt-auto mb-0" style="color:var(--hv2-faint);">Growing community — relevant updates, not noise.</p>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="why-hirevo-card p-4 p-lg-5 h-100 d-flex flex-column">
-                        <div class="hirevo-value-card__media mb-3">
-                            <img src="{{ $siteImg('Image 4.PNG') }}" alt="Plan your next step with a clear career focus" class="hirevo-value-card__img" loading="lazy" width="560" height="176">
-                        </div>
-                        <div class="hirevo-value-card__eyebrow">Career clarity</div>
-                        <h3 class="h4 fw-bold mb-2">Not sure what direction to take?</h3>
-                        <p class="text-muted mb-3">
-                            Choosing a path is easier when you can <span class="fw-semibold text-dark">compare roles, skills, and fit</span> instead of guessing from job titles alone.
+                <div class="col-lg-6 hv2-reveal hv2-reveal-d2">
+                    <div class="hv2-card h-100 d-flex flex-column">
+                        <img src="{{ $siteImg('Image 4.PNG') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
+                        <div class="small fw-bold text-uppercase mb-2" style="color:var(--hv2-teal);letter-spacing:0.08em;">Career clarity</div>
+                        <h3 class="h4 mb-2">Not sure what direction to take?</h3>
+                        <p style="color:var(--hv2-muted);" class="mb-3">
+                            Compare <strong style="color:var(--hv2-text);">roles, skills, and fit</strong> instead of guessing from titles alone.
                         </p>
-                        <ul class="hirevo-value-list mb-4">
+                        <ul class="hv2-list mb-4">
                             <li>Browse job goals and see what each role expects</li>
-                            <li>Spot skill gaps before you invest weeks in the wrong role</li>
-                            <li>Move from “I’m confused” to “here’s my next step”</li>
+                            <li>Spot skill gaps before you invest in the wrong path</li>
+                            <li>Move from "I'm confused" to "here's my next step"</li>
                         </ul>
                         <div class="mt-auto">
-                            <a href="{{ route('job-list') }}" class="btn btn-outline-primary rounded-pill px-4">Explore Career Paths</a>
+                            <a href="{{ route('job-list') }}" class="hv2-btn hv2-btn--ghost">Explore career paths</a>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="row g-4 mt-1">
-                <div class="col-lg-6">
-                    <div class="why-hirevo-card p-4 p-lg-5 h-100 d-flex flex-column">
-                        <div class="hirevo-value-card__media mb-3 p-0 overflow-hidden">
-                            <img src="{{ $siteImg('headway-5QgIuuBxKwM-unsplash.jpg') }}" alt="Stay connected with opportunities and conversations that matter" class="hirevo-value-card__img hirevo-value-card__img--photo w-100" loading="lazy" width="560" height="160">
-                        </div>
-                        <div class="hirevo-value-card__eyebrow">Updates &amp; opportunities</div>
-                        <h3 class="h4 fw-bold mb-2">Stay connected with opportunities</h3>
-                        <p class="text-muted mb-3">
-                            Get <span class="fw-semibold text-dark">curated openings and useful career signals</span> — not a flood of irrelevant listings.
+                <div class="col-lg-6 hv2-reveal hv2-reveal-d1">
+                    <div class="hv2-card h-100 d-flex flex-column">
+                        <img src="{{ $siteImg('headway-5QgIuuBxKwM-unsplash.jpg') }}" alt="" class="hv2-card-img hv2-card-img--photo w-100" loading="lazy" width="560" height="160">
+                        <div class="small fw-bold text-uppercase mb-2" style="color:var(--hv2-amber);letter-spacing:0.08em;">Updates &amp; opportunities</div>
+                        <h3 class="h4 mb-2">Stay connected</h3>
+                        <p style="color:var(--hv2-muted);" class="mb-3">
+                            <strong style="color:var(--hv2-text);">Curated openings and useful signals</strong> — not a flood of irrelevant listings.
                         </p>
-                        <ul class="hirevo-value-list mb-4">
-                            <li>Jobs, internships, and timely nudges in one place</li>
-                            <li><span class="fw-semibold text-dark">No spam</span> — only what helps you move forward</li>
-                            <li>Join to personalize what you hear about</li>
+                        <ul class="hv2-list mb-4">
+                            <li>Roles and timely nudges in one place</li>
+                            <li><strong style="color:var(--hv2-text);">No spam</strong> — only what helps you move forward</li>
+                            <li>Join to personalise what you hear about</li>
                         </ul>
                         <div class="mt-auto">
-                            <a href="{{ route('register') }}" class="btn btn-primary rounded-pill px-4">Join Now</a>
+                            <a href="{{ route('register') }}" class="hv2-btn hv2-btn--primary">Join now</a>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="why-hirevo-card p-4 p-lg-5 h-100 d-flex flex-column">
-                        <div class="hirevo-value-card__media mb-3">
-                            <img src="{{ $siteImg('Image 6.PNG') }}" alt="Source talent, review candidates, and hire with confidence" class="hirevo-value-card__img" loading="lazy" width="560" height="176">
-                        </div>
-                        <div class="hirevo-value-card__eyebrow">For employers</div>
-                        <h3 class="h4 fw-bold mb-2">Hiring made simple</h3>
-                        <p class="text-muted mb-3">
-                            Post roles and reach candidates who are <span class="fw-semibold text-dark">already preparing</span> — clearer profiles, fewer mismatched applicants.
+                <div class="col-lg-6 hv2-reveal hv2-reveal-d2">
+                    <div class="hv2-card h-100 d-flex flex-column">
+                        <img src="{{ $siteImg('Image 6.PNG') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
+                        <div class="small fw-bold text-uppercase mb-2" style="color:#c4bfff;letter-spacing:0.08em;">For employers</div>
+                        <h3 class="h4 mb-2">Hiring made simpler</h3>
+                        <p style="color:var(--hv2-muted);" class="mb-3">
+                            Reach candidates who are <strong style="color:var(--hv2-text);">already preparing</strong> — clearer profiles, fewer mismatches.
                         </p>
-                        <ul class="hirevo-value-list mb-4">
+                        <ul class="hv2-list mb-4">
                             <li>List jobs with clear requirements and work modes</li>
                             <li>Review applications in one workflow</li>
-                            <li>Optional external apply link for your own ATS or site</li>
+                            <li>Optional external apply link for your ATS or site</li>
                         </ul>
                         <div class="mt-auto">
-                            <a href="{{ route('employer.jobs.create') }}" class="btn btn-outline-primary rounded-pill px-4">Post a Job</a>
+                            <a href="{{ route('employer.jobs.create') }}" class="hv2-btn hv2-btn--ghost">Post a job</a>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="text-center mt-5">
-                <h2 class="h3 fw-bold mb-2">Start taking your career seriously</h2>
-                <p class="text-muted mb-4" style="max-width: 760px; margin: 0 auto;">
-                    You don’t need to apply everywhere. You need to apply better.
-                    Hirevoo helps you do exactly that.
-                </p>
-                <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <a href="{{ auth()->check() ? route('resume.upload') : route('login', ['redirect' => route('resume.upload')]) }}" class="btn btn-primary rounded-pill px-4">Get Started</a>
-                    <a href="{{ route('job-openings') }}" class="btn btn-outline-primary rounded-pill px-4">Explore Opportunities</a>
-                </div>
-                <p class="text-muted small mt-3 mb-0">Careers don’t grow with random applications. They grow with clarity, preparation, and the right opportunities.</p>
             </div>
         </div>
     </section>
+
+    {{-- ═══════════════ TESTIMONIALS ═══════════════ --}}
+    <section class="hv2-testi-strip">
+        <div class="container">
+            <div class="text-center mb-5 hv2-reveal">
+                <div class="hv2-eyebrow hv2-eyebrow--pill hv2-eyebrow--violet">What people say</div>
+                <h2 class="hv2-display mt-3" style="font-size:clamp(1.6rem,3vw,2.3rem);">
+                    Real <span class="hv2-accent">results</span> from real candidates
+                </h2>
+            </div>
+            <div class="hv2-testi-grid">
+                <div class="hv2-testi-card hv2-reveal hv2-reveal-d1">
+                    <div class="hv2-testi-stars">★★★★★</div>
+                    <p class="hv2-testi-text">"Uploaded my resume and within two minutes I had a clear picture of what was missing. Applied to 3 roles that actually fit — got 2 interviews."</p>
+                    <div class="hv2-testi-author">
+                        <div class="hv2-testi-av" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">PK</div>
+                        <div>
+                            <div class="hv2-testi-name">Priya K.</div>
+                            <div class="hv2-testi-role">CS Graduate · Exploring Data roles</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hv2-testi-card hv2-reveal hv2-reveal-d2">
+                    <div class="hv2-testi-stars">★★★★★</div>
+                    <p class="hv2-testi-text">"I had no idea why I kept getting rejected. Hirevo showed exactly which skills were missing for Product Manager roles. Changed my approach completely."</p>
+                    <div class="hv2-testi-author">
+                        <div class="hv2-testi-av" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;">RS</div>
+                        <div>
+                            <div class="hv2-testi-name">Rahul S.</div>
+                            <div class="hv2-testi-role">MBA Fresher · PM track</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hv2-testi-card hv2-reveal hv2-reveal-d3">
+                    <div class="hv2-testi-stars">★★★★★</div>
+                    <p class="hv2-testi-text">"Stop applying to 100 jobs and getting nowhere. Hirevo made me realise my profile was strong for 3 specific roles. That focus made all the difference."</p>
+                    <div class="hv2-testi-author">
+                        <div class="hv2-testi-av" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;">AM</div>
+                        <div>
+                            <div class="hv2-testi-name">Anjali M.</div>
+                            <div class="hv2-testi-role">BCA Final Year · Frontend track</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ═══════════════ FINAL CTA ═══════════════ --}}
+    <section class="hv2-final-cta">
+        <div class="container position-relative" style="z-index:1;">
+            <div class="hv2-reveal">
+                <div class="hv2-eyebrow text-center hv2-eyebrow--pill" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25);color:#059669;">Start today — it's free</div>
+                <h2 class="text-center mt-3">
+                    Stop guessing.<br>
+                    Start with <span class="hv2-glow">clarity.</span>
+                </h2>
+                <p class="hv2-lead text-center mx-auto mt-3 mb-4" style="max-width:34rem;">
+                    Upload your resume — no account needed. Get your ATS score, skill gaps, and matched jobs in under 2 minutes.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                    <a href="{{ route('resume.upload') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg" style="background:linear-gradient(135deg,#6366f1,#4f46e5);box-shadow:0 8px 28px rgba(99,102,241,0.38);">
+                        <i class="uil uil-upload"></i> Analyse my resume free
+                    </a>
+                    <a href="{{ route('job-openings') }}" class="hv2-btn hv2-btn--ghost hv2-btn-lg">Browse openings</a>
+                </div>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <span class="d-flex align-items-center gap-1 small" style="color:var(--hv2-faint);"><i class="uil uil-check-circle text-success"></i> No account needed</span>
+                    <span class="d-flex align-items-center gap-1 small" style="color:var(--hv2-faint);"><i class="uil uil-bolt-alt text-warning"></i> Under 2 minutes</span>
+                    <span class="d-flex align-items-center gap-1 small" style="color:var(--hv2-faint);"><i class="uil uil-lock-alt" style="color:#6366f1;"></i> 100% free</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
 @endsection
 
 @push('scripts')
 <script src="{{ asset($theme.'/assets/js/pages/index.init.js') }}"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+/* ── Navbar scroll elevation ─────────────────────────── */
+(function () {
+    var nav = document.getElementById('navbar');
+    if (!nav) return;
+    var onScroll = function () {
+        nav.classList.toggle('nav-scrolled', window.scrollY > 20);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+})();
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── Choices.js ──────────────────────────────── */
     if (typeof Choices !== 'undefined' && document.getElementById('choices-single-location')) {
         new Choices('#choices-single-location', { searchEnabled: false });
     }
+
+    /* ── Scroll-reveal (IntersectionObserver) ────── */
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) {
+                    e.target.classList.add('hv2-revealed');
+                    io.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.14 });
+        document.querySelectorAll('.hv2-reveal').forEach(function (el) { io.observe(el); });
+    } else {
+        /* No observer support — reveal everything immediately */
+        document.querySelectorAll('.hv2-reveal').forEach(function (el) { el.classList.add('hv2-revealed'); });
+    }
+
+    /* ── Hero ring & bars animate on load ───────── */
+    function animateHeroCard() {
+        /* Count-up ring */
+        var ringNum = document.getElementById('heroRingNum');
+        var target = 78; var current = 0;
+        var step = function () {
+            current = Math.min(current + 2, target);
+            if (ringNum) ringNum.textContent = current + '%';
+            if (current < target) requestAnimationFrame(step);
+        };
+        setTimeout(function () { requestAnimationFrame(step); }, 600);
+
+        /* Animate bar fills */
+        document.querySelectorAll('.hv2-anim-bar').forEach(function (bar) {
+            var w = bar.getAttribute('data-w') || '0';
+            setTimeout(function () { bar.style.width = w + '%'; }, 700);
+        });
+    }
+    animateHeroCard();
+
 });
 </script>
 @endpush

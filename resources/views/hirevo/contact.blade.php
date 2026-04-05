@@ -52,7 +52,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="subjectInput" class="form-label">Subject</label>
-                                        <input type="text" name="subject" id="subjectInput" class="form-control" placeholder="Enter your subject" value="{{ old('subject') }}">
+                                        <input type="text" name="subject" id="subjectInput" class="form-control" placeholder="Enter your subject" value="{{ old('subject', request('subject')) }}">
                                     </div>
                                 </div>
                                 <div class="col-lg-12">
