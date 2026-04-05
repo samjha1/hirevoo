@@ -418,11 +418,22 @@ class JobController extends Controller
             return 'Could not generate a description. Write it below or try again later.';
         }
         $lower = mb_strtolower($raw);
-        if (str_contains($lower, 'no ai api keys') || str_contains($lower, 'openai_api_key') || str_contains($lower, 'openrouter')) {
+        // Match overload before generic substrings like "openrouter" (avoids mislabeling 429 as "configuration").
+        if (str_contains($lower, '429')
+            || str_contains($lower, 'rate limit')
+            || str_contains($lower, 'too many requests')
+            || str_contains($lower, 'busy')) {
+            return 'AI is busy right now. Write the description below or try again in a minute.';
+        }
+        // Do not match "openai_api_key" / "api keys configured" — those substrings appear inside GptService's own help text.
+        if (str_contains($lower, 'no ai api keys')) {
             return 'AI could not run (configuration or rate limits). Write the job description below, or try again later.';
         }
-        if (str_contains($lower, '429') || str_contains($lower, 'rate limit') || str_contains($lower, 'busy')) {
-            return 'AI is busy right now. Write the description below or try again in a minute.';
+        if (str_contains($lower, 'invalid api key')
+            || str_contains($lower, 'incorrect api key')
+            || preg_match('/\b401\b/', $raw)
+            || preg_match('/\b403\b/', $raw)) {
+            return 'AI could not run (invalid or missing API key on the server). Write the job description below, or contact support.';
         }
 
         return 'Could not generate a description. Write it below or try again later.';

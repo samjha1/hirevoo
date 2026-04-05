@@ -47,7 +47,7 @@ class GptService
         $this->openAiModel = (string) config('services.openai.model', 'gpt-4o-mini');
         $this->primaryApiKey = config('services.primary_llm.key') ?: null;
         $this->primaryBaseUrl = rtrim((string) config('services.primary_llm.base_url', 'https://openrouter.ai/api/v1'), '/');
-        $this->primaryModel = (string) config('services.primary_llm.model', 'qwen/qwen3.6-plus:free');
+        $this->primaryModel = (string) config('services.primary_llm.model', 'openai/gpt-oss-20b:free');
         $this->bedrockBearer = config('services.bedrock.bearer_token') ?: null;
         $this->bedrockAccessKey = config('services.bedrock.key') ?: null;
         $this->bedrockSecretKey = config('services.bedrock.secret') ?: null;
@@ -107,14 +107,22 @@ class GptService
         $messages = [
             [
                 'role' => 'system',
-                'content' => 'You are an HR expert writing job descriptions. Output only the job description text. Use clear sections: About the role, Responsibilities, Requirements/Qualifications, Nice to have (optional). Use bullet points where appropriate. Write in a professional, inclusive tone. No preamble like "Here is the description".',
+                'content' => 'You are an HR expert writing job descriptions. Output only the job description text. Use clear sections: About the role, Responsibilities, Requirements/Qualifications, Nice to have (optional). Use bullet points where appropriate. Write in a professional, inclusive tone. Be concise—no filler, no repetition. No preamble like "Here is the description".',
             ],
             [
                 'role' => 'user',
-                'content' => "Write a complete job description for the following job title. Include: a short intro (2-3 sentences), key responsibilities (4-6 bullets), required qualifications/skills (4-6 bullets), and optional nice-to-have. Keep it practical and scannable.\n\nJob title: " . $title,
+                'content' => "Write a complete job description for the following job title. Include: a short intro (2-3 sentences), key responsibilities (4-6 bullets), required qualifications/skills (4-6 bullets), and optional nice-to-have (2-3 bullets max). Keep it practical, scannable, and roughly one printed page or less.\n\nJob title: " . $title,
             ],
         ];
-        $response = $this->chat($messages);
+        $maxTokens = (int) config('hirevo.llm_job_description_max_tokens', 750);
+        $prevTimeout = $this->timeout;
+        $this->timeout = min($prevTimeout, (int) config('hirevo.llm_job_description_timeout_seconds', 90));
+        try {
+            $response = $this->chat($messages, $maxTokens);
+        } finally {
+            $this->timeout = $prevTimeout;
+        }
+
         return $response ? trim($response) : null;
     }
 
@@ -609,7 +617,9 @@ class GptService
             && ! $this->shouldSkipOpenRouterPrimary()
             && ! $this->shouldSkipOpenRouterFreeByPolicy();
 
+        $openRouterPrimaryAttempted = false;
         if ($openRouterWouldRun) {
+            $openRouterPrimaryAttempted = true;
             $content = $this->requestChatCompletion(
                 $this->primaryBaseUrl,
                 $this->primaryApiKey,
@@ -622,6 +632,41 @@ class GptService
                 return $content;
             }
             $trail[] = 'OpenRouter ('.$this->primaryModel.'): '.($this->lastError ?? 'failed');
+        } elseif (! empty($this->primaryApiKey)) {
+            if ($this->shouldSkipOpenRouterPrimary()) {
+                $trail[] = 'OpenRouter: cooling down after recent rate limits; try again in a minute.';
+            } elseif ($this->shouldSkipOpenRouterFreeByPolicy()) {
+                $trail[] = 'OpenRouter skipped: with OPENAI_API_KEY set, :free OpenRouter models are skipped. Use OpenAI, set OPENROUTER_SKIP_FREE_WHEN_OPENAI=false, or use a paid OpenRouter model.';
+            }
+        }
+
+        $fallbackModel = trim((string) config('services.primary_llm.model_fallback', ''));
+        if ($openRouterPrimaryAttempted
+            && $fallbackModel !== ''
+            && $fallbackModel !== $this->primaryModel
+            && ! empty($this->primaryApiKey)
+            && str_contains($this->primaryBaseUrl, 'openrouter.ai')) {
+            $errLower = mb_strtolower($this->lastError ?? '');
+            $looks429 = str_contains($errLower, '429')
+                || str_contains($errLower, 'busy')
+                || str_contains($errLower, 'rate limit');
+            if ($looks429) {
+                $this->logSafe('info', 'OpenRouter primary failed with overload; trying fallback model', [
+                    'fallback' => $fallbackModel,
+                ]);
+                $fb = $this->requestChatCompletion(
+                    $this->primaryBaseUrl,
+                    $this->primaryApiKey,
+                    $fallbackModel,
+                    $messages,
+                    $maxTokens,
+                    isOpenRouter: true
+                );
+                if ($fb !== null && $fb !== '') {
+                    return $fb;
+                }
+                $trail[] = 'OpenRouter fallback ('.$fallbackModel.'): '.($this->lastError ?? 'failed');
+            }
         }
 
         if ($this->isBedrockConfigured() && ! $bedrockTried) {
@@ -1137,8 +1182,11 @@ class GptService
     ): ?string {
         $this->lastError = null;
         $url = rtrim($baseUrl, '/').'/chat/completions';
-        $retry429 = $isOpenRouter && (bool) config('services.primary_llm.retry_on_429', false);
-        $max429Attempts = $retry429 ? 2 : 1;
+        $retry429 = $isOpenRouter && (bool) config('services.primary_llm.retry_on_429', true);
+        $configuredAttempts = (int) config('services.primary_llm.openrouter_429_max_attempts', 5);
+        $max429Attempts = $retry429
+            ? max(2, min(8, $configuredAttempts))
+            : 1;
         $maxTimeoutAttempts = 2;
 
         for ($timeoutRound = 0; $timeoutRound < $maxTimeoutAttempts; $timeoutRound++) {
@@ -1165,7 +1213,15 @@ class GptService
 
                 for ($attempt = 1; $attempt <= $max429Attempts; $attempt++) {
                     if ($attempt > 1) {
-                        usleep(2_000_000);
+                        // 1s, 2s, 4s… capped (configurable; lower cap = faster retries).
+                        $cap = max(1, min(15, (int) config('services.primary_llm.openrouter_429_delay_cap_seconds', 4)));
+                        $delaySec = min($cap, 2 ** ($attempt - 2));
+                        usleep($delaySec * 1_000_000);
+                        $this->logSafe('info', 'OpenRouter 429 retry', [
+                            'model' => $model,
+                            'attempt' => $attempt,
+                            'delay_sec' => $delaySec,
+                        ]);
                     }
 
                     $response = $client->post($url, [
@@ -1200,11 +1256,6 @@ class GptService
                     $label = $isOpenRouter ? 'OpenRouter' : 'OpenAI';
 
                     if ($isOpenRouter && $status === 429 && $attempt < $max429Attempts) {
-                        $this->logSafe('info', 'OpenRouter returned 429; retrying once after delay', [
-                            'model' => $model,
-                            'attempt' => $attempt,
-                        ]);
-
                         continue;
                     }
 

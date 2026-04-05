@@ -10,23 +10,29 @@ return [
     /*
      * OpenRouter (OpenAI-compatible). Used after Bedrock + direct OpenAI when keys are set.
      *
-     * Default model: Qwen 3.6 Plus (free). Override with OPENROUTER_MODEL — confirm the exact id on
-     * https://openrouter.ai/models (e.g. paid Gemma 4: google/gemma-4-31b-it or similar slug shown there).
+     * Default model: OpenAI gpt-oss-20b (free) — smaller / faster than 400B-class free models. Override OPENROUTER_MODEL on
+     * https://openrouter.ai/models (paid slugs without :free for production).
      *
      * Optional: OPENROUTER_SKIP_FREE_WHEN_OPENAI=true skips ":free" OpenRouter when OpenAI is set.
      */
     'primary_llm' => [
         'key' => env('OPENROUTER_API_KEY'),
         'base_url' => rtrim(env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'), '/'),
-        'model' => env('OPENROUTER_MODEL', 'qwen/qwen3.6-plus:free'),
+        'model' => env('OPENROUTER_MODEL', 'openai/gpt-oss-20b:free'),
         'http_referer' => env('OPENROUTER_HTTP_REFERER', env('APP_URL', 'http://localhost')),
         'app_title' => env('OPENROUTER_APP_TITLE', env('APP_NAME', 'Hirevo')),
-        // Free OpenRouter models can 429 upstream; retry adds ~2s. Enable only if you want one retry.
-        'retry_on_429' => (bool) env('OPENROUTER_RETRY_ON_429', false),
+        // Free OpenRouter models often 429 upstream; exponential backoff retries reduce flaky UI calls.
+        'retry_on_429' => (bool) env('OPENROUTER_RETRY_ON_429', true),
+        // Max HTTP attempts when OpenRouter returns 429 (each attempt waits longer: ~1s, 2s, 4s, …).
+        'openrouter_429_max_attempts' => max(1, min(8, (int) env('OPENROUTER_429_MAX_ATTEMPTS', 4))),
+        // Max seconds between 429 retries (lower = faster failures; higher = more patience on free tier).
+        'openrouter_429_delay_cap_seconds' => max(1, min(15, (int) env('OPENROUTER_429_DELAY_CAP', 4))),
+        // If primary returns 429 after retries, try this slug once. Empty = skip (fastest path on failure).
+        'model_fallback' => env('OPENROUTER_MODEL_FALLBACK', ''),
         // After first 429, skip OpenRouter for remaining calls in the same request (request attributes).
         'circuit_on_429' => (bool) env('OPENROUTER_CIRCUIT_ON_429', true),
-        // Also remember 429 in cache so parallel/sub-requests and missing request() still skip OpenRouter briefly.
-        'circuit_cache' => (bool) env('OPENROUTER_CIRCUIT_CACHE', true),
+        // Global cache skip (default off): when true, one 429 blocks OpenRouter for all users for circuit_cache_ttl seconds.
+        'circuit_cache' => (bool) env('OPENROUTER_CIRCUIT_CACHE', false),
         'circuit_cache_ttl' => (int) env('OPENROUTER_CIRCUIT_CACHE_TTL', 120),
         // false = always try OpenRouter first; true = for ":free" models, use OpenAI directly if both keys set.
         'skip_free_when_openai' => (bool) env('OPENROUTER_SKIP_FREE_WHEN_OPENAI', false),
