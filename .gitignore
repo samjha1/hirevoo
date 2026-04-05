@@ -3,10 +3,8 @@
 /node_modules/
 /public/storage
 
-# Storage (IMPORTANT FIX)
+# Storage (FINAL FIX)
 /storage/*
-!/storage/app/
-!/storage/app/public/
 !/storage/.gitignore
 
 /storage/*.key
