@@ -189,6 +189,9 @@
                                     <li><a class="dropdown-item" href="{{ route('profile') }}">My Profile</a></li>
                                 @else
                                     <li><a class="dropdown-item" href="{{ route('profile') }}">My Profile</a></li>
+                                    @if(auth()->user()->isCandidate())
+                                        <li><a class="dropdown-item" href="{{ route('candidate.dashboard') }}">My Applications</a></li>
+                                    @endif
                                 @endif
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></li>
