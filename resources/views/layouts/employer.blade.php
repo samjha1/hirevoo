@@ -354,17 +354,64 @@
 
         /* Avatar dropdown */
         .et-user { display: flex; align-items: center; gap: .5rem; cursor: pointer; }
-        .et-avatar {
-            width: 36px;
-            height: 36px;
+        .et-user.et-user-trigger {
+            gap: .5rem;
+            padding: .3rem .65rem .3rem .4rem;
             border-radius: var(--radius-pill);
-            object-fit: cover;
-            border: 2px solid var(--border);
+            border: 1px solid var(--border);
+            background: linear-gradient(180deg, #fff 0%, var(--ink-50) 100%);
+            box-shadow: var(--shadow-xs);
+            transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
         }
-        .et-user-name {
+        .et-user.et-user-trigger:hover {
+            border-color: rgba(37, 99, 235, 0.35);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+        .et-user-initials-badge {
+            width: 38px;
+            height: 38px;
+            font-size: .72rem;
+        }
+        .et-user-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 0;
+            line-height: 1.2;
+        }
+        .et-user-fullname {
             font-size: .875rem;
+            font-weight: 600;
+            color: var(--ink-900);
+            letter-spacing: -.02em;
+            max-width: min(11rem, 42vw);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .et-user-sub {
+            font-size: .65rem;
             font-weight: 500;
-            color: var(--ink-700);
+            color: var(--ink-500);
+            letter-spacing: .02em;
+        }
+        .et-user-chevron {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(15, 23, 42, 0.06);
+            color: var(--ink-300);
+            font-size: .9rem;
+            transition: background var(--transition), color var(--transition);
+        }
+        .et-user-trigger:hover .et-user-chevron {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--accent);
         }
 
         /* ─── Content area ───────────────────────────────────── */
@@ -518,7 +565,6 @@
             .et-toggle { display: flex; }
             .es-brand-close { display: flex; }
             .ec { padding: 1rem 0.75rem 1.25rem; }
-            .et-user-name { display: none; }
         }
 
         /* ─── Dropdown adjustments ───────────────────────────── */
@@ -712,14 +758,18 @@
                     @yield('header_actions')
 
                     <div class="dropdown">
-                        <a href="#" class="et-user d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
-                            @if(!empty($employerProfilePhotoUrl))
-                                <img src="{{ $employerProfilePhotoUrl }}" alt="{{ auth()->user()->name }}" class="et-avatar">
-                            @else
-                                <img src="{{ asset($theme.'/assets/images/profile.jpg') }}" alt="{{ auth()->user()->name }}" class="et-avatar">
-                            @endif
-                            <span class="et-user-name ms-2">{{ auth()->user()->name }}</span>
-                            <i class="mdi mdi-chevron-down ms-1" style="font-size:.9rem; color:var(--ink-300);"></i>
+                        @php
+                            $employerTopbarName = trim((string) auth()->user()->name);
+                            $employerDisplayName = $employerTopbarName !== '' ? \Illuminate\Support\Str::title(\Illuminate\Support\Str::lower($employerTopbarName)) : 'Account';
+                            $employerInitials = auth()->user()->initials();
+                        @endphp
+                        <a href="#" class="et-user et-user-trigger d-flex align-items-center text-decoration-none min-w-0" data-bs-toggle="dropdown" aria-expanded="false" @if($employerTopbarName !== '') title="{{ $employerTopbarName }}" @endif>
+                            <span class="hirevo-user-initials-avatar et-user-initials-badge flex-shrink-0" aria-hidden="true">{{ $employerInitials }}</span>
+                            <span class="et-user-meta text-start">
+                                <span class="et-user-fullname">{{ $employerDisplayName }}</span>
+                                <span class="et-user-sub">Employer</span>
+                            </span>
+                            <span class="et-user-chevron" aria-hidden="true"><i class="mdi mdi-chevron-down"></i></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>

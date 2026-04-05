@@ -90,6 +90,33 @@ class User extends Authenticatable
     }
 
     /**
+     * Two-letter initials for nav avatars (first + last word, or first two letters of a single word).
+     */
+    public function initials(): string
+    {
+        $name = trim((string) $this->name);
+        if ($name === '') {
+            return '?';
+        }
+
+        $parts = preg_split('/\s+/u', $name, -1, PREG_SPLIT_NO_EMPTY);
+        if (count($parts) >= 2) {
+            $a = mb_substr($parts[0], 0, 1);
+            $b = mb_substr($parts[count($parts) - 1], 0, 1);
+
+            return mb_strtoupper($a.$b, 'UTF-8');
+        }
+
+        $single = $parts[0] ?? $name;
+        $len = mb_strlen($single);
+        if ($len <= 1) {
+            return mb_strtoupper($single, 'UTF-8');
+        }
+
+        return mb_strtoupper(mb_substr($single, 0, 2), 'UTF-8');
+    }
+
+    /**
      * Set candidate_profile_completed_at when required profile fields are present (or clear when not).
      */
     public function syncCandidateProfileCompletion(): void

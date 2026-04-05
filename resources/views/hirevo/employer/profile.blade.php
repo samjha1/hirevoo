@@ -146,8 +146,8 @@
                     </div>
                     <div class="col-md-8">
                         <div class="mb-3">
-                            <label for="name" class="form-label fw-500">Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $user->name) }}" placeholder="Your name" required>
+                            <label for="name" class="form-label fw-500">Your full name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $user->name) }}" placeholder="e.g. Shivam Jha" required>
                             @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="mb-3">

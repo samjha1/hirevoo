@@ -167,10 +167,19 @@
                             </div>
                         </li>
                         <li class="nav-item dropdown ms-2">
-                            <a href="javascript:void(0)" class="nav-link hirevo-nav-user d-flex align-items-center" id="userdropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="{{ asset($theme.'/assets/images/profile.jpg') }}" alt="" width="32" height="32" class="rounded-circle me-2 object-fit-cover">
-                                <span class="d-none d-md-inline-block fw-medium text-dark">{{ auth()->user()->name }}</span>
-                                <i class="uil uil-angle-down ms-1 d-none d-md-inline-block small"></i>
+                            @php
+                                $navUserName = trim((string) auth()->user()->name);
+                                $navDisplayName = $navUserName !== '' ? \Illuminate\Support\Str::title(\Illuminate\Support\Str::lower($navUserName)) : 'Account';
+                                $u = auth()->user();
+                                $navUserRole = $u->isCandidate() ? 'Candidate' : ($u->isReferrer() ? 'Employer' : ($u->isAdmin() ? 'Admin' : 'Account'));
+                            @endphp
+                            <a href="javascript:void(0)" class="nav-link hirevo-nav-user hirevo-nav-user-trigger d-flex align-items-center min-w-0" id="userdropdown" data-bs-toggle="dropdown" aria-expanded="false" title="{{ $navUserName }}">
+                                <span class="hirevo-user-initials-avatar flex-shrink-0" aria-hidden="true">{{ $u->initials() }}</span>
+                                <span class="hirevo-nav-user-meta d-flex flex-column align-items-start min-w-0 text-start">
+                                    <span class="hirevo-nav-user-fullname text-truncate">{{ $navDisplayName }}</span>
+                                    <span class="hirevo-nav-user-sub">{{ $navUserRole }}</span>
+                                </span>
+                                <span class="hirevo-nav-user-chevron flex-shrink-0" aria-hidden="true"><i class="uil uil-angle-down"></i></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 py-2" aria-labelledby="userdropdown">
                                 @if(auth()->user()->isReferrer())

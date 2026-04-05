@@ -100,7 +100,7 @@ class SocialAuthController extends Controller
         }
 
         $user = User::create([
-            'name' => $oauthUser->getName() ?: Str::before($email, '@'),
+            'name' => $this->oauthDisplayName($oauthUser, $email),
             'email' => $email,
             'phone' => null,
             'password' => bcrypt(Str::random(32)),
@@ -121,6 +121,37 @@ class SocialAuthController extends Controller
     protected function clearOAuthSession(): void
     {
         session()->forget(['oauth_intended_role', 'oauth_intended_redirect']);
+    }
+
+    /**
+     * Prefer given + family name from the provider (e.g. Microsoft Graph) over a short displayName.
+     */
+    protected function oauthDisplayName($oauthUser, string $email): string
+    {
+        $raw = $oauthUser->user ?? [];
+        $given = $raw['givenName'] ?? $raw['given_name'] ?? null;
+        $family = $raw['surname'] ?? $raw['family_name'] ?? null;
+        if (is_string($given)) {
+            $given = trim($given);
+        } else {
+            $given = '';
+        }
+        if (is_string($family)) {
+            $family = trim($family);
+        } else {
+            $family = '';
+        }
+        $fromParts = trim($given.' '.$family);
+        if ($fromParts !== '') {
+            return $fromParts;
+        }
+
+        $name = trim((string) $oauthUser->getName());
+        if ($name !== '') {
+            return $name;
+        }
+
+        return Str::before($email, '@') ?: 'User';
     }
 
     protected function redirectAfterLogin(): RedirectResponse
