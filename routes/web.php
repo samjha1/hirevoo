@@ -18,6 +18,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReferralSignupController;
+use App\Http\Controllers\CareerConsultationController;
 use App\Http\Controllers\ResumeController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,7 +49,9 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/fill-from-resume', [ProfileController::class, 'fillFromResume'])->name('profile.fill-from-resume');
+    Route::post('/career-consultation', [CareerConsultationController::class, 'store'])->name('career-consultation.store');
     Route::post('/resume/upload', [ResumeController::class, 'upload'])->name('resume.upload.store');
+    Route::get('/resume/{resume}/file', [ResumeController::class, 'serveFile'])->name('resume.file');
     Route::get('/resume/{resume}/results', [ResumeController::class, 'results'])->name('resume.results');
     Route::post('/resume/lead', [ResumeController::class, 'createLead'])->name('resume.lead');
     Route::post('/leads/upskill-contact', [LeadController::class, 'storeUpskillContact'])->name('leads.upskill-contact');

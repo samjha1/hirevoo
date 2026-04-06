@@ -45,6 +45,19 @@
 .cp-photo-zone.cp-photo-zone-active { border-color: #0d9488 !important; background: rgba(13,148,136,0.06) !important; }
 #cp-hero-photo-zone.cp-hero-photo-drag .cp-avatar,
 #cp-hero-photo-zone.cp-hero-photo-drag .cp-avatar-fallback { box-shadow: 0 0 0 4px rgba(13,148,136,0.45); outline: 2px dashed #0d9488; outline-offset: 4px; }
+.cp-resume-current {
+    border: 1px solid rgba(24,24,27,0.1);
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    background: linear-gradient(135deg, rgba(13,148,136,0.06) 0%, rgba(255,255,255,0.9) 55%, #fff 100%);
+}
+.cp-resume-current .cp-resume-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(13,148,136,0.12); color: #0f766e;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.35rem; flex-shrink: 0;
+}
+.cp-resume-filename { font-weight: 600; color: #18181b; word-break: break-word; }
 </style>
 @endpush
 
@@ -152,25 +165,62 @@
             <div class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-body p-4">
                     <h2 class="cp-section-title mb-2"><i class="uil uil-file-upload text-primary me-1"></i> Resume</h2>
-                    <p class="text-muted small mb-3">PDF only. Upload sends you back here with fields filled from the file.</p>
+
+                    @if($primaryResume ?? null)
+                        <div class="cp-resume-current mb-4">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="cp-resume-icon" aria-hidden="true"><i class="uil uil-file-alt"></i></div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="cp-resume-filename">{{ $primaryResume->file_name ?: 'Resume.pdf' }}</div>
+                                    <div class="small text-muted mt-1">
+                                        Added {{ $primaryResume->created_at->format('j M Y') }}
+                                        @if($primaryResume->is_primary)
+                                            <span class="badge rounded-pill bg-success-subtle text-success ms-1">Primary</span>
+                                        @endif
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2 mt-3">
+                                        <a href="{{ route('resume.file', $primaryResume) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            <i class="uil uil-eye me-1"></i>View PDF
+                                        </a>
+                                        <a href="{{ route('resume.file', $primaryResume) }}?download=1" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                            <i class="uil uil-import me-1"></i>Download
+                                        </a>
+                                        <a href="{{ route('resume.results', $primaryResume) }}" class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                                            <i class="uil uil-chart-line me-1"></i>ATS analysis
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-muted small mb-3"><strong>Update resume</strong> — PDF only. A new file replaces your current one, is analysed again, and profile fields can be refreshed from it.</p>
+                    @else
+                        <p class="text-muted small mb-3">PDF only. Upload sends you back here with fields filled from the file.</p>
+                    @endif
+
                     <form action="{{ route('resume.upload.store') }}" method="POST" enctype="multipart/form-data" class="row g-2 align-items-end">
                         @csrf
                         <input type="hidden" name="return_to" value="profile">
                         <div class="col-md-8">
+                            <label class="form-label small text-muted mb-1">{{ ($primaryResume ?? null) ? 'Choose a new PDF to replace the one above' : 'Choose PDF' }}</label>
                             <input type="file" name="resume" class="form-control" accept=".pdf,application/pdf" required>
                             @error('resume')<div class="text-danger small">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4">
-                            <button type="submit" class="btn btn-primary w-100">Upload &amp; fill profile</button>
+                            <label class="form-label small text-muted mb-1 d-none d-md-block">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                                @if($primaryResume ?? null)
+                                    Replace resume &amp; refresh
+                                @else
+                                    Upload &amp; fill profile
+                                @endif
+                            </button>
                         </div>
                     </form>
-                    @if($latestResume ?? null)
-                        <p class="small text-muted mt-3 mb-0">
-                            <a href="{{ route('resume.results', $latestResume) }}">View ATS analysis</a>
-                            @if($hasResume ?? false)
-                                ·
-                                <form method="POST" action="{{ route('profile.fill-from-resume') }}" class="d-inline">@csrf<button type="submit" class="btn btn-link btn-sm p-0 align-baseline">Re-fill from resume</button></form>
-                            @endif
+
+                    @if(($primaryResume ?? null) && ($hasResume ?? false))
+                        <p class="small text-muted border-top pt-3 mt-3 mb-0">
+                            Pull the latest data from your saved resume into the form (no new upload):
+                            <form method="POST" action="{{ route('profile.fill-from-resume') }}" class="d-inline ms-1">@csrf<button type="submit" class="btn btn-link btn-sm p-0 align-baseline text-decoration-none">Re-fill from resume</button></form>
                         </p>
                     @endif
                 </div>

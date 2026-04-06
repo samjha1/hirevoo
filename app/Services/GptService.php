@@ -493,6 +493,150 @@ class GptService
     }
 
     /**
+     * Map a candidate's resume to which required skills (exact labels) they reasonably satisfy.
+     * Uses resume excerpt + parsed skill chips; treat common synonyms as equivalent (e.g. JS ↔ JavaScript).
+     *
+     * @param  list<string>  $requiredSkillsExact  Labels configured for the role; output must use these strings exactly
+     * @param  list<string>  $extractedChips        Skill strings from resume parsing / profile
+     * @return list<string>|null  Subset of $requiredSkillsExact, or null if invalid / unavailable
+     */
+    public function inferResumeCoverageForRequiredSkills(string $resumeExcerpt, array $requiredSkillsExact, array $extractedChips): ?array
+    {
+        $required = array_values(array_filter(array_map(function ($s) {
+            return is_string($s) ? trim($s) : '';
+        }, $requiredSkillsExact), fn ($s) => $s !== ''));
+        if ($required === []) {
+            return [];
+        }
+
+        $chips = array_values(array_filter(array_map(function ($s) {
+            return is_string($s) ? trim($s) : '';
+        }, $extractedChips), fn ($s) => $s !== ''));
+        $chips = array_slice($chips, 0, 40);
+
+        $resumeTruncated = mb_substr($resumeExcerpt, 0, 7500);
+        $reqJson = json_encode($required, JSON_UNESCAPED_UNICODE);
+        $chipsJson = json_encode($chips, JSON_UNESCAPED_UNICODE);
+        if ($reqJson === false || $chipsJson === false) {
+            return null;
+        }
+
+        $system = 'You are an expert technical recruiter. Given a resume excerpt and a fixed list of REQUIRED skill labels, '
+            . 'decide which of those labels the candidate already demonstrates (projects, work experience, skills section, or tools used). '
+            . 'Treat synonyms as the same skill (e.g. JS = JavaScript, TS = TypeScript, Github work implies Git when Git is required). '
+            . 'Be realistic: only mark a required label satisfied if there is clear evidence. '
+            . 'Output ONLY valid JSON with no markdown: {"satisfied":["<exact label from required list>", ...]}. '
+            . 'Each string in "satisfied" MUST match one entry from the required list EXACTLY (same spelling and casing).';
+
+        $user = "Required skill labels (JSON array — use these strings exactly when satisfied):\n{$reqJson}\n\n"
+            . "Parsed skill chips from resume (may be incomplete):\n{$chipsJson}\n\n"
+            . "Resume excerpt:\n---\n{$resumeTruncated}\n---\n\n"
+            . 'Return only: {"satisfied":[...]}';
+
+        $response = $this->chat([
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user', 'content' => $user],
+        ], 900);
+
+        if (! $response) {
+            return null;
+        }
+
+        $decoded = $this->parseJsonObject($response);
+        if (! is_array($decoded) || ! isset($decoded['satisfied']) || ! is_array($decoded['satisfied'])) {
+            return null;
+        }
+
+        $allowed = [];
+        foreach ($required as $r) {
+            $allowed[$r] = true;
+        }
+
+        $out = [];
+        foreach ($decoded['satisfied'] as $item) {
+            if (! is_string($item)) {
+                continue;
+            }
+            $item = trim($item);
+            if ($item !== '' && isset($allowed[$item])) {
+                $out[] = $item;
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * One-shot AI ordering: rank job posting ids from best resume fit to worst.
+     *
+     * @param  list<array{id:int|string,title:string,company:string,description:string,required_skills:string}>  $jobsPayload
+     * @return list<int>|null  Permutation of input ids, or null if the model output is invalid
+     */
+    public function rankEmployerJobsForResume(string $resumeText, array $jobsPayload): ?array
+    {
+        if (count($jobsPayload) < 2) {
+            $ids = [];
+            foreach ($jobsPayload as $row) {
+                if (isset($row['id'])) {
+                    $ids[] = (int) $row['id'];
+                }
+            }
+
+            return $ids;
+        }
+
+        $resumeTruncated = mb_substr($resumeText, 0, 3500);
+        $normalized = [];
+        foreach (array_values($jobsPayload) as $row) {
+            $normalized[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'title' => mb_substr((string) ($row['title'] ?? ''), 0, 180),
+                'company' => mb_substr((string) ($row['company'] ?? ''), 0, 120),
+                'description' => mb_substr((string) ($row['description'] ?? ''), 0, 240),
+                'required_skills' => mb_substr((string) ($row['required_skills'] ?? ''), 0, 400),
+            ];
+        }
+
+        $expectedIds = array_values(array_unique(array_map(fn ($r) => $r['id'], $normalized)));
+        sort($expectedIds);
+
+        $payloadJson = json_encode($normalized, JSON_UNESCAPED_UNICODE);
+        if ($payloadJson === false) {
+            return null;
+        }
+
+        $system = 'You are an expert technical recruiter. Given a candidate resume excerpt and a JSON array of job postings '
+            . '(each object has: id, title, company, description snippet, required_skills), order the jobs from BEST overall fit for the candidate to WORST. '
+            . 'Consider skills overlap, seniority, domain, and title alignment. Output ONLY valid JSON with no markdown: '
+            . '{"ranked_ids":[<int>, ...]}. The ranked_ids array must contain every job id from the input exactly once.';
+
+        $user = "Resume excerpt:\n---\n{$resumeTruncated}\n---\n\nJob postings (JSON):\n{$payloadJson}\n\nReturn only: {\"ranked_ids\":[...]}";
+
+        $response = $this->chat([
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user', 'content' => $user],
+        ], 2048);
+
+        if (! $response) {
+            return null;
+        }
+
+        $decoded = $this->parseJsonObject($response);
+        if (! is_array($decoded) || ! isset($decoded['ranked_ids']) || ! is_array($decoded['ranked_ids'])) {
+            return null;
+        }
+
+        $ranked = array_map(fn ($v) => (int) $v, $decoded['ranked_ids']);
+        $rankedUnique = array_values(array_unique($ranked));
+        sort($rankedUnique);
+        if ($rankedUnique !== $expectedIds) {
+            return null;
+        }
+
+        return $ranked;
+    }
+
+    /**
      * Extract a JSON object from response (strips markdown code blocks if present).
      */
     protected function parseJsonObject(string $raw): ?array

@@ -116,6 +116,15 @@
         color: #047857;
         border: 1px solid rgba(16, 185, 129, 0.28);
     }
+    .rr-pill-suggest {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.35rem 0.65rem;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.08);
+        color: #4338ca;
+        border: 1px dashed rgba(99, 102, 241, 0.45);
+    }
     .rr-skill-section-label {
         font-size: 0.65rem;
         font-weight: 700;

@@ -13,10 +13,11 @@
     }
 
     .apps-hero {
-        margin-top: 50px; /* match navbar height */
+        /* main-content already has padding-top for fixed navbar — no extra margin */
+        margin-top: 0;
         background: #fff;
         border-bottom: 1px solid rgba(0,0,0,.06);
-        padding: 1.75rem 0 1.5rem;
+        padding: 0.85rem 0 1.15rem;
         position: relative;
         overflow: hidden;
     }
@@ -35,7 +36,7 @@
         gap: .35rem;
         font-size: .8125rem;
         color: #64748b;
-        margin-bottom: 1rem;
+        margin-bottom: 0.65rem;
     }
     .breadcrumb-row a {
         color: #64748b;
@@ -407,12 +408,221 @@
         .hero-title { font-size: 1.35rem; }
         .app-card { grid-template-columns: 1fr; padding: 1rem 1.15rem; }
         .app-card-aside { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-        .apps-hero { padding: 1.25rem 0 1.25rem; }
+        .apps-hero { padding: 0.7rem 0 1rem; }
         .stats-strip { grid-template-columns: 1fr 1fr; }
         .app-job-title { white-space: normal; }
     }
 
     .apps-page { scroll-behavior: smooth; }
+
+    /* Insight strip: skills + referral (dashboard only) — compact */
+    .dash-insight-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 0.25rem;
+    }
+    @media (max-width: 991px) {
+        .dash-insight-grid { grid-template-columns: 1fr; }
+    }
+    .dash-card {
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 14px rgba(11, 31, 59, 0.06);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .dash-card--skills {
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 55%, rgba(16, 185, 129, 0.06) 100%);
+    }
+    .dash-card--skills::after {
+        content: '';
+        position: absolute;
+        top: -35%;
+        right: -18%;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(11, 31, 59, 0.05) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .dash-card--referral {
+        background: linear-gradient(135deg, var(--hirevo-primary, #0B1F3B) 0%, #132a45 50%, #0d2844 100%);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .dash-card-inner { position: relative; z-index: 1; }
+    .dash-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.625rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--hirevo-secondary, #10b981);
+        background: rgba(16, 185, 129, 0.12);
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        margin-bottom: 0.35rem;
+    }
+    .dash-card--referral .dash-badge {
+        background: rgba(16, 185, 129, 0.2);
+        color: #6ee7b7;
+    }
+    .dash-card-title {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0 0 0.25rem;
+        line-height: 1.3;
+    }
+    .dash-card--referral .dash-card-title { color: #fff; }
+    .dash-card-sub {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin: 0 0 0.65rem;
+        line-height: 1.4;
+        max-width: 34rem;
+    }
+    .dash-card--referral .dash-card-sub {
+        color: rgba(255, 255, 255, 0.72);
+        margin-bottom: 0.75rem;
+    }
+    .dash-match-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        padding: 0.22rem 0.55rem;
+        border-radius: 999px;
+        background: #fff;
+        border: 1px solid rgba(11, 31, 59, 0.12);
+        color: var(--hirevo-primary);
+        margin-bottom: 0.55rem;
+        box-shadow: 0 1px 3px rgba(11, 31, 59, 0.05);
+    }
+    .dash-skill-col-lbl {
+        font-size: 0.625rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #475569;
+        margin: 0 0 0.3rem;
+    }
+    .dash-skill-col-lbl.strengthen { color: #b45309; }
+    .dash-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.28rem;
+    }
+    .dash-chip {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        color: #334155;
+    }
+    .dash-chip--have {
+        background: rgba(16, 185, 129, 0.12);
+        border-color: rgba(16, 185, 129, 0.28);
+        color: #047857;
+    }
+    .dash-chip--gap {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.35);
+        color: #b45309;
+    }
+    .dash-chip--suggest {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: rgba(99, 102, 241, 0.28);
+        color: #4338ca;
+        border-style: dashed;
+    }
+    .dash-consult {
+        background: #fff;
+        border: 1px solid rgba(11, 31, 59, 0.1);
+        border-radius: 10px;
+        padding: 0.65rem 0.85rem;
+        box-shadow: 0 1px 8px rgba(11, 31, 59, 0.05);
+        margin-top: 0.65rem;
+    }
+    .dash-consult .dash-consult-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 0.25rem;
+    }
+    .dash-chip-more {
+        font-size: 0.6875rem;
+        color: #64748b;
+        align-self: center;
+        margin-left: 0.15rem;
+    }
+    .dash-skill-block { margin-bottom: 0.6rem; }
+    .dash-skill-block:last-of-type { margin-bottom: 0.25rem; }
+    .dash-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.65rem;
+    }
+    .dash-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .dash-btn-primary {
+        background: var(--hirevo-primary);
+        color: #fff;
+        border: none;
+        box-shadow: 0 2px 10px rgba(11, 31, 59, 0.25);
+    }
+    .dash-btn-primary:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(11, 31, 59, 0.3); }
+    .dash-btn-ghost {
+        background: transparent;
+        color: var(--hirevo-primary);
+        border: 1.5px solid rgba(11, 31, 59, 0.2);
+    }
+    .dash-btn-ghost:hover { background: rgba(11, 31, 59, 0.06); color: var(--hirevo-primary); }
+    .dash-card--referral .dash-btn-referral {
+        background: #10b981;
+        color: #fff;
+        border: none;
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 0.4rem 1rem;
+        box-shadow: 0 3px 12px rgba(16, 185, 129, 0.3);
+        cursor: pointer;
+    }
+    .dash-card--referral .dash-btn-referral:hover {
+        color: #fff;
+        background: #059669;
+        transform: translateY(-1px);
+    }
+    .dash-referral-foot {
+        font-size: 0.6875rem;
+        color: rgba(255, 255, 255, 0.55);
+        margin: 0.45rem 0 0;
+    }
+    .dash-source-hint {
+        font-size: 0.625rem;
+        color: #94a3b8;
+        margin: 0.35rem 0 0;
+    }
 </style>
 @endpush
 
@@ -498,180 +708,301 @@
                     </div>
                 @endif
 
-                {{-- ── Employer job applications ── --}}
-                <div class="apps-section" id="employer-apps">
+                @php
+                    $dashChipMax = 8;
+                    $consultGapPayload = $consultGapPayload ?? ['display_gaps' => [], 'suggested_only' => [], 'actual_gaps' => []];
+                    $dashGapsDisplay = ! empty($consultGapPayload['display_gaps']) ? $consultGapPayload['display_gaps'] : ($dashboardSkillGaps ?? []);
+                    $dashSuggestedSet = array_fill_keys($consultGapPayload['suggested_only'] ?? [], true);
+                    $dashMatchedSlice = $primaryResume && $skillFocusRole ? array_slice($dashboardSkillMatched ?? [], 0, $dashChipMax) : [];
+                    $dashGapsSlice = $primaryResume && $skillFocusRole ? array_slice($dashGapsDisplay, 0, $dashChipMax) : [];
+                    $dashMatchedMore = $primaryResume && $skillFocusRole ? max(0, count($dashboardSkillMatched ?? []) - $dashChipMax) : 0;
+                    $dashGapsMore = $primaryResume && $skillFocusRole ? max(0, count($dashGapsDisplay) - $dashChipMax) : 0;
+                @endphp
+
+                <div class="dash-insight-grid mt-3">
+                    <div class="dash-card dash-card--skills">
+                        <div class="dash-card-inner">
+                            @if(!$primaryResume)
+                                <span class="dash-badge">Growth radar</span>
+                                <h3 class="dash-card-title">Skills top employers pay for</h3>
+                                <p class="dash-card-sub">
+                                    Upload your resume and we’ll map what you already prove vs what’s missing for high-paying roles — so you know exactly what to learn next.
+                                </p>
+                                <div class="dash-card-actions">
+                                    <a href="{{ route('resume.upload') }}" class="dash-btn dash-btn-primary">Upload resume</a>
+                                    <a href="{{ route('job-list') }}" class="dash-btn dash-btn-ghost">Explore job goals</a>
+                                </div>
+                            @elseif($skillFocusRole && $dashboardSkillMatchPct !== null)
+                                <span class="dash-badge">Skills for this role</span>
+                                <h3 class="dash-card-title">{{ $skillFocusRole->title }}</h3>
+                                <p class="dash-card-sub">
+                                    What you already cover vs what’s left to learn — closing the gaps moves you toward stronger offers and senior {{ \Illuminate\Support\Str::lower($skillFocusRole->title) }} roles.
+                                </p>
+                                <div class="dash-match-pill" aria-label="Role skill coverage">
+                                    <span>{{ $dashboardSkillMatchPct }}%</span> role skills matched from your resume
+                                </div>
+
+                                @if(count($dashboardSkillMatched ?? []) === 0 && count($dashboardSkillGaps ?? []) > 0)
+                                    <p class="small text-muted mb-2" style="max-width:32rem">
+                                        None of this role’s required skills were detected on your resume yet. Update your CV or add projects that mention these tools — it sharpens your profile for recruiters.
+                                    </p>
+                                @elseif(count($dashboardSkillGaps ?? []) === 0 && count($dashboardSkillMatched ?? []) > 0)
+                                    <p class="small text-success mb-2 fw-semibold" style="max-width:32rem">
+                                        You’re covering every required skill we track for this role. Keep current and highlight impact in interviews.
+                                    </p>
+                                @endif
+
+                                <div class="dash-skill-block">
+                                    <p class="dash-skill-col-lbl">You have</p>
+                                    @if(count($dashboardSkillMatched ?? []) > 0)
+                                        <div class="dash-chip-row">
+                                            @foreach($dashMatchedSlice as $sk)
+                                                <span class="dash-chip dash-chip--have">{{ $sk }}</span>
+                                            @endforeach
+                                            @if($dashMatchedMore > 0)
+                                                <span class="dash-chip-more">+{{ $dashMatchedMore }} more</span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <p class="small text-muted mb-0">No overlap detected yet — your resume may need clearer skill keywords.</p>
+                                    @endif
+                                </div>
+                                <div class="dash-skill-block">
+                                    <p class="dash-skill-col-lbl strengthen">To strengthen</p>
+                                    @if(count($dashGapsDisplay) > 0)
+                                        <div class="dash-chip-row">
+                                            @foreach($dashGapsSlice as $sk)
+                                                <span class="dash-chip {{ isset($dashSuggestedSet[$sk]) ? 'dash-chip--suggest' : 'dash-chip--gap' }}">{{ $sk }}</span>
+                                            @endforeach
+                                            @if($dashGapsMore > 0)
+                                                <span class="dash-chip-more">+{{ $dashGapsMore }} more</span>
+                                            @endif
+                                        </div>
+                                        @if(! empty($consultGapPayload['suggested_only']))
+                                            <p class="small text-muted mb-0 mt-2" style="max-width:36rem">Purple dashed chips are <strong>suggested focus areas</strong> for senior-level growth — discuss them in a consult even when required skills look complete.</p>
+                                        @endif
+                                    @else
+                                        <p class="small text-muted mb-0">Nothing to show yet — pick a job goal with required skills.</p>
+                                    @endif
+                                </div>
+
+                                @if($skillFocusRole && $dashboardSkillMatchPct !== null && count($dashGapsDisplay) > 0)
+                                    <div class="dash-consult">
+                                        <p class="dash-consult-title"><i class="mdi mdi-comment-question-outline me-1"></i>Get consulted</p>
+                                        <p class="dash-card-sub mb-2 mb-0" style="font-size:0.8125rem;">Decode gaps, prioritize this goal vs openings — quick session.</p>
+                                        <form action="{{ route('career-consultation.store') }}" method="POST" class="mt-2">
+                                            @csrf
+                                            <input type="hidden" name="job_role_id" value="{{ $skillFocusRole->id }}">
+                                            <input type="hidden" name="source" value="dashboard">
+                                            <input type="hidden" name="match_percentage" value="{{ $dashboardSkillMatchPct }}">
+                                            @foreach($dashGapsDisplay as $g)
+                                                <input type="hidden" name="gap_skills[]" value="{{ $g }}">
+                                            @endforeach
+                                            @foreach($consultGapPayload['suggested_only'] ?? [] as $g)
+                                                <input type="hidden" name="suggested_gap_skills[]" value="{{ $g }}">
+                                            @endforeach
+                                            @foreach($dashboardSkillMatched ?? [] as $m)
+                                                <input type="hidden" name="matched_skills[]" value="{{ $m }}">
+                                            @endforeach
+                                            <button type="submit" class="dash-btn dash-btn-primary" style="border:none;cursor:pointer;">Request consultation</button>
+                                        </form>
+                                    </div>
+                                @endif
+
+                                @if($skillFocusSource === 'applied_goal')
+                                    <p class="dash-source-hint">Based on your most recent job goal application.</p>
+                                @elseif($skillFocusSource === 'resume_top')
+                                    <p class="dash-source-hint">Based on your best-fit role from your resume.</p>
+                                @endif
+                                @if(($dashboardSkillMatchLayer ?? null) === 'ai')
+                                    <p class="dash-source-hint">Coverage refined with AI from your resume text (including common synonyms).</p>
+                                @endif
+
+                                <div class="dash-card-actions">
+                                    <a href="{{ route('job-goal.show', $skillFocusRole) }}" class="dash-btn dash-btn-primary">Full skill match</a>
+                                    <a href="{{ route('resume.upload') }}" class="dash-btn dash-btn-ghost">Update resume</a>
+                                </div>
+                            @else
+                                <span class="dash-badge">Growth radar</span>
+                                <h3 class="dash-card-title">Map your skills to a high-value role</h3>
+                                <p class="dash-card-sub">
+                                    Apply to a job goal or pick one from our list — we’ll show “you have” vs “to strengthen” against real role requirements so you can target better-paid positions.
+                                </p>
+                                <div class="dash-card-actions">
+                                    <a href="{{ route('job-list') }}" class="dash-btn dash-btn-primary">Choose a job goal</a>
+                                    <a href="{{ route('resume.upload') }}" class="dash-btn dash-btn-ghost">Refresh resume</a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="dash-card dash-card--referral">
+                        <div class="dash-card-inner">
+                            <span class="dash-badge">Refer & earn</span>
+                            <h3 class="dash-card-title">💸 Earn up to ₹5,000 per successful referral</h3>
+                            <p class="dash-card-sub mb-2">
+                                <strong class="text-white">Refer talent in your company & start earning.</strong>
+                                Know open roles? Refer candidates and earn rewards. Tell us your company and how many people you can refer — we’ll connect you with matching candidates.
+                            </p>
+                            <button
+                                type="button"
+                                class="dash-btn dash-btn-referral"
+                                data-bs-toggle="modal"
+                                data-bs-target="#referralSignupModal">
+                                🚀 Start referring & earn
+                            </button>
+                            <p class="dash-referral-foot mb-0">No cost · Flexible · Quick payouts</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ── All applications (employer + job goals), newest first ── --}}
+                <div class="apps-section" id="applications">
                     <div class="section-header">
                         <div class="section-title-group">
                             <div class="section-dot"></div>
-                            <h2 class="section-title">Job Applications</h2>
-                            @if($employerApplications->total() > 0)
-                                <span class="section-count">{{ $employerApplications->total() }}</span>
+                            <h2 class="section-title">Applications</h2>
+                            @if($allApplications->total() > 0)
+                                <span class="section-count">{{ $allApplications->total() }}</span>
                             @endif
                         </div>
-                        <p class="section-desc d-none d-sm-block">Roles you applied to on Hirevo</p>
+                        <p class="section-desc d-none d-sm-block">Job openings and job goals — newest first</p>
                     </div>
 
-                    @if($employerApplications->total() === 0)
+                    @if($allApplications->total() === 0)
                         <div class="empty-state">
-                            <div class="empty-icon">💼</div>
+                            <div class="empty-icon">📋</div>
                             <p class="empty-title">No applications yet</p>
-                            <p class="empty-sub">Explore job openings and apply to get started.</p>
-                            <a href="{{ route('job-openings') }}" class="btn-outline-accent">Browse job openings</a>
+                            <p class="empty-sub">Browse live openings or explore skill-based job goals.</p>
+                            <div class="d-flex flex-wrap justify-content-center gap-2">
+                                <a href="{{ route('job-openings') }}" class="btn-outline-accent">Browse job openings</a>
+                                <a href="{{ route('job-list') }}" class="btn-outline-accent">Explore job goals</a>
+                            </div>
                         </div>
                     @else
                         <div class="apps-grid">
-                            @foreach($employerApplications as $app)
-                                @php
-                                    $job = $app->employerJob;
-                                    $companyName = $job->company_name ?? ($job->user?->referrerProfile?->company_name ?? '—');
-                                    $initials = collect(explode(' ', $companyName))->take(2)->map(fn($w) => strtoupper($w[0] ?? ''))->implode('');
-                                    $statusKey = $app->status ?? 'applied';
-                                    $statusLabel = \App\Models\EmployerJobApplication::statusOptions()[$statusKey] ?? ucfirst($statusKey);
-                                    $score = $app->job_match_score;
-                                    $scoreColor = $score >= 75 ? 'green' : ($score >= 50 ? 'amber' : '');
-                                    $circumference = 2 * 3.14159 * 15;
-                                    $offset = $score !== null ? $circumference - ($score / 100 * $circumference) : $circumference;
-                                @endphp
-                                <div class="app-card">
-                                    <div class="app-card-main">
-                                        <div class="app-card-top">
-                                            <div class="company-logo">{{ $initials ?: '?' }}</div>
-                                            <span class="company-name">{{ $companyName }}</span>
-                                        </div>
-                                        <p class="app-job-title"><a href="{{ route('job-openings') }}">{{ $job->title }}</a></p>
-                                        <div class="app-meta">
-                                            @if($job->formatted_location)
-                                                <span class="meta-tag">
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                                {{ $job->formatted_location }}
-                                            </span>
-                                            @endif
-                                            @if($job->work_location_type)
-                                                <span class="meta-tag">{{ ucfirst($job->work_location_type) }}</span>
-                                            @endif
-                                            @if($job->job_type)
-                                                <span class="meta-tag">{{ str_replace('_', ' ', ucfirst($job->job_type)) }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <div class="app-card-aside">
-                                    <span class="status-badge {{ $statusKey }}">
-                                        <span class="dot"></span>
-                                        {{ $statusLabel }}
-                                    </span>
-                                        @if($score !== null)
-                                            <div class="text-end">
-                                                <div class="match-no mb-1">Profile match score</div>
-                                                <div class="match-ring d-inline-block" title="{{ $score }}% match">
-                                                    <svg width="40" height="40" viewBox="0 0 40 40">
-                                                        <circle class="track" cx="20" cy="20" r="15"/>
-                                                        <circle class="fill {{ $scoreColor }}" cx="20" cy="20" r="15"
-                                                                stroke-dasharray="{{ $circumference }}"
-                                                                stroke-dashoffset="{{ $offset }}"/>
-                                                    </svg>
-                                                    <div class="match-ring-num">{{ $score }}%</div>
-                                                </div>
+                            @foreach($allApplications as $row)
+                                @if($row->kind === 'employer')
+                                    @php
+                                        $app = $row->application;
+                                        $job = $app->employerJob;
+                                        $companyName = $job->company_name ?? ($job->user?->referrerProfile?->company_name ?? '—');
+                                        $initials = collect(explode(' ', $companyName))->take(2)->map(fn($w) => strtoupper($w[0] ?? ''))->implode('');
+                                        $statusKey = $app->status ?? 'applied';
+                                        $statusLabel = \App\Models\EmployerJobApplication::statusOptions()[$statusKey] ?? ucfirst($statusKey);
+                                        $score = $app->job_match_score;
+                                        $scoreColor = $score >= 75 ? 'green' : ($score >= 50 ? 'amber' : '');
+                                        $circumference = 2 * 3.14159 * 15;
+                                        $offset = $score !== null ? $circumference - ($score / 100 * $circumference) : $circumference;
+                                    @endphp
+                                    <div class="app-card">
+                                        <div class="app-card-main">
+                                            <div class="app-card-top">
+                                                <div class="company-logo">{{ $initials ?: '?' }}</div>
+                                                <span class="company-name">{{ $companyName }}</span>
                                             </div>
-                                        @else
-                                            <span class="match-no">Profile match score — No score</span>
-                                        @endif
-                                        <span class="app-date">{{ $app->created_at->format('d M Y') }}</span>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="apps-pagination-wrap">
-                            <p class="apps-pagination-meta mb-0">
-                                Showing {{ $employerApplications->firstItem() }}–{{ $employerApplications->lastItem() }} of {{ $employerApplications->total() }}
-                            </p>
-                            @if($employerApplications->hasPages())
-                                <div class="apps-pagination">
-                                    {{ $employerApplications->onEachSide(1)->links() }}
-                                </div>
-                            @endif
-                        </div>
-                    @endif
-                </div>
-
-                {{-- ── Job goal applications ── --}}
-                <div class="apps-section" id="goal-apps">
-                    <div class="section-header">
-                        <div class="section-title-group">
-                            <div class="section-dot green"></div>
-                            <h2 class="section-title">Job Goal Applications</h2>
-                            @if($jobGoalApplications->total() > 0)
-                                <span class="section-count green-count">{{ $jobGoalApplications->total() }}</span>
-                            @endif
-                        </div>
-                        <p class="section-desc d-none d-sm-block">Skill-based applications from your job goals</p>
-                    </div>
-
-                    @if($jobGoalApplications->total() === 0)
-                        <div class="empty-state">
-                            <div class="empty-icon">🎯</div>
-                            <p class="empty-title">No job goal applications yet</p>
-                            <p class="empty-sub">Explore skill-based roles aligned with your goals.</p>
-                            <a href="{{ route('job-list') }}" class="btn-outline-accent">Explore job goals</a>
-                        </div>
-                    @else
-                        <div class="apps-grid">
-                            @foreach($jobGoalApplications as $app)
-                                @php
-                                    $score = $app->match_score ?? null;
-                                    $scoreColor = $score >= 75 ? 'green' : ($score >= 50 ? 'amber' : '');
-                                    $circumference = 2 * 3.14159 * 15;
-                                    $offset = $score !== null ? $circumference - ($score / 100 * $circumference) : $circumference;
-                                    $statusKey = $app->status ?? 'applied';
-                                @endphp
-                                <div class="app-card">
-                                    <div class="app-card-main">
-                                        <div class="app-card-top">
-                                            <div class="company-logo" style="background:#d6f5ec;color:#059669;border-color:rgba(0,184,122,.15)">🎯</div>
-                                            <span class="company-name">Skill-based role</span>
+                                            <p class="app-job-title mb-1"><a href="{{ route('job-openings') }}">{{ $job->title }}</a></p>
+                                            <span class="meta-tag mb-2 d-inline-flex" style="font-size:0.65rem;">Live opening</span>
+                                            <div class="app-meta">
+                                                @if($job->formatted_location)
+                                                    <span class="meta-tag">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                                    {{ $job->formatted_location }}
+                                                </span>
+                                                @endif
+                                                @if($job->work_location_type)
+                                                    <span class="meta-tag">{{ ucfirst($job->work_location_type) }}</span>
+                                                @endif
+                                                @if($job->job_type)
+                                                    <span class="meta-tag">{{ str_replace('_', ' ', ucfirst($job->job_type)) }}</span>
+                                                @endif
+                                            </div>
                                         </div>
-                                        <p class="app-job-title">
-                                            <a href="{{ route('job-goal.show', $app->jobRole) }}" class="text-decoration-none" style="color:inherit">{{ $app->jobRole->title }}</a>
-                                        </p>
-                                        <div class="app-meta">
-                                        <span class="meta-tag">
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                            Skill match
+                                        <div class="app-card-aside">
+                                        <span class="status-badge {{ $statusKey }}">
+                                            <span class="dot"></span>
+                                            {{ $statusLabel }}
                                         </span>
+                                            @if($score !== null)
+                                                <div class="text-end">
+                                                    <div class="match-no mb-1">Profile match score</div>
+                                                    <div class="match-ring d-inline-block" title="{{ $score }}% match">
+                                                        <svg width="40" height="40" viewBox="0 0 40 40">
+                                                            <circle class="track" cx="20" cy="20" r="15"/>
+                                                            <circle class="fill {{ $scoreColor }}" cx="20" cy="20" r="15"
+                                                                    stroke-dasharray="{{ $circumference }}"
+                                                                    stroke-dashoffset="{{ $offset }}"/>
+                                                        </svg>
+                                                        <div class="match-ring-num">{{ $score }}%</div>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <span class="match-no">Profile match score — No score</span>
+                                            @endif
+                                            <span class="app-date">{{ $app->created_at->format('d M Y') }}</span>
                                         </div>
                                     </div>
-                                    <div class="app-card-aside">
-                                    <span class="status-badge {{ $statusKey }}">
-                                        <span class="dot"></span>
-                                        {{ ucfirst($statusKey) }}
-                                    </span>
-                                        @if($score !== null)
-                                            <div class="text-end">
-                                                <div class="match-no mb-1">Profile match score</div>
-                                                <div class="match-ring d-inline-block" title="{{ $score }}% match">
-                                                    <svg width="40" height="40" viewBox="0 0 40 40">
-                                                        <circle class="track" cx="20" cy="20" r="15"/>
-                                                        <circle class="fill {{ $scoreColor }}" cx="20" cy="20" r="15"
-                                                                stroke-dasharray="{{ $circumference }}"
-                                                                stroke-dashoffset="{{ $offset }}"/>
-                                                    </svg>
-                                                    <div class="match-ring-num">{{ $score }}%</div>
-                                                </div>
+                                @else
+                                    @php
+                                        $app = $row->application;
+                                        $score = $app->match_score ?? null;
+                                        $scoreColor = $score >= 75 ? 'green' : ($score >= 50 ? 'amber' : '');
+                                        $circumference = 2 * 3.14159 * 15;
+                                        $offset = $score !== null ? $circumference - ($score / 100 * $circumference) : $circumference;
+                                        $statusKey = $app->status ?? 'applied';
+                                    @endphp
+                                    <div class="app-card">
+                                        <div class="app-card-main">
+                                            <div class="app-card-top">
+                                                <div class="company-logo" style="background:#d6f5ec;color:#059669;border-color:rgba(0,184,122,.15)">🎯</div>
+                                                <span class="company-name">Job goal</span>
                                             </div>
-                                        @else
-                                            <span class="match-no">Profile match score — No score</span>
-                                        @endif
-                                        <span class="app-date">{{ $app->created_at->format('d M Y') }}</span>
+                                            <p class="app-job-title mb-1">
+                                                <a href="{{ route('job-goal.show', $app->jobRole) }}" class="text-decoration-none" style="color:inherit">{{ $app->jobRole->title }}</a>
+                                            </p>
+                                            <div class="app-meta">
+                                            <span class="meta-tag">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                                Skill match
+                                            </span>
+                                            </div>
+                                        </div>
+                                        <div class="app-card-aside">
+                                        <span class="status-badge {{ $statusKey }}">
+                                            <span class="dot"></span>
+                                            {{ ucfirst($statusKey) }}
+                                        </span>
+                                            @if($score !== null)
+                                                <div class="text-end">
+                                                    <div class="match-no mb-1">Profile match score</div>
+                                                    <div class="match-ring d-inline-block" title="{{ $score }}% match">
+                                                        <svg width="40" height="40" viewBox="0 0 40 40">
+                                                            <circle class="track" cx="20" cy="20" r="15"/>
+                                                            <circle class="fill {{ $scoreColor }}" cx="20" cy="20" r="15"
+                                                                    stroke-dasharray="{{ $circumference }}"
+                                                                    stroke-dashoffset="{{ $offset }}"/>
+                                                        </svg>
+                                                        <div class="match-ring-num">{{ $score }}%</div>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <span class="match-no">Profile match score — No score</span>
+                                            @endif
+                                            <span class="app-date">{{ $app->created_at->format('d M Y') }}</span>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             @endforeach
                         </div>
                         <div class="apps-pagination-wrap">
-                            <p class="apps-pagination-meta mb-0">
-                                Showing {{ $jobGoalApplications->firstItem() }}–{{ $jobGoalApplications->lastItem() }} of {{ $jobGoalApplications->total() }}
-                            </p>
-                            @if($jobGoalApplications->hasPages())
+                            @if($allApplications->total() > 0)
+                                <p class="apps-pagination-meta mb-0">
+                                    Showing {{ $allApplications->firstItem() }}–{{ $allApplications->lastItem() }} of {{ $allApplications->total() }}
+                                </p>
+                            @endif
+                            @if($allApplications->hasPages())
                                 <div class="apps-pagination">
-                                    {{ $jobGoalApplications->onEachSide(1)->links() }}
+                                    {{ $allApplications->onEachSide(1)->links() }}
                                 </div>
                             @endif
                         </div>

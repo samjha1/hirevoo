@@ -398,6 +398,49 @@
 .hirevo-home-page .hv2-search-bar .choices__list--dropdown .choices__item--choice,
 .hirevo-home-page .hv2-search-bar .choices__list--dropdown .choices__item { white-space: nowrap !important; }
 
+/* ─── International openings (home → job-openings) ──── */
+.hirevo-home-page .hv2-intl-openings {
+  padding: 0.85rem 1rem;
+  border-radius: var(--hv2-r-lg);
+  background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(16,185,129,0.05));
+  border: 1px solid rgba(99,102,241,0.15);
+}
+.hirevo-home-page .hv2-intl-openings__label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--hv2-muted);
+  margin-bottom: 0.55rem;
+}
+.hirevo-home-page .hv2-intl-openings__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.hirevo-home-page .hv2-intl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--hv2-r-pill);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none !important;
+  color: var(--hv2-text) !important;
+  background: #fff;
+  border: 1px solid var(--hv2-border);
+  box-shadow: 0 2px 8px rgba(15,23,42,0.05);
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.hirevo-home-page .hv2-intl-chip:hover {
+  border-color: rgba(99,102,241,0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.12);
+}
+.hirevo-home-page .hv2-intl-chip__fi { font-size: 1rem; line-height: 1; }
+
 /* ─── Trust row ───────────────────────────────────────── */
 .hirevo-home-page .hv2-trust-row {
   display: flex; flex-wrap: wrap; align-items: center;

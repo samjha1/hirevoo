@@ -15,7 +15,9 @@ use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ResumeController extends Controller
 {
@@ -86,6 +88,29 @@ class ResumeController extends Controller
                 );
         }
 
+        if ($request->input('return_to') === 'job-openings') {
+            $request->session()->forget('job_openings_personalized');
+            $request->session()->put('job_openings_personalize_resume_id', $resume->id);
+
+            $joCountry = strtolower((string) $request->input('jo_country', ''));
+            $validCountries = ['ca', 'us', 'gb', 'ae'];
+            $qs = array_filter([
+                'q' => $request->input('jo_q'),
+                'location' => $request->input('jo_location'),
+                'job_type' => $request->input('jo_job_type'),
+                'work_location_type' => $request->input('jo_work_type'),
+                'country' => in_array($joCountry, $validCountries, true) ? $joCountry : null,
+            ], fn ($v) => $v !== null && $v !== '');
+
+            return redirect()->route('job-openings', $qs)
+                ->with(
+                    'success',
+                    $profileFilled
+                        ? 'Resume analyzed. Listings below are ordered for your profile — tweak filters any time.'
+                        : 'Resume analyzed. Listings below are ranked for your resume — adjust search or filters as needed.'
+                );
+        }
+
         return redirect()->route('resume.results', $resume)
             ->with(
                 'success',
@@ -93,6 +118,33 @@ class ResumeController extends Controller
                     ? 'Resume analyzed successfully. Your profile was updated from the file. View your ATS score and jobs below.'
                     : 'Resume analyzed successfully. View your ATS score and recommended jobs below.'
             );
+    }
+
+    /**
+     * Serve the candidate's own resume PDF (inline view or download). Owner-only.
+     */
+    public function serveFile(Request $request, Resume $resume): BinaryFileResponse|RedirectResponse
+    {
+        if ($resume->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (! Storage::disk('local')->exists($resume->file_path)) {
+            return redirect()->route('profile')->with('info', 'That resume file is no longer on the server.');
+        }
+
+        $path = Storage::disk('local')->path($resume->file_path);
+        $filename = $resume->file_name ?: 'resume.pdf';
+
+        if ($request->boolean('download')) {
+            return response()->download($path, $filename, [
+                'Content-Type' => 'application/pdf',
+            ]);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     public function results(Resume $resume, Request $request): View|RedirectResponse

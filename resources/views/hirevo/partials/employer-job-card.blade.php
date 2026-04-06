@@ -1,4 +1,5 @@
 @php
+    $jobMatchScores = $jobMatchScores ?? [];
     $companyName = $job->user->referrerProfile?->company_name ?? $job->company_name ?? 'Company';
     $initialRaw = trim($companyName);
     $initial = $initialRaw !== '' ? strtoupper(mb_substr($initialRaw, 0, 1)) : '?';
@@ -31,7 +32,10 @@
                             <p class="text-muted small mb-0 fw-500">{{ $companyName }}</p>
                         </div>
                         <div class="col-12 mt-1 mt-md-2">
-                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                @if(isset($jobMatchScores[$job->id]))
+                                    <span class="jo-fit-pill" title="Keyword overlap vs your resume">{{ $jobMatchScores[$job->id] }}% fit</span>
+                                @endif
                                 @if($job->formatted_location)
                                     <span class="jo-meta-pill"><i class="uil uil-map-marker text-muted me-1"></i>{{ $job->formatted_location }}</span>
                                 @endif

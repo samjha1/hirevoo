@@ -3,9 +3,13 @@
 namespace App\Services;
 
 use App\Models\CandidateProfile;
+use App\Models\EmployerJob;
 use App\Models\JobRole;
 use App\Models\JobRequiredSkill;
 use App\Models\Resume;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Smalot\PdfParser\Parser as PdfParser;
 
@@ -731,32 +735,443 @@ class ResumeAnalysisService
     }
 
     /**
+     * Plain text from resume file and/or AI fields for job matching.
+     */
+    public function getResumePlainTextForMatching(Resume $resume): string
+    {
+        $parts = [];
+        $path = Storage::disk('local')->path($resume->file_path);
+        if (is_readable($path)) {
+            $fromFile = $this->extractTextFromFile($path, (string) ($resume->mime_type ?? 'application/pdf'));
+            if ($fromFile !== '') {
+                $parts[] = $fromFile;
+            }
+        }
+        if (is_string($resume->ai_summary) && trim($resume->ai_summary) !== '') {
+            $parts[] = strip_tags($resume->ai_summary);
+        }
+        $skills = $resume->getExtractedSkillsList();
+        if (count($skills) > 0) {
+            $parts[] = 'Skills: '.implode(', ', $skills);
+        }
+
+        return trim(implode("\n\n", array_filter($parts)));
+    }
+
+    /**
+     * Order employer jobs for job-openings (rule-based scores + optional single AI ranking pass on the top bucket).
+     *
+     * @param  Collection<int, EmployerJob>  $jobs
+     * @return array{ordered_ids: list<int>, scores: array<int, int>, ai_ranked: bool}
+     */
+    public function orderEmployerJobsForOpeningsList(Resume $resume, Collection $jobs, GptService $gpt): array
+    {
+        if ($jobs->isEmpty()) {
+            return ['ordered_ids' => [], 'scores' => [], 'ai_ranked' => false];
+        }
+
+        $resumeText = $this->getResumePlainTextForMatching($resume);
+        if ($resumeText === '') {
+            return [
+                'ordered_ids' => $jobs->sortByDesc(fn ($j) => $j->created_at)->pluck('id')->all(),
+                'scores' => [],
+                'ai_ranked' => false,
+            ];
+        }
+
+        $scores = [];
+        foreach ($jobs as $job) {
+            $req = is_array($job->required_skills) ? $job->required_skills : [];
+            $req = array_values(array_filter(array_map(function ($s) {
+                return is_string($s) ? trim($s) : '';
+            }, $req), fn ($s) => $s !== ''));
+            $rb = $this->getEmployerJobMatchRuleBased(
+                $resumeText,
+                (string) ($job->title ?? ''),
+                strip_tags((string) ($job->description ?? '')),
+                $req
+            );
+            $scores[(int) $job->id] = (int) ($rb['score'] ?? 0);
+        }
+
+        $sorted = $jobs->sort(function ($a, $b) use ($scores) {
+            $sa = $scores[(int) $a->id] ?? 0;
+            $sb = $scores[(int) $b->id] ?? 0;
+            if ($sa !== $sb) {
+                return $sb <=> $sa;
+            }
+
+            return ($b->created_at ?? '') <=> ($a->created_at ?? '');
+        })->values();
+
+        $topN = 28;
+        $top = $sorted->take($topN)->values();
+        $rest = $sorted->slice($topN)->values();
+        $aiRanked = false;
+        $finalOrder = $sorted;
+
+        if ($gpt->isAvailable() && $top->count() >= 2) {
+            $payload = [];
+            foreach ($top as $job) {
+                $req = is_array($job->required_skills) ? $job->required_skills : [];
+                $skillsStr = implode(', ', array_slice(array_values(array_filter(array_map(function ($s) {
+                    return is_string($s) ? trim($s) : '';
+                }, $req), fn ($s) => $s !== '')), 0, 14));
+                $co = (string) ($job->user->referrerProfile?->company_name ?? $job->company_name ?? '');
+                $payload[] = [
+                    'id' => (int) $job->id,
+                    'title' => (string) ($job->title ?? ''),
+                    'company' => $co,
+                    'description' => strip_tags((string) ($job->description ?? '')),
+                    'required_skills' => $skillsStr,
+                ];
+            }
+
+            $rankedIds = $gpt->rankEmployerJobsForResume($resumeText, $payload);
+            if (is_array($rankedIds) && count($rankedIds) === $top->count()) {
+                $byId = $top->keyBy('id');
+                $reorderedTop = collect();
+                foreach ($rankedIds as $jid) {
+                    $jid = (int) $jid;
+                    if ($byId->has($jid)) {
+                        $reorderedTop->push($byId->get($jid));
+                    }
+                }
+                foreach ($top as $j) {
+                    if (! $reorderedTop->contains(fn ($item) => (int) $item->id === (int) $j->id)) {
+                        $reorderedTop->push($j);
+                    }
+                }
+                $finalOrder = $reorderedTop->concat($rest)->values();
+                $aiRanked = true;
+            }
+        }
+
+        return [
+            'ordered_ids' => $finalOrder->pluck('id')->map(fn ($id) => (int) $id)->all(),
+            'scores' => $scores,
+            'ai_ranked' => $aiRanked,
+        ];
+    }
+
+    /**
      * Get job roles sorted by resume match % for the job-goals resume view.
      *
      * @return array<int, array{job_role: JobRole, match_percentage: int, missing_skills: array<string>}>
      */
     public function getMatchingJobGoalsForResume(Resume $resume, int $limit = 20): array
     {
-        $extracted = $resume->getExtractedSkillsList();
         $roles = JobRole::where('is_active', true)->with('requiredSkills')->get();
+        $profileLine = $resume->user?->candidateProfile?->skills;
         $scored = [];
         foreach ($roles as $role) {
-            $required = $role->requiredSkills->pluck('skill_name')->map(fn ($s) => strtolower(trim($s)))->unique()->values()->all();
-            if (count($required) === 0) {
+            $requiredLabels = $this->orderedRequiredSkillLabels($role);
+            if ($requiredLabels === []) {
                 $scored[] = ['job_role' => $role, 'match_percentage' => 0, 'missing_skills' => []];
                 continue;
             }
-            $matched = array_values(array_intersect($required, $extracted));
-            $missing = array_values(array_diff($required, $extracted));
-            $matchPercentage = (int) round((count($matched) / count($required)) * 100);
+            $cov = $this->resumeRequiredSkillCoverageRuleBased($resume, $requiredLabels, $profileLine);
             $scored[] = [
                 'job_role' => $role,
-                'match_percentage' => $matchPercentage,
-                'missing_skills' => $missing,
+                'match_percentage' => $cov['match_pct'],
+                'missing_skills' => array_map(fn ($s) => mb_strtolower($s), $cov['gaps_display']),
             ];
         }
         usort($scored, fn ($a, $b) => $b['match_percentage'] <=> $a['match_percentage']);
         return array_slice($scored, 0, $limit);
+    }
+
+    /**
+     * Ordered display labels for a job role’s required skills (deduped, case-insensitive).
+     *
+     * @return list<string>
+     */
+    public function orderedRequiredSkillLabels(JobRole $jobRole): array
+    {
+        $jobRole->loadMissing('requiredSkills');
+        $ordered = $jobRole->requiredSkills->sortBy(function (JobRequiredSkill $s) {
+            return [(int) ($s->priority ?? 0), (int) $s->id];
+        });
+        $seen = [];
+        $out = [];
+        foreach ($ordered as $row) {
+            $name = trim((string) $row->skill_name);
+            if ($name === '') {
+                continue;
+            }
+            $k = mb_strtolower($name);
+            if (isset($seen[$k])) {
+                continue;
+            }
+            $seen[$k] = true;
+            $out[] = $name;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Match resume (+ optional profile skills) to role required skills using synonyms, resume text,
+     * and optional AI when rule-based coverage is weak. Cached per resume revision + required set.
+     *
+     * @param  list<string>  $requiredLabelsOrdered
+     * @return array{matched_display: list<string>, gaps_display: list<string>, match_pct: int, match_layer: 'rule'|'ai'}
+     */
+    public function matchResumeToRequiredSkillNames(Resume $resume, array $requiredLabelsOrdered, ?string $profileSkillsLine = null): array
+    {
+        $requiredLabelsOrdered = array_values(array_unique(array_filter(array_map(
+            fn ($s) => is_string($s) ? trim($s) : '',
+            $requiredLabelsOrdered
+        ), fn ($s) => $s !== '')));
+
+        if ($requiredLabelsOrdered === []) {
+            return [
+                'matched_display' => [],
+                'gaps_display' => [],
+                'match_pct' => 0,
+                'match_layer' => 'rule',
+            ];
+        }
+
+        $reqSig = md5(implode('|', $requiredLabelsOrdered));
+        $resumeTs = (int) ($resume->updated_at?->timestamp ?? 0);
+        $cacheKey = 'hirevo:dash_skill_cov:v1:'.$resume->id.':'.$resumeTs.':'.$reqSig;
+        $profileSig = $profileSkillsLine !== null ? md5($profileSkillsLine) : 'np';
+
+        return Cache::remember($cacheKey.':'.$profileSig, 600, function () use ($resume, $requiredLabelsOrdered, $profileSkillsLine) {
+            $rule = $this->resumeRequiredSkillCoverageRuleBased($resume, $requiredLabelsOrdered, $profileSkillsLine);
+            $matchLayer = 'rule';
+            $plain = $this->getResumePlainTextForMatching($resume);
+            $textLen = mb_strlen(trim($plain));
+            $nReq = count($requiredLabelsOrdered);
+            $nMatch = count($rule['matched_display']);
+            $weak = $nReq > 0 && (($nMatch === 0 && $textLen >= 200) || ($nMatch / $nReq < 0.35 && $textLen >= 250));
+
+            if ($weak && $this->gptService->isAvailable()) {
+                $requiredByLower = [];
+                foreach ($requiredLabelsOrdered as $label) {
+                    $requiredByLower[mb_strtolower($label)] = $label;
+                }
+
+                $chips = array_merge(
+                    $resume->getExtractedSkillsList(),
+                    $this->splitProfileSkillsLine($profileSkillsLine),
+                    is_array($resume->extracted_skills) ? array_map(fn ($x) => is_string($x) ? $x : '', $resume->extracted_skills) : []
+                );
+                $chips = array_values(array_filter(array_map('trim', $chips), fn ($s) => $s !== ''));
+
+                $aiSatisfied = $this->gptService->inferResumeCoverageForRequiredSkills($plain, $requiredLabelsOrdered, $chips);
+                if (is_array($aiSatisfied)) {
+                    $satisfiedExact = [];
+                    foreach ($aiSatisfied as $lbl) {
+                        $lk = mb_strtolower(trim((string) $lbl));
+                        if (isset($requiredByLower[$lk])) {
+                            $satisfiedExact[$requiredByLower[$lk]] = true;
+                        }
+                    }
+                    $matched = [];
+                    $gaps = [];
+                    foreach ($requiredLabelsOrdered as $label) {
+                        if (isset($satisfiedExact[$label])) {
+                            $matched[] = $label;
+                        } else {
+                            $gaps[] = $label;
+                        }
+                    }
+                    $pct = $nReq > 0 ? (int) round((count($matched) / $nReq) * 100) : 0;
+
+                    return [
+                        'matched_display' => $matched,
+                        'gaps_display' => $gaps,
+                        'match_pct' => $pct,
+                        'match_layer' => 'ai',
+                    ];
+                }
+            }
+
+            return [
+                'matched_display' => $rule['matched_display'],
+                'gaps_display' => $rule['gaps_display'],
+                'match_pct' => $rule['match_pct'],
+                'match_layer' => $matchLayer,
+            ];
+        });
+    }
+
+    /**
+     * Rule-based only: extracted chips + profile + synonym buckets + substring matches in resume text.
+     *
+     * @param  list<string>  $requiredLabelsOrdered
+     * @return array{matched_display: list<string>, gaps_display: list<string>, match_pct: int}
+     */
+    protected function resumeRequiredSkillCoverageRuleBased(Resume $resume, array $requiredLabelsOrdered, ?string $profileSkillsLine): array
+    {
+        $nReq = count($requiredLabelsOrdered);
+        if ($nReq === 0) {
+            return ['matched_display' => [], 'gaps_display' => [], 'match_pct' => 0];
+        }
+
+        $plain = $this->getResumePlainTextForMatching($resume);
+        $textLower = mb_strtolower($plain);
+
+        $tokens = $resume->getExtractedSkillsList();
+        $tokens = array_merge($tokens, $this->splitProfileSkillsLine($profileSkillsLine));
+
+        $canonicalHits = [];
+        foreach ($tokens as $t) {
+            if ($t === '') {
+                continue;
+            }
+            $canonicalHits[$this->canonicalSkillId($t)] = true;
+        }
+
+        foreach ($requiredLabelsOrdered as $reqLabel) {
+            $cid = $this->canonicalSkillId($reqLabel);
+            foreach ($this->variantsForLabel($reqLabel) as $variant) {
+                if ($this->variantMatchesInText($plain, $textLower, $variant)) {
+                    $canonicalHits[$cid] = true;
+                    break;
+                }
+            }
+        }
+
+        $matched = [];
+        $gaps = [];
+        foreach ($requiredLabelsOrdered as $reqLabel) {
+            if (isset($canonicalHits[$this->canonicalSkillId($reqLabel)])) {
+                $matched[] = $reqLabel;
+            } else {
+                $gaps[] = $reqLabel;
+            }
+        }
+
+        $pct = (int) round((count($matched) / $nReq) * 100);
+
+        return [
+            'matched_display' => $matched,
+            'gaps_display' => $gaps,
+            'match_pct' => $pct,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function splitProfileSkillsLine(?string $line): array
+    {
+        if (! is_string($line) || trim($line) === '') {
+            return [];
+        }
+        $parts = preg_split('/[,;|]+/', $line) ?: [];
+        $out = [];
+        foreach ($parts as $p) {
+            $s = mb_strtolower(trim((string) $p));
+            if ($s !== '') {
+                $out[] = $s;
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * Synonym groups: first term is the canonical id (lowercase).
+     */
+    protected function skillSynonymGroups(): array
+    {
+        static $groups = null;
+        if ($groups !== null) {
+            return $groups;
+        }
+
+        $groups = [
+            ['javascript', 'js', 'ecmascript', 'es6', 'es2015'],
+            ['typescript', 'ts'],
+            ['react', 'reactjs', 'react.js', 'react js'],
+            ['html', 'html5', 'html 5'],
+            ['css', 'css3', 'scss', 'sass', 'less', 'stylus'],
+            ['bootstrap', 'bootstrap5', 'bs5', 'bootstrap 5'],
+            ['git', 'github', 'gitlab', 'bitbucket'],
+            ['node', 'node.js', 'nodejs', 'node js'],
+            ['jquery', 'j query'],
+            ['redux', 'redux toolkit', 'rtk'],
+            ['sql', 'mysql', 'postgresql', 'postgres', 'sqlite', 'mssql', 'tsql', 'pl/sql'],
+            ['python', 'django', 'flask', 'fastapi'],
+            ['java'],
+            ['spring', 'spring boot', 'springboot'],
+            ['aws', 'amazon web services', 'ec2', 's3'],
+            ['docker', 'docker-compose', 'containerization'],
+            ['kubernetes', 'k8s'],
+            ['php', 'php7', 'php8'],
+            ['laravel', 'lumen'],
+            ['angular', 'angularjs'],
+            ['vue', 'vuejs', 'vue.js'],
+            ['next.js', 'nextjs', 'next'],
+            ['tailwind', 'tailwindcss', 'tailwind css'],
+            ['webpack', 'vite', 'rollup'],
+            ['graphql', 'apollo'],
+            ['mongodb', 'mongo'],
+            ['restful', 'rest api', 'rest-api'],
+        ];
+
+        return $groups;
+    }
+
+    protected function canonicalSkillId(string $label): string
+    {
+        $raw = mb_strtolower(trim($label));
+        $raw = preg_replace('/\s+/u', ' ', $raw) ?? '';
+        foreach ($this->skillSynonymGroups() as $group) {
+            $lowerGroup = array_map(fn ($t) => mb_strtolower($t), $group);
+            if (in_array($raw, $lowerGroup, true)) {
+                return mb_strtolower($group[0]);
+            }
+            $compact = str_replace([' ', '.'], '', $raw);
+            foreach ($lowerGroup as $g) {
+                if ($compact === str_replace([' ', '.'], '', $g)) {
+                    return mb_strtolower($group[0]);
+                }
+            }
+        }
+
+        return $raw;
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function variantsForLabel(string $label): array
+    {
+        $raw = mb_strtolower(trim($label));
+        $raw = preg_replace('/\s+/u', ' ', $raw) ?? '';
+        foreach ($this->skillSynonymGroups() as $group) {
+            $lowerGroup = array_map(fn ($t) => mb_strtolower($t), $group);
+            if (in_array($raw, $lowerGroup, true)) {
+                return $lowerGroup;
+            }
+        }
+
+        return [$raw];
+    }
+
+    protected function variantMatchesInText(string $plain, string $textLower, string $variant): bool
+    {
+        $v = mb_strtolower(trim($variant));
+        $v = preg_replace('/\s+/u', ' ', $v) ?? '';
+        if (mb_strlen($v) < 2) {
+            return false;
+        }
+        if (in_array($v, ['js', 'ts', 'go'], true)) {
+            return (bool) preg_match('/(?<![a-z0-9])'.preg_quote($v, '/').'(?![a-z0-9])/iu', $plain);
+        }
+        if ($v === 'java') {
+            return (bool) preg_match('/\bjava\b(?!\s*script)/iu', $plain);
+        }
+        if ($v === 'react') {
+            return (bool) preg_match('/\breact\b(?![a-z])/iu', $plain);
+        }
+
+        return mb_strpos($textLower, $v) !== false;
     }
 
     /**

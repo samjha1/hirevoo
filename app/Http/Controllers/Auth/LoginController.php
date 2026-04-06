@@ -55,7 +55,7 @@ class LoginController extends Controller
             if ($user->isReferrer()) {
                 return redirect()->intended(route('employer.dashboard'));
             }
-            return redirect()->intended(route('candidate.dashboard'));
+            return redirect()->intended(route('home'));
         }
 
         return back()->withErrors([

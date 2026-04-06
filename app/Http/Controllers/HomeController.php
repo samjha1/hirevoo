@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CareerConsultationRequest;
 use App\Models\CandidateProfile;
 use App\Models\EmployerJob;
 use App\Models\EmployerJobApplication;
@@ -12,8 +13,10 @@ use App\Models\UpskillOpportunity;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
 use App\Support\CandidateOnboarding;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -55,11 +58,13 @@ class HomeController extends Controller
     public function skillMatch(JobRole $jobRole, ResumeAnalysisService $resumeAnalysis): View
     {
         $jobRole->load('requiredSkills');
-        $requiredSkills = $jobRole->requiredSkills->pluck('skill_name')->map(fn ($s) => strtolower(trim($s)))->unique()->values()->all();
+        $orderedSkillLabels = $jobRole->requiredSkills->isNotEmpty()
+            ? $resumeAnalysis->orderedRequiredSkillLabels($jobRole)
+            : [];
 
         $matchPercentage = 0;
         $matchedSkills = [];
-        $missingSkills = $requiredSkills;
+        $missingSkills = $orderedSkillLabels;
         $candidateSkills = [];
 
         $primaryResume = null;
@@ -77,22 +82,49 @@ class HomeController extends Controller
                 $upskillOpportunities = UpskillOpportunity::active()->orderBy('sort_order')->get();
                 $userSkillsForUpskill = array_map('strtolower', $primaryResume->getExtractedSkillsList());
             }
-            $profile = auth()->user()->candidateProfile;
-            if ($profile && ! empty($profile->skills)) {
-                $candidateSkills = array_map(function ($s) {
-                    return strtolower(trim($s));
-                }, preg_split('/[\s,;|]+/', $profile->skills, -1, PREG_SPLIT_NO_EMPTY));
-                $candidateSkills = array_unique($candidateSkills);
 
-                if (count($requiredSkills) > 0) {
-                    $matchedSkills = array_values(array_intersect($requiredSkills, $candidateSkills));
-                    $missingSkills = array_values(array_diff($requiredSkills, $candidateSkills));
-                    $matchPercentage = (int) round((count($matchedSkills) / count($requiredSkills)) * 100);
-                }
+            if ($primaryResume && count($orderedSkillLabels) > 0) {
+                $cov = $resumeAnalysis->matchResumeToRequiredSkillNames(
+                    $primaryResume,
+                    $orderedSkillLabels,
+                    auth()->user()->candidateProfile?->skills
+                );
+                $matchPercentage = $cov['match_pct'];
+                $matchedSkills = $cov['matched_display'];
+                $missingSkills = $cov['gaps_display'];
+                $candidateSkills = array_map('strtolower', $primaryResume->getExtractedSkillsList());
             } else {
-                $missingSkills = $requiredSkills;
+                $profile = auth()->user()->candidateProfile;
+                if ($profile && trim((string) $profile->skills) !== '' && count($orderedSkillLabels) > 0) {
+                    $skillSet = [];
+                    foreach (preg_split('/[\s,;|]+/', $profile->skills, -1, PREG_SPLIT_NO_EMPTY) as $p) {
+                        $skillSet[mb_strtolower(trim($p))] = true;
+                    }
+                    $matchedSkills = [];
+                    $missingSkills = [];
+                    foreach ($orderedSkillLabels as $label) {
+                        if (isset($skillSet[mb_strtolower($label)])) {
+                            $matchedSkills[] = $label;
+                        } else {
+                            $missingSkills[] = $label;
+                        }
+                    }
+                    $matchPercentage = (int) round((count($matchedSkills) / count($orderedSkillLabels)) * 100);
+                    $candidateSkills = array_keys($skillSet);
+                } elseif (count($orderedSkillLabels) > 0) {
+                    $missingSkills = $orderedSkillLabels;
+                    $matchedSkills = [];
+                    $matchPercentage = 0;
+                    $candidateSkills = [];
+                }
             }
         }
+
+        $consultGapPayload = CareerConsultationRequest::buildConsultGapPayload(
+            $jobRole,
+            $missingSkills,
+            $matchedSkills
+        );
 
         $hasApplied = auth()->check()
             ? JobApplication::where('user_id', auth()->id())->where('job_role_id', $jobRole->id)->exists()
@@ -135,6 +167,7 @@ class HomeController extends Controller
             'userSkillsForUpskill' => $userSkillsForUpskill,
             'relatedJobs' => $relatedJobs,
             'appliedEmployerJobIds' => $appliedEmployerJobIds,
+            'consultGapPayload' => $consultGapPayload,
         ]);
     }
 
@@ -143,8 +176,14 @@ class HomeController extends Controller
         return view('hirevo.pricing');
     }
 
-    public function jobOpenings(Request $request): View
+    public function jobOpenings(Request $request, ResumeAnalysisService $resumeAnalysis, GptService $gptService): View|JsonResponse|RedirectResponse
     {
+        if ($request->boolean('clear_personalization')) {
+            $request->session()->forget(['job_openings_personalize_resume_id', 'job_openings_personalized']);
+
+            return redirect()->route('job-openings', $request->except('clear_personalization'));
+        }
+
         $query = EmployerJob::where('status', 'active')->with(['user.referrerProfile']);
 
         if ($request->filled('q')) {
@@ -156,6 +195,34 @@ class HomeController extends Controller
                         $uq->where('company_name', 'like', '%' . $q . '%');
                     });
             });
+        }
+
+        $validCountryCodes = ['ca', 'us', 'gb', 'ae'];
+        $countryFilter = '';
+        if ($request->filled('country')) {
+            $c = strtolower((string) $request->get('country'));
+            if (in_array($c, $validCountryCodes, true)) {
+                $countryFilter = $c;
+            }
+        }
+
+        $countryHints = config('hirevo.job_openings_country_hints', []);
+        if ($countryFilter !== '' && isset($countryHints[$countryFilter]) && is_array($countryHints[$countryFilter])) {
+            $terms = array_values(array_filter(
+                $countryHints[$countryFilter],
+                fn ($t) => is_string($t) && trim($t) !== ''
+            ));
+            if ($terms !== []) {
+                $query->where(function ($qry) use ($terms) {
+                    foreach ($terms as $i => $term) {
+                        if ($i === 0) {
+                            $qry->where('location', 'like', '%' . $term . '%');
+                        } else {
+                            $qry->orWhere('location', 'like', '%' . $term . '%');
+                        }
+                    }
+                });
+            }
         }
 
         if ($request->filled('location')) {
@@ -172,7 +239,6 @@ class HomeController extends Controller
             $query->where('work_location_type', $request->get('work_location_type'));
         }
 
-        $jobs = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
         $appliedIds = auth()->check()
             ? EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all()
             : [];
@@ -180,6 +246,96 @@ class HomeController extends Controller
         $searchLocation = $request->get('location', '');
         $filterJobType = $request->get('job_type', '');
         $filterWorkType = $request->get('work_location_type', '');
+
+        $filterHash = md5($searchQuery.'|'.$searchLocation.'|'.$filterJobType.'|'.$filterWorkType.'|'.$countryFilter);
+
+        $jobMatchScores = [];
+        $jobMatchAiRanked = false;
+        $jobsPersonalized = false;
+        $personalizeResumeId = null;
+
+        if (auth()->check() && auth()->user()->isCandidate()) {
+            $personalizeResumeId = (int) $request->session()->get('job_openings_personalize_resume_id', 0);
+            if ($personalizeResumeId > 0) {
+                $owns = Resume::where('user_id', auth()->id())->where('id', $personalizeResumeId)->exists();
+                if (! $owns) {
+                    $request->session()->forget(['job_openings_personalize_resume_id', 'job_openings_personalized']);
+                    $personalizeResumeId = null;
+                }
+            } else {
+                $personalizeResumeId = null;
+            }
+        }
+
+        $jobs = null;
+        if ($personalizeResumeId) {
+            $resume = Resume::where('user_id', auth()->id())->find($personalizeResumeId);
+            if (! $resume) {
+                $request->session()->forget(['job_openings_personalize_resume_id', 'job_openings_personalized']);
+            } elseif ($resume) {
+                $cached = $request->session()->get('job_openings_personalized');
+                if (is_array($cached)
+                    && (int) ($cached['resume_id'] ?? 0) === (int) $resume->id
+                    && ($cached['filter_hash'] ?? '') === $filterHash
+                    && isset($cached['ordered_ids']) && is_array($cached['ordered_ids'])) {
+                    $orderedIds = $cached['ordered_ids'];
+                    $jobMatchScores = is_array($cached['scores'] ?? null) ? $cached['scores'] : [];
+                    $jobMatchAiRanked = (bool) ($cached['ai_ranked'] ?? false);
+                } else {
+                    $pool = (clone $query)->orderByDesc('created_at')->limit(120)->get();
+                    $ordered = $resumeAnalysis->orderEmployerJobsForOpeningsList($resume, $pool, $gptService);
+                    $orderedIds = $ordered['ordered_ids'];
+                    $jobMatchScores = $ordered['scores'];
+                    $jobMatchAiRanked = $ordered['ai_ranked'];
+                    $request->session()->put('job_openings_personalized', [
+                        'resume_id' => $resume->id,
+                        'filter_hash' => $filterHash,
+                        'ordered_ids' => $orderedIds,
+                        'scores' => $jobMatchScores,
+                        'ai_ranked' => $jobMatchAiRanked,
+                    ]);
+                }
+
+                $total = count($orderedIds);
+                $perPage = 10;
+                $lastPage = $total > 0 ? (int) ceil($total / $perPage) : 1;
+                $currentPage = min($lastPage, max(1, (int) $request->get('page', 1)));
+                $offset = ($currentPage - 1) * $perPage;
+                $pageIds = array_slice($orderedIds, $offset, $perPage);
+
+                $pageItems = [];
+                if ($pageIds !== []) {
+                    $jobsMap = EmployerJob::whereIn('id', $pageIds)
+                        ->with(['user.referrerProfile'])
+                        ->get()
+                        ->keyBy('id');
+
+                    foreach ($pageIds as $jid) {
+                        $jid = (int) $jid;
+                        if ($jobsMap->has($jid)) {
+                            $pageItems[] = $jobsMap->get($jid);
+                        }
+                    }
+                }
+
+                $jobs = new LengthAwarePaginator(
+                    $pageItems,
+                    $total,
+                    $perPage,
+                    $currentPage,
+                    [
+                        'path' => $request->url(),
+                        'pageName' => 'page',
+                    ]
+                );
+                $jobs->withQueryString();
+                $jobsPersonalized = true;
+            }
+        }
+
+        if ($jobs === null) {
+            $jobs = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
+        }
 
         $locationOptions = EmployerJob::where('status', 'active')
             ->whereNotNull('location')
@@ -195,18 +351,25 @@ class HomeController extends Controller
                 'html' => view('hirevo.partials.employer-job-cards', [
                     'jobs' => $jobs,
                     'appliedIds' => $appliedIds,
+                    'jobMatchScores' => $jobMatchScores,
                 ])->render(),
                 'next_page_url' => $jobs->nextPageUrl(),
                 'has_more' => $jobs->hasMorePages(),
                 'from' => $jobs->firstItem(),
                 'to' => $jobs->lastItem(),
                 'total' => $jobs->total(),
+                'personalized' => $jobsPersonalized,
+                'ai_ranked' => $jobMatchAiRanked,
             ]);
         }
 
+        $countryLabels = config('hirevo.job_openings_country_labels', []);
+
         return view('hirevo.job-openings', compact(
             'jobs', 'appliedIds', 'searchQuery', 'searchLocation',
-            'filterJobType', 'filterWorkType', 'locationOptions'
+            'filterJobType', 'filterWorkType', 'locationOptions',
+            'jobMatchScores', 'jobMatchAiRanked', 'jobsPersonalized', 'personalizeResumeId',
+            'countryFilter', 'countryLabels'
         ));
     }
 

@@ -26,13 +26,17 @@ class ProfileController extends Controller
             );
         }
         $hasResume = $user->isCandidate() && $user->resumes()->exists();
-        $latestResume = $user->isCandidate() ? $user->resumes()->orderByDesc('created_at')->first() : null;
+        $primaryResume = null;
+        if ($user->isCandidate()) {
+            $primaryResume = $user->resumes()->where('is_primary', true)->first()
+                ?? $user->resumes()->orderByDesc('created_at')->first();
+        }
 
         return view('hirevo.profile', [
             'profile' => $profile,
             'user' => $user,
             'hasResume' => $hasResume,
-            'latestResume' => $latestResume,
+            'primaryResume' => $primaryResume,
             'profileOnboardingComplete' => $user->isCandidate() && $user->candidate_profile_completed_at,
             'profileCompletion' => $user->isCandidate()
                 ? CandidateProfile::completionStats($profile, $user)

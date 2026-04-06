@@ -177,6 +177,10 @@ class SocialAuthController extends Controller
             return redirect()->to($redirect);
         }
 
-        return redirect()->intended($user && $user->isCandidate() ? route('candidate.dashboard') : route('home'));
+        if ($user && $user->isReferrer()) {
+            return redirect()->intended(route('employer.dashboard'));
+        }
+
+        return redirect()->intended(route('home'));
     }
 }

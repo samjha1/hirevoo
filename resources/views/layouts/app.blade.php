@@ -28,7 +28,7 @@
     <link href="{{ asset('css/hirevo-theme.css') }}" rel="stylesheet">
     @stack('styles')
 </head>
-<body>
+<body class="@yield('body_class')">
     <div id="preloader">
         <div id="status">
             <ul>
@@ -252,22 +252,44 @@
 
             <!-- START REFERRAL (Refer in your company & earn) -->
             <section class="py-5" style="background: linear-gradient(135deg, var(--hirevo-primary, #0B1F3B) 0%, #162d4d 100%);">
-                <div class="container">
-                    <div class="row justify-content-between align-items-center">
-                        <div class="col-lg-7">
-                            <div class="text-center text-lg-start">
-                                <h4 class="text-white mb-2">Refer in your company & earn</h4>
-                                <p class="text-white-50 mb-0">If you can refer candidates in your company, sign up here. Share your company name and how many people you can refer — we’ll get in touch so you can start earning.</p>
-                            </div>
-                        </div>
-                        <div class="col-lg-5 mt-4 mt-lg-0 text-center text-lg-end">
-                            <button type="button" class="btn btn-success btn-lg rounded-pill px-4 hirevo-cta-btn" data-bs-toggle="modal" data-bs-target="#referralSignupModal">
-                                <i class="uil uil-user-plus me-1"></i> I can refer in my company
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
+    <div class="container"> <!-- keeps same width as rest of site -->
+        <div class="row align-items-center">
+            
+            <!-- Left Content -->
+            <div class="col-lg-7 text-center text-lg-start">
+                
+                <span class="badge bg-success-subtle text-success mb-3 px-3 py-2 rounded-pill">
+                    💸 Earn up to ₹5,000 per successful referral
+                </span>
+
+                <h3 class="text-white fw-bold mb-3">
+                    Refer Talent in Your Company & Start Earning
+                </h3>
+
+                <p class="text-white-50 mb-0" style="max-width: 520px;">
+                    Know open roles in your company? Refer candidates and earn rewards.
+                    Just tell us your company and how many people you can refer we’ll connect you with matching candidates.
+                </p>
+            </div>
+
+            <!-- Right CTA -->
+            <div class="col-lg-5 mt-4 mt-lg-0 text-center text-lg-end">
+                <button type="button" 
+                    class="btn btn-success btn-lg rounded-pill px-5 py-3 shadow hirevo-cta-btn"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#referralSignupModal">
+                    
+                    🚀 Start Referring & Earn
+                </button>
+
+                <p class="text-white-50 mt-2 mb-0 small">
+                    No cost • Flexible • Quick payouts
+                </p>
+            </div>
+
+        </div>
+    </div>
+</section>
             <!-- END REFERRAL -->
 
             <!-- START SUBSCRIBE -->

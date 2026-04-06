@@ -158,4 +158,35 @@ return [
         ],
         'Other' => [],
     ],
+
+    /**
+     * Job openings: ?country=ca|us|gb|ae narrows listings where raw `location` matches any hint (JSON or plain text).
+     */
+    'job_openings_country_hints' => [
+        'ca' => [
+            'Canada', 'CA"', '"country":"Canada"', 'Canadian', 'Toronto', 'Vancouver', 'Montreal', 'Montréal', 'Calgary',
+            'Ottawa', 'Edmonton', 'Winnipeg', 'Quebec', 'Québec', 'Ontario', 'British Columbia', 'Alberta', 'Manitoba',
+            'Saskatchewan', 'Nova Scotia', 'Mississauga', 'Hamilton', 'Halifax',
+        ],
+        'us' => [
+            'United States', 'USA', 'U.S.', 'America', 'US"', '"United States"', 'New York', 'California', 'Texas',
+            'Florida', 'Chicago', 'Seattle', 'Boston', 'Washington', 'Georgia', 'Illinois', 'Pennsylvania',
+        ],
+        'gb' => [
+            'United Kingdom', 'UK', 'GB"', '"United Kingdom"', 'England', 'Scotland', 'Wales', 'London', 'Manchester',
+            'Birmingham', 'Bristol', 'Edinburgh', 'Glasgow', 'Leeds', 'Liverpool',
+        ],
+        'ae' => [
+            'United Arab Emirates', 'UAE', 'AE"', '"United Arab Emirates"', 'Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman',
+            'Ras Al Khaimah',
+        ],
+    ],
+
+    /** Short labels for country filter chips (code => [label, optional emoji]). */
+    'job_openings_country_labels' => [
+        'ca' => ['label' => 'Canada', 'emoji' => '🇨🇦'],
+        'us' => ['label' => 'United States', 'emoji' => '🇺🇸'],
+        'gb' => ['label' => 'United Kingdom', 'emoji' => '🇬🇧'],
+        'ae' => ['label' => 'UAE', 'emoji' => '🇦🇪'],
+    ],
 ];

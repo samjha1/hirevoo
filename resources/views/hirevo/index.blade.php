@@ -31,7 +31,7 @@
                     </h1>
                     <p class="hv2-lead">
                         Stop applying blindly. Hirevo shows where your profile stands,
-                        <strong>what to improve</strong>, and <strong>real roles</strong> that fit —
+                        <strong>what to improve</strong>, and <strong>real roles</strong> that fit 
                         so every application counts.
                     </p>
                     <div class="d-flex flex-wrap gap-2 mb-4">
@@ -68,8 +68,17 @@
                             </div>
                         </form>
                         <p class="small mt-2 mb-0" style="color:var(--hv2-faint);">
-                            Unsure where to start? Upload your resume — we'll map skills and gaps in minutes.
+                            Unsure where to start? Upload your resume, we'll map skills and gaps in minutes.
                         </p>
+                        <div class="hv2-intl-openings mt-3">
+                            <span class="hv2-intl-openings__label">International job openings</span>
+                            <div class="hv2-intl-openings__chips">
+                                <a class="hv2-intl-chip" href="{{ route('job-openings', ['country' => 'ca']) }}"><span class="hv2-intl-chip__fi" aria-hidden="true">🇨🇦</span>Canada</a>
+                                <a class="hv2-intl-chip" href="{{ route('job-openings', ['country' => 'us']) }}"><span class="hv2-intl-chip__fi" aria-hidden="true">🇺🇸</span>United States</a>
+                                <a class="hv2-intl-chip" href="{{ route('job-openings', ['country' => 'gb']) }}"><span class="hv2-intl-chip__fi" aria-hidden="true">🇬🇧</span>United Kingdom</a>
+                                <a class="hv2-intl-chip" href="{{ route('job-openings', ['country' => 'ae']) }}"><span class="hv2-intl-chip__fi" aria-hidden="true">🇦🇪</span>UAE</a>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="hv2-trust-row">
@@ -242,7 +251,7 @@
                     <h2 class="hv2-statement mb-4">You're not <em>unqualified.</em><br>You're under-guided.</h2>
                     <p class="hv2-lead mb-4">
                         Most platforms push volume.
-                        <strong>Hirevo pushes clarity</strong> — so you know what to fix, what to learn, and where to aim.
+                        <strong>Hirevo pushes clarity</strong>  so you know what to fix, what to learn, and where to aim.
                     </p>
                     <a href="{{ route('resume.upload') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg">
                         Fix this for me <i class="uil uil-arrow-right"></i>
@@ -260,21 +269,21 @@
                         <div class="hv2-pain-ico" aria-hidden="true">🗺️</div>
                         <div>
                             <strong>"Which role is actually for me?"</strong>
-                            <span>Job titles hide skill reality — we map roles to what you bring.</span>
+                            <span>Job titles hide skill reality  we map roles to what you bring.</span>
                         </div>
                     </div>
                     <div class="hv2-pain-item">
                         <div class="hv2-pain-ico" aria-hidden="true">🔍</div>
                         <div>
                             <strong>Rejected without knowing why</strong>
-                            <span>ATS and skill mismatches filter you out early — we show what to address.</span>
+                            <span>ATS and skill mismatches filter you out early  we show what to address.</span>
                         </div>
                     </div>
                     <div class="hv2-pain-item">
                         <div class="hv2-pain-ico" aria-hidden="true">✨</div>
                         <div>
                             <strong>Not just another job board</strong>
-                            <span>We focus on preparation and fit — not endless scrolling listings.</span>
+                            <span>We focus on preparation and fit  not endless scrolling listings.</span>
                         </div>
                     </div>
                 </div>
@@ -435,7 +444,7 @@
                         Find work that <span class="hv2-accent">fits</span> your profile
                     </h2>
                     <p class="hv2-lead">
-                        Employer-posted roles you can explore and apply to — with the same clarity mindset, not spray-and-pray.
+                        Employer-posted roles you can explore and apply to  with the same clarity mindset, not spray-and-pray.
                     </p>
                     <a href="{{ route('job-openings') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg">
                         <i class="uil uil-search"></i> Browse job openings
@@ -474,7 +483,7 @@
             <div class="text-center mb-5 hv2-reveal">
                 <div class="hv2-eyebrow" style="letter-spacing:0.08em;">Why Hirevo</div>
                 <p class="hv2-lead mx-auto text-center mb-0" style="max-width:34rem;">
-                    For learners, job seekers, and employers — one platform, clearer outcomes.
+                    For learners, job seekers, and employers  one platform, clearer outcomes.
                 </p>
             </div>
             <div class="row g-4">
@@ -518,11 +527,11 @@
                         <div class="small fw-bold text-uppercase mb-2" style="color:var(--hv2-amber);letter-spacing:0.08em;">Updates &amp; opportunities</div>
                         <h3 class="h4 mb-2">Stay connected</h3>
                         <p style="color:var(--hv2-muted);" class="mb-3">
-                            <strong style="color:var(--hv2-text);">Curated openings and useful signals</strong> — not a flood of irrelevant listings.
+                            <strong style="color:var(--hv2-text);">Curated openings and useful signals</strong>  not a flood of irrelevant listings.
                         </p>
                         <ul class="hv2-list mb-4">
                             <li>Roles and timely nudges in one place</li>
-                            <li><strong style="color:var(--hv2-text);">No spam</strong> — only what helps you move forward</li>
+                            <li><strong style="color:var(--hv2-text);">No spam</strong>  only what helps you move forward</li>
                             <li>Join to personalise what you hear about</li>
                         </ul>
                         <div class="mt-auto">
@@ -536,7 +545,7 @@
                         <div class="small fw-bold text-uppercase mb-2" style="color:#c4bfff;letter-spacing:0.08em;">For employers</div>
                         <h3 class="h4 mb-2">Hiring made simpler</h3>
                         <p style="color:var(--hv2-muted);" class="mb-3">
-                            Reach candidates who are <strong style="color:var(--hv2-text);">already preparing</strong> — clearer profiles, fewer mismatches.
+                            Reach candidates who are <strong style="color:var(--hv2-text);">already preparing</strong> clearer profiles, fewer mismatches.
                         </p>
                         <ul class="hv2-list mb-4">
                             <li>List jobs with clear requirements and work modes</li>
@@ -564,7 +573,7 @@
             <div class="hv2-testi-grid">
                 <div class="hv2-testi-card hv2-reveal hv2-reveal-d1">
                     <div class="hv2-testi-stars">★★★★★</div>
-                    <p class="hv2-testi-text">"Uploaded my resume and within two minutes I had a clear picture of what was missing. Applied to 3 roles that actually fit — got 2 interviews."</p>
+                    <p class="hv2-testi-text">"Uploaded my resume and within two minutes I had a clear picture of what was missing. Applied to 3 roles that actually fit  got 2 interviews."</p>
                     <div class="hv2-testi-author">
                         <div class="hv2-testi-av" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">PK</div>
                         <div>
@@ -609,7 +618,7 @@
                     Start with <span class="hv2-glow">clarity.</span>
                 </h2>
                 <p class="hv2-lead text-center mx-auto mt-3 mb-4" style="max-width:34rem;">
-                    Upload your resume — no account needed. Get your ATS score, skill gaps, and matched jobs in under 2 minutes.
+                    Upload your resume  no account needed. Get your ATS score, skill gaps, and matched jobs in under 2 minutes.
                 </p>
                 <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
                     <a href="{{ route('resume.upload') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg" style="background:linear-gradient(135deg,#6366f1,#4f46e5);box-shadow:0 8px 28px rgba(99,102,241,0.38);">
