@@ -275,6 +275,113 @@
 .ru-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(16,185,129,0.5); color: #fff; }
 .ru-submit-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* ── AI Loading Overlay ──────────────────────────── */
+.ru-ai-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background:
+        radial-gradient(circle at 20% 10%, rgba(16, 185, 129, 0.2), transparent 40%),
+        radial-gradient(circle at 85% 90%, rgba(99, 102, 241, 0.22), transparent 45%),
+        rgba(2, 6, 23, 0.84);
+    backdrop-filter: blur(8px);
+}
+.ru-ai-overlay.is-visible { display: flex; }
+.ru-ai-card {
+    width: min(560px, 100%);
+    border-radius: 1.1rem;
+    padding: 1.2rem 1.1rem 1rem;
+    color: #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.82));
+    box-shadow: 0 24px 70px rgba(2, 8, 23, 0.55);
+}
+@media (min-width: 576px) {
+    .ru-ai-card { padding: 1.5rem 1.45rem 1.25rem; border-radius: 1.25rem; }
+}
+.ru-ai-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.ru-ai-spinner {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 3px solid rgba(148, 163, 184, 0.28);
+    border-top-color: #34d399;
+    border-right-color: #60a5fa;
+    animation: ruSpin 0.85s linear infinite;
+}
+@keyframes ruSpin { to { transform: rotate(360deg); } }
+.ru-ai-title {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #f8fafc;
+}
+.ru-ai-sub {
+    margin: 0.2rem 0 0;
+    font-size: 0.82rem;
+    color: #94a3b8;
+}
+.ru-ai-progress {
+    height: 8px;
+    margin-top: 1rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(148, 163, 184, 0.18);
+}
+.ru-ai-progress-bar {
+    width: 20%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #34d399, #60a5fa, #818cf8);
+    box-shadow: 0 0 18px rgba(96, 165, 250, 0.5);
+    transition: width 0.45s ease;
+}
+.ru-ai-steps {
+    margin: 0.85rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.38rem;
+}
+.ru-ai-step {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    border-radius: 0.7rem;
+    padding: 0.43rem 0.6rem;
+    font-size: 0.79rem;
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(15, 23, 42, 0.4);
+}
+.ru-ai-step i { color: #475569; transition: color 0.2s ease; }
+.ru-ai-step.is-active {
+    color: #dbeafe;
+    border-color: rgba(96, 165, 250, 0.38);
+    background: linear-gradient(100deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.9));
+}
+.ru-ai-step.is-active i { color: #60a5fa; }
+.ru-ai-step.is-done {
+    color: #a7f3d0;
+    border-color: rgba(52, 211, 153, 0.35);
+    background: rgba(6, 78, 59, 0.3);
+}
+.ru-ai-step.is-done i { color: #34d399; }
+.ru-ai-note {
+    margin: 0.7rem 0 0;
+    color: #cbd5e1;
+    font-size: 0.75rem;
+}
+
 /* ── Benefit cards ───────────────────────────────── */
 .ru-benefit {
     background: #fff;
@@ -430,6 +537,28 @@
     </section>
 </div>
 
+<div id="ruAiOverlay" class="ru-ai-overlay" aria-hidden="true" role="status" aria-live="polite">
+    <div class="ru-ai-card">
+        <div class="ru-ai-head">
+            <span class="ru-ai-spinner" aria-hidden="true"></span>
+            <div>
+                <p class="ru-ai-title">AI is analyzing your resume</p>
+                <p class="ru-ai-sub" id="ruAiStatusText">Preparing secure upload...</p>
+            </div>
+        </div>
+        <div class="ru-ai-progress" aria-hidden="true">
+            <div id="ruAiProgressBar" class="ru-ai-progress-bar"></div>
+        </div>
+        <ul class="ru-ai-steps">
+            <li class="ru-ai-step" data-step="0"><span><i class="uil uil-cloud-upload"></i> Uploading your PDF</span><small>Queued</small></li>
+            <li class="ru-ai-step" data-step="1"><span><i class="uil uil-file-search-alt"></i> Reading and parsing content</span><small>Queued</small></li>
+            <li class="ru-ai-step" data-step="2"><span><i class="uil uil-brain"></i> Running AI scoring and insights</span><small>Queued</small></li>
+            <li class="ru-ai-step" data-step="3"><span><i class="uil uil-check-circle"></i> Preparing your report</span><small>Queued</small></li>
+        </ul>
+        <p class="ru-ai-note mb-0"><i class="uil uil-shield-check me-1"></i>Please keep this tab open. This usually takes a few seconds.</p>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 (function() {
@@ -443,6 +572,12 @@
     var removeBtn  = document.getElementById('ruRemoveFile');
     var browseBtn  = document.getElementById('ruBrowseBtn');
     var submitBtn  = document.getElementById('submitBtn');
+    var form       = document.getElementById('resumeForm');
+    var aiOverlay  = document.getElementById('ruAiOverlay');
+    var aiStatus   = document.getElementById('ruAiStatusText');
+    var aiBar      = document.getElementById('ruAiProgressBar');
+    var aiSteps    = Array.prototype.slice.call(document.querySelectorAll('.ru-ai-step'));
+    var isSubmitting = false;
     if (!zone || !input) return;
 
     function setFile(name) {
@@ -480,6 +615,64 @@
     input.addEventListener('change', function() {
         setFile(input.files.length ? input.files[0].name : '');
     });
+
+    function setAiStep(index) {
+        for (var i = 0; i < aiSteps.length; i++) {
+            aiSteps[i].classList.remove('is-active');
+            aiSteps[i].classList.remove('is-done');
+            aiSteps[i].lastElementChild.textContent = 'Queued';
+            if (i < index) {
+                aiSteps[i].classList.add('is-done');
+                aiSteps[i].lastElementChild.textContent = 'Done';
+            } else if (i === index) {
+                aiSteps[i].classList.add('is-active');
+                aiSteps[i].lastElementChild.textContent = 'Running';
+            }
+        }
+    }
+
+    function startAiLoadingUI() {
+        if (!aiOverlay || !aiBar || !aiStatus) return;
+        aiOverlay.classList.add('is-visible');
+        aiOverlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        var labels = [
+            'Uploading and validating your file...',
+            'Extracting text and resume structure...',
+            'Generating AI score and suggestions...',
+            'Finalizing your personalized report...'
+        ];
+        var widths = ['22%', '48%', '76%', '94%'];
+        var step = 0;
+
+        setAiStep(step);
+        aiStatus.textContent = labels[step];
+        aiBar.style.width = widths[step];
+
+        window.setInterval(function() {
+            if (step < labels.length - 1) step++;
+            setAiStep(step);
+            aiStatus.textContent = labels[step];
+            aiBar.style.width = widths[step];
+        }, 1300);
+    }
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return;
+            }
+            isSubmitting = true;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="uil uil-spin uil-spinner me-2"></i>Processing...';
+            }
+            startAiLoadingUI();
+        });
+    }
+
     setFile(input.files.length ? input.files[0].name : '');
 })();
 </script>

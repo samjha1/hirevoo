@@ -64,14 +64,14 @@
             linear-gradient(118deg, #0a1628 0%, #0f2137 42%, #0d3d38 100%);
         color: #f1f5f9;
         padding: 1.15rem 0 1.35rem;
-        margin-bottom: -1.35rem;
+        margin-bottom: 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         box-shadow: 0 12px 40px rgba(10, 22, 40, 0.35);
     }
     @media (min-width: 992px) {
         .jo-hero-band {
             padding: 1.35rem 0 1.5rem;
-            margin-bottom: -1.4rem;
+            margin-bottom: 0;
         }
     }
     .jo-hero-band::after {
@@ -190,10 +190,28 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 10px;
+        min-height: 0;
+        padding: 0.45rem;
+    }
+    .jo-hero-visual::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(148, 163, 184, 0.05));
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.24),
+            0 16px 36px rgba(2, 8, 23, 0.34);
+        backdrop-filter: blur(8px);
     }
     @media (min-width: 992px) {
-        .jo-hero-visual { justify-content: flex-end; min-height: 0; }
+        .jo-hero-visual {
+            justify-content: flex-end;
+            min-height: 0;
+            max-width: 360px;
+            margin-left: auto;
+        }
     }
     .jo-hero-orbit {
         position: absolute;
@@ -211,14 +229,18 @@
     .jo-hero-visual img {
         position: relative;
         z-index: 1;
-        max-height: 72px;
-        width: auto;
-        filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.4));
+        width: clamp(190px, 34vw, 280px);
+        max-height: 170px;
+        object-fit: contain;
+        filter: drop-shadow(0 10px 22px rgba(2, 8, 23, 0.42));
         transform: translateY(0);
-        opacity: 0.95;
+        opacity: 0.98;
     }
     @media (min-width: 992px) {
-        .jo-hero-visual img { max-height: 84px; }
+        .jo-hero-visual img {
+            width: clamp(220px, 24vw, 310px);
+            max-height: 185px;
+        }
     }
 
     /* ── Floating stack (search + panels) ─────────────────────── */
@@ -839,7 +861,7 @@
                             Open roles
                         </div>
                         <h1 class="jo-hero-title">Job openings that <span>fit</span> you</h1>
-                        <p class="jo-hero-lead">Search and filter below — upload your resume to reorder this list for your profile.</p>
+                        <p class="jo-hero-lead">Search and filter below  upload your resume to reorder this list for your profile.</p>
                         @if($jobs->total() > 0)
                             <p class="jo-hero-stat mb-0">
                                 <strong id="jo-hero-count">{{ $jobs->total() }}</strong>
@@ -850,7 +872,7 @@
                     <div class="col-lg-5 d-none d-md-flex justify-content-lg-end">
                         <div class="jo-hero-visual">
                             <div class="jo-hero-orbit d-none" aria-hidden="true"></div>
-                            <img src="{{ $siteImg('Image 2.PNG') }}" alt="" loading="lazy" width="200" height="84">
+                            <img src="{{ $siteImg('Image2.jpeg') }}" alt="Job search dashboard preview" loading="lazy" width="310" height="185">
                         </div>
                     </div>
                 </div>

@@ -489,7 +489,7 @@
             <div class="row g-4">
                 <div class="col-lg-6 hv2-reveal hv2-reveal-d1">
                     <div class="hv2-card h-100 d-flex flex-column">
-                        <img src="{{ $siteImg('Image 1.PNG') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
+                        <img src="{{ $siteImg('Image1.jpeg') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
                         <div class="small fw-bold text-uppercase mb-2" style="color:#a5a0ff;letter-spacing:0.08em;">Community &amp; focus</div>
                         <h3 class="h4 mb-2">Built for people serious about careers</h3>
                         <p style="color:var(--hv2-muted);" class="mb-3">
@@ -541,7 +541,7 @@
                 </div>
                 <div class="col-lg-6 hv2-reveal hv2-reveal-d2">
                     <div class="hv2-card h-100 d-flex flex-column">
-                        <img src="{{ $siteImg('Image 6.PNG') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
+                        <img src="{{ $siteImg('Image6.jpeg') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
                         <div class="small fw-bold text-uppercase mb-2" style="color:#c4bfff;letter-spacing:0.08em;">For employers</div>
                         <h3 class="h4 mb-2">Hiring made simpler</h3>
                         <p style="color:var(--hv2-muted);" class="mb-3">
