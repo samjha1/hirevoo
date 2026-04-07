@@ -451,7 +451,7 @@
                     </a>
                 </div>
                 <div class="col-lg-6 order-lg-1 text-center hv2-reveal hv2-reveal--left">
-                    <img src="{{ $siteImg('Image 2.PNG') }}" alt="" class="img-fluid" style="max-height:260px;" loading="lazy" width="520" height="280">
+                    <img src="{{ $siteImg('image3.jpeg') }}" alt="" class="img-fluid" style="max-height:260px;" loading="lazy" width="520" height="280">
                 </div>
             </div>
         </div>
@@ -505,7 +505,7 @@
                 </div>
                 <div class="col-lg-6 hv2-reveal hv2-reveal-d2">
                     <div class="hv2-card h-100 d-flex flex-column">
-                        <img src="{{ $siteImg('Image 4.PNG') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
+                        <img src="{{ $siteImg('image5.jpeg') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
                         <div class="small fw-bold text-uppercase mb-2" style="color:var(--hv2-teal);letter-spacing:0.08em;">Career clarity</div>
                         <h3 class="h4 mb-2">Not sure what direction to take?</h3>
                         <p style="color:var(--hv2-muted);" class="mb-3">
@@ -523,7 +523,7 @@
                 </div>
                 <div class="col-lg-6 hv2-reveal hv2-reveal-d1">
                     <div class="hv2-card h-100 d-flex flex-column">
-                        <img src="{{ $siteImg('headway-5QgIuuBxKwM-unsplash.jpg') }}" alt="" class="hv2-card-img hv2-card-img--photo w-100" loading="lazy" width="560" height="160">
+                        <img src="{{ $siteImg('image4.jpeg') }}" alt="" class="hv2-card-img hv2-card-img--photo w-100" loading="lazy" width="560" height="160">
                         <div class="small fw-bold text-uppercase mb-2" style="color:var(--hv2-amber);letter-spacing:0.08em;">Updates &amp; opportunities</div>
                         <h3 class="h4 mb-2">Stay connected</h3>
                         <p style="color:var(--hv2-muted);" class="mb-3">
@@ -541,7 +541,7 @@
                 </div>
                 <div class="col-lg-6 hv2-reveal hv2-reveal-d2">
                     <div class="hv2-card h-100 d-flex flex-column">
-                        <img src="{{ $siteImg('Image6.jpeg') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
+                        <img src="{{ $siteImg('Image7.jpeg') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
                         <div class="small fw-bold text-uppercase mb-2" style="color:#c4bfff;letter-spacing:0.08em;">For employers</div>
                         <h3 class="h4 mb-2">Hiring made simpler</h3>
                         <p style="color:var(--hv2-muted);" class="mb-3">
