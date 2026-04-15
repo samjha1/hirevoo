@@ -9,6 +9,7 @@ class ReferrerProfile extends Model
 {
     protected $fillable = [
         'user_id', 'company_name', 'company_email', 'company_email_verified',
+        'referral_code',
         'designation', 'department', 'profile_photo',
         'gstin', 'gst_verified', 'company_legal_name', 'company_address', 'invoice_consent',
         'is_approved', 'approved_at', 'credits',

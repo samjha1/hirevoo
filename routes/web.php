@@ -54,6 +54,7 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
     Route::get('/resume/{resume}/file', [ResumeController::class, 'serveFile'])->name('resume.file');
     Route::get('/resume/{resume}/results', [ResumeController::class, 'results'])->name('resume.results');
     Route::post('/resume/lead', [ResumeController::class, 'createLead'])->name('resume.lead');
+    Route::post('/resume/referral', [ResumeController::class, 'storeReferral'])->name('resume.referral');
     Route::post('/leads/upskill-contact', [LeadController::class, 'storeUpskillContact'])->name('leads.upskill-contact');
 
     // Employer routes (role: referrer)

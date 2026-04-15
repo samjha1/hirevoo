@@ -102,6 +102,16 @@
                                             <label for="password_confirmation" class="form-label">Confirm Password</label>
                                             <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" placeholder="Confirm password" required autocomplete="new-password">
                                         </div>
+                                        @if($isEmployer)
+                                            <div class="mb-3">
+                                                <button type="button" id="toggle_referral_code" class="btn btn-link p-0 text-white text-decoration-underline">Have a referral code?</button>
+                                            </div>
+                                            <div class="mb-3 {{ old('referral_code') ? '' : 'd-none' }}" id="referral_code_wrap">
+                                                <label for="referral_code" class="form-label">Referral Code (optional)</label>
+                                                <input type="text" class="form-control @error('referral_code') is-invalid @enderror" id="referral_code" name="referral_code" value="{{ old('referral_code') }}" placeholder="Enter referral code">
+                                                @error('referral_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                            </div>
+                                        @endif
                                         @if(!request()->has('role'))
                                         <div class="mb-3">
                                             <label for="role_select" class="form-label">I am a</label>
@@ -141,6 +151,20 @@
 document.getElementById('role_select')?.addEventListener('change', function() {
     var role = this.value;
     window.location.href = '{{ route("register") }}?role=' + role;
+});
+</script>
+@endpush
+@endif
+@if($isEmployer)
+@push('scripts')
+<script>
+document.getElementById('toggle_referral_code')?.addEventListener('click', function () {
+    var wrap = document.getElementById('referral_code_wrap');
+    if (!wrap) return;
+    wrap.classList.toggle('d-none');
+    if (!wrap.classList.contains('d-none')) {
+        document.getElementById('referral_code')?.focus();
+    }
 });
 </script>
 @endpush

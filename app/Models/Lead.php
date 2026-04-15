@@ -11,6 +11,7 @@ class Lead extends Model
         'candidate_id',
         'skill_analysis_id',
         'job_role_id',
+        'employer_job_id',
         'upskill_opportunity_id',
         'match_percentage',
         'missing_skills',
@@ -51,5 +52,10 @@ class Lead extends Model
     public function upskillOpportunity(): BelongsTo
     {
         return $this->belongsTo(UpskillOpportunity::class);
+    }
+
+    public function employerJob(): BelongsTo
+    {
+        return $this->belongsTo(EmployerJob::class);
     }
 }

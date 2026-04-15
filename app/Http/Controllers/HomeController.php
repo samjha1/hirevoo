@@ -242,6 +242,11 @@ class HomeController extends Controller
         $appliedIds = auth()->check()
             ? EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all()
             : [];
+
+        if (auth()->check() && auth()->user()->isCandidate() && $appliedIds !== []) {
+            $query->whereNotIn('id', $appliedIds);
+        }
+
         $searchQuery = $request->get('q', '');
         $searchLocation = $request->get('location', '');
         $filterJobType = $request->get('job_type', '');

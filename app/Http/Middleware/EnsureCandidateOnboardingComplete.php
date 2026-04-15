@@ -50,6 +50,7 @@ class EnsureCandidateOnboardingComplete
             'resume.upload.store',
             'resume.results',
             'resume.lead',
+            'resume.referral',
             'notifications.read-all',
             'notifications.read',
         ]);

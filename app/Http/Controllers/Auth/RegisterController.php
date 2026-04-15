@@ -38,6 +38,7 @@ class RegisterController extends Controller
         if ($role === 'referrer') {
             $rules['email'][] = new WorkEmail;
             $rules['company_name'] = ['required', 'string', 'max:255'];
+            $rules['referral_code'] = ['nullable', 'string', 'max:50'];
         }
 
         $validated = $request->validate($rules);
@@ -58,6 +59,7 @@ class RegisterController extends Controller
                 [
                     'company_name' => $validated['company_name'] ?? null,
                     'company_email' => $validated['email'],
+                    'referral_code' => $validated['referral_code'] ?? null,
                     'company_email_verified' => false,
                     'is_approved' => false,
                     'credits' => 5,

@@ -1,0 +1,22 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('leads', function (Blueprint $table) {
+            $table->foreignId('employer_job_id')->nullable()->after('upskill_opportunity_id')->constrained('employer_jobs')->nullOnDelete();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('leads', function (Blueprint $table) {
+            $table->dropForeign(['employer_job_id']);
+        });
+    }
+};

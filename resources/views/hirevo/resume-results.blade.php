@@ -744,9 +744,11 @@
                                             {{ $job->apply_link ? 'Apply on Site' : 'Apply Now' }}
                                         </a>
                                     @endif
-                                    <a href="{{ route('pricing') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
-                                        <i class="uil uil-users-alt me-1"></i>Referral
-                                    </a>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill js-rr-referral"
+                                            data-resume-id="{{ $resume->id }}"
+                                            data-employer-job-id="{{ $job->id }}">
+                                        <i class="uil uil-users-alt me-1"></i>Get referral
+                                    </button>
                                 </div>
                             </article>
 
@@ -785,9 +787,11 @@
                                     @else
                                         <a href="{{ route('job-goal.apply', $role) }}" class="btn btn-primary btn-sm rounded-pill">Apply</a>
                                     @endif
-                                    <a href="{{ route('pricing') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
-                                        <i class="uil uil-users-alt me-1"></i>Referral
-                                    </a>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill js-rr-referral"
+                                            data-resume-id="{{ $resume->id }}"
+                                            data-job-role-id="{{ $role->id }}">
+                                        <i class="uil uil-users-alt me-1"></i>Get referral
+                                    </button>
                                     <form action="{{ route('resume.lead') }}" method="POST" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="resume_id" value="{{ $resume->id }}">
@@ -874,6 +878,47 @@
     } else {
         animateScoreRing();
     }
+
+    /* Referral: save lead via fetch, then go to plan (pricing) without reloading this page first */
+    var refUrl = @json(route('resume.referral'));
+    var planUrl = @json(route('pricing'));
+    document.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('.js-rr-referral');
+        if (!btn) return;
+        ev.preventDefault();
+        if (btn.disabled) return;
+        var tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        var token = tokenMeta ? tokenMeta.getAttribute('content') : '';
+        var fd = new FormData();
+        fd.append('_token', token);
+        fd.append('resume_id', btn.getAttribute('data-resume-id'));
+        var ej = btn.getAttribute('data-employer-job-id');
+        var jr = btn.getAttribute('data-job-role-id');
+        if (ej) fd.append('employer_job_id', ej);
+        if (jr) fd.append('job_role_id', jr);
+        btn.disabled = true;
+        fetch(refUrl, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': token
+            },
+            body: fd,
+            credentials: 'same-origin'
+        }).then(function (res) {
+            if (!res.ok) throw new Error('referral failed');
+            return res.json();
+        }).then(function (data) {
+            if (data && data.redirect) {
+                window.location.assign(data.redirect);
+            } else {
+                window.location.assign(planUrl);
+            }
+        }).catch(function () {
+            btn.disabled = false;
+        });
+    });
 })();
 </script>
 @endpush
