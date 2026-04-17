@@ -9,6 +9,20 @@
             border: 1px solid #e7edfb;
             border-radius: 1rem;
             padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-hero::after {
+            content: "";
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            right: -80px;
+            top: -80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(13, 110, 253, 0.16) 0%, rgba(13, 110, 253, 0) 70%);
+            pointer-events: none;
         }
 
         .pricing-chip {
@@ -30,6 +44,7 @@
             box-shadow: 0 10px 25px rgba(16, 24, 40, 0.05);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             height: 100%;
+            background: #fff;
         }
 
         .pricing-card:hover {
@@ -53,6 +68,7 @@
             font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.02em;
+            z-index: 1;
         }
 
         .section-eyebrow {
@@ -127,6 +143,119 @@
             color: #198754;
             font-weight: 700;
         }
+
+        .pricing-table th {
+            background: #f8fbff;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .pricing-table td,
+        .pricing-table th {
+            padding: 0.8rem 0.7rem;
+            font-size: 0.92rem;
+        }
+
+        .section-block {
+            margin-bottom: 3rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .pricing-hero {
+                padding: 1.5rem;
+            }
+
+            .section-block {
+                margin-bottom: 2.25rem;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .section {
+                padding-top: 2rem !important;
+                padding-bottom: 2.25rem !important;
+            }
+
+            .pricing-hero {
+                padding: 1.25rem;
+                border-radius: 0.85rem;
+            }
+
+            .pricing-hero h1 {
+                font-size: 1.5rem;
+                line-height: 1.3;
+            }
+
+            .pricing-card,
+            .metric-card,
+            .compare-card {
+                border-radius: 0.85rem;
+            }
+
+            .pricing-card {
+                padding: 1rem !important;
+            }
+
+            .pricing-popular {
+                border-width: 1px;
+                box-shadow: 0 12px 30px rgba(13, 110, 253, 0.15);
+            }
+
+            .pricing-badge {
+                top: 10px;
+                right: 10px;
+                font-size: 0.68rem;
+                padding: 0.25rem 0.55rem;
+            }
+
+            .section-title {
+                font-size: 1.2rem;
+                padding-left: 0.75rem;
+            }
+
+            .section-title::before {
+                height: 1rem;
+                top: 0.3rem;
+            }
+
+            .metric-value {
+                font-size: 1.6rem;
+            }
+
+            .table-responsive.pricing-card {
+                padding: 0.65rem !important;
+                border-radius: 0.85rem;
+            }
+
+            .pricing-table {
+                min-width: 700px;
+            }
+
+            .pricing-table td,
+            .pricing-table th {
+                padding: 0.65rem 0.6rem;
+                font-size: 0.84rem;
+            }
+
+            .accordion-button {
+                font-size: 0.95rem;
+                line-height: 1.45;
+                padding: 0.9rem 0.95rem;
+            }
+
+            .accordion-body {
+                font-size: 0.9rem;
+                padding: 0.9rem 0.95rem;
+            }
+
+            .pricing-hero.text-center .d-flex {
+                flex-direction: column;
+            }
+
+            .pricing-hero.text-center .btn {
+                width: 100%;
+            }
+        }
     </style>
     <section class="section py-5">
         <div class="container" style="max-width: 1120px;">
@@ -142,11 +271,11 @@
                 <small class="text-muted">www.hirevoo.in</small>
             </div>
 
-            <div class="mb-4 mb-lg-5">
+            <div class="section-block">
                 <span class="section-eyebrow">The Problem</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Does this sound familiar?</h2>
                 <ul class="text-muted ps-3 mb-3">
-                    <li>You apply to 30+ jobs and get 1 response — or zero.</li>
+                    <li>You apply to 30+ jobs and get 1 response  or zero.</li>
                     <li>Your resume disappears into a pile of hundreds. No feedback, no visibility.</li>
                     <li>You have no idea if you're even a good fit for the role.</li>
                     <li>You don't know anyone at the company you're applying to.</li>
@@ -155,9 +284,9 @@
                 <p class="text-muted mb-0">The problem isn't you. It's how you're applying. Hirevoo was built to change that.</p>
             </div>
 
-            <div class="mb-4 mb-lg-5">
+            <div class="section-block">
                 <span class="section-eyebrow">The Solution</span>
-                <h2 class="h4 fw-bold mb-3 section-title">Meet Hirevoo - your career advantage</h2>
+                <h2 class="h4 fw-bold mb-3 section-title">Meet Hirevoo your career advantage</h2>
                 <p class="text-muted mb-3">Hirevoo is not a job portal. It's a career acceleration platform that gives you data, referrals, and insights to apply smarter and get hired faster.</p>
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-3">
@@ -187,7 +316,7 @@
                 </div>
             </div>
 
-            <div class="mb-4 mb-lg-5">
+            <div class="section-block">
                 <span class="section-eyebrow">How It Works</span>
                 <h2 class="h4 fw-bold mb-3 section-title">5 simple steps to go from applicant to hired</h2>
                 <div class="row g-3">
@@ -201,15 +330,15 @@
                         <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">3. Request a Referral</h3><p class="text-muted mb-0">Send referral requests to real employees at target companies.</p></div>
                     </div>
                     <div class="col-md-6 col-lg-6">
-                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">4. Improve Your Profile</h3><p class="text-muted mb-0">Use skill-gap analysis and upskill recommendations.</p></div>
+                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">4. Improve Your Profile</h3><p class="text-muted mb-0">Use skill gap analysis and upskill recommendations.</p></div>
                     </div>
                     <div class="col-md-6 col-lg-6">
-                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">5. Get Hired</h3><p class="text-muted mb-0">Apply with confidence — referred, matched, and prepared.</p></div>
+                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">5. Get Hired</h3><p class="text-muted mb-0">Apply with confidence  referred, matched, and prepared.</p></div>
                     </div>
                 </div>
             </div>
 
-            <div class="mb-4 mb-lg-5">
+            <div class="section-block">
                 <span class="section-eyebrow">Plans</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Hiring Advantage Plans</h2>
                 <p class="text-muted mb-3">Choose your level of advantage.</p>
@@ -275,10 +404,10 @@
                         </div>
                     </div>
                 </div>
-                <p class="text-muted small mt-3 mb-0">* Unlimited referrals subject to fair usage policy. All plans provide access to tools and features — Hirevoo does not guarantee job placement, interviews, or referral responses.</p>
+                <p class="text-muted small mt-3 mb-0">* Unlimited referrals subject to fair usage policy. All plans provide access to tools and features  Hirevoo does not guarantee job placement, interviews, or referral responses.</p>
             </div>
 
-            <div class="mb-4 mb-lg-5">
+            <div class="section-block">
                 <span class="section-eyebrow">Why It Matters</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Same candidate, better strategy, better outcomes</h2>
                 <div class="row g-3 mb-3">
@@ -317,7 +446,7 @@
                         <div class="compare-card">
                             <h3 class="h6 fw-bold mb-3">With Hirevoo</h3>
                             <ul class="check-list">
-                                <li>Target high-match roles (70%+ score)</li>
+                                <li>Target high match roles (70%+ score)</li>
                                 <li>Know exactly where your profile stands</li>
                                 <li>Request referrals from real insiders</li>
                                 <li>Close skill gaps and apply with confidence</li>
@@ -331,7 +460,7 @@
                 <span class="section-eyebrow">Comparison</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Plan comparison at a glance</h2>
                 <div class="table-responsive pricing-card p-3">
-                    <table class="table align-middle mb-0">
+                    <table class="table align-middle mb-0 pricing-table">
                         <thead>
                             <tr>
                                 <th>Feature Access</th>
@@ -355,7 +484,7 @@
                 </div>
             </div>
 
-            <div class="mb-4 mb-lg-5">
+            <div class="section-block">
                 <span class="section-eyebrow">Why Hirevoo</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Built different. For a reason.</h2>
                 <div class="row g-3">
@@ -378,7 +507,7 @@
                 <strong>Transparency and Trust:</strong> We don't guarantee jobs. We improve your chances with better data, better connections, and a stronger candidacy.
             </div>
 
-            <div class="mb-4 mb-lg-5">
+            <div class="section-block">
                 <span class="section-eyebrow">FAQ</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Honest answers to common questions</h2>
                 <div class="accordion" id="pricingFaq">

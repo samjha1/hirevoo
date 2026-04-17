@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CandidateProfile;
 use App\Models\CareerConsultationRequest;
 use App\Models\JobRole;
 use App\Services\ResumeAnalysisService;
@@ -128,6 +129,56 @@ class CandidateDashboardController extends Controller
             }
         }
 
+        $candidateProfile = $user->candidateProfile;
+        $dashboardRecommendMasters = false;
+        $dashboardMastersField = 'your field';
+
+        if ($candidateProfile) {
+            $educationSelect = trim((string) ($candidateProfile->education ?? ''));
+            $hist = CandidateProfile::jsonRepeaterToArray($candidateProfile->education_history ?? null);
+            $eduBlob = $educationSelect;
+            foreach ($hist as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+                foreach (['degree', 'field', 'institution'] as $k) {
+                    if (! empty($row[$k])) {
+                        $eduBlob .= ' '.(string) $row[$k];
+                    }
+                }
+            }
+
+            $hasPostgrad = (bool) preg_match(
+                '/\b(m\.?\s*e\.?|m\.?\s*tech|m\.?\s*sc|m\.?\s*com|mba|m\.?\s*ba|ms\b|masters?\b|post\s*graduate|pgdm|ph\.?\s*d\.?|doctorate)\b/i',
+                $eduBlob
+            );
+
+            $hasBeOrBtech = in_array($educationSelect, ['B.E.', 'B.Tech'], true)
+                || (bool) preg_match(
+                    '/\b(b\.?\s*e\.?|b\.?\s*tech|bachelor\s+of\s+engineering)\b/i',
+                    $eduBlob
+                );
+
+            $dashboardRecommendMasters = $hasBeOrBtech && ! $hasPostgrad;
+
+            foreach ($hist as $row) {
+                if (is_array($row) && filled($row['field'] ?? null)) {
+                    $dashboardMastersField = trim((string) $row['field']);
+                    break;
+                }
+            }
+            if ($dashboardMastersField === 'your field' && $educationSelect !== '') {
+                $stripped = preg_replace('/^\s*(b\.?\s*e\.?|b\.?\s*tech)\s*[,:]?\s*/i', '', $educationSelect);
+                $stripped = trim((string) $stripped);
+                if ($stripped !== '' && mb_strlen($stripped) > 2) {
+                    $dashboardMastersField = $stripped;
+                }
+            }
+            if ($dashboardMastersField === 'your field' && $skillFocusRole) {
+                $dashboardMastersField = $skillFocusRole->title;
+            }
+        }
+
         return view('hirevo.candidate.dashboard', [
             'allApplications' => $allApplications,
             'dashboardStats' => [
@@ -144,6 +195,8 @@ class CandidateDashboardController extends Controller
             'dashboardSkillMatchLayer' => $dashboardSkillMatchLayer,
             'skillFocusSource' => $skillFocusSource,
             'consultGapPayload' => $consultGapPayload,
+            'dashboardRecommendMasters' => $dashboardRecommendMasters,
+            'dashboardMastersField' => $dashboardMastersField,
         ]);
     }
 }

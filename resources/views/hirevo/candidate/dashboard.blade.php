@@ -623,6 +623,87 @@
         color: #94a3b8;
         margin: 0.35rem 0 0;
     }
+
+    /* Simplified upgrade path: full-width clickable rows */
+    .dash-action-stack { display: flex; flex-direction: column; gap: 0.4rem; }
+    .dash-action-tile {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 10px;
+        text-decoration: none;
+        color: #0f172a;
+        border: 1px solid rgba(11, 31, 59, 0.1);
+        background: #fff;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+    .dash-action-tile:hover {
+        color: #0f172a;
+        border-color: rgba(16, 185, 129, 0.45);
+        box-shadow: 0 4px 14px rgba(11, 31, 59, 0.08);
+        transform: translateY(-1px);
+    }
+    .dash-action-tile--masters {
+        border-color: rgba(16, 185, 129, 0.35);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, #fff 55%);
+    }
+    .dash-action-tile__icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 10px;
+        background: rgba(16, 185, 129, 0.18);
+        color: #047857;
+        display: grid;
+        place-items: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+    .dash-action-tile__text { min-width: 0; flex: 1; font-size: 0.8125rem; line-height: 1.35; }
+    .dash-action-tile__text strong { display: block; color: var(--hirevo-primary); margin-bottom: 0.15rem; }
+    .dash-action-tile__sub { display: block; font-size: 0.6875rem; font-weight: 500; color: #64748b; margin-top: 0.15rem; }
+    .dash-action-tile__chev { font-size: 1.25rem; color: #94a3b8; flex-shrink: 0; }
+    .dash-action-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.55rem 0.85rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--hirevo-primary);
+        background: #fff;
+        border: 1px solid rgba(11, 31, 59, 0.12);
+        transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        box-sizing: border-box;
+    }
+    .dash-action-row:hover {
+        color: var(--hirevo-primary);
+        background: rgba(11, 31, 59, 0.05);
+        border-color: rgba(11, 31, 59, 0.18);
+    }
+    .dash-action-row .mdi-chevron-right { font-size: 1.1rem; opacity: 0.45; flex-shrink: 0; }
+    .dash-action-row--cta {
+        background: var(--hirevo-primary);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        text-align: left;
+        box-shadow: 0 2px 10px rgba(11, 31, 59, 0.2);
+    }
+    .dash-action-row--cta:hover {
+        color: #fff;
+        background: #0a1a35;
+        transform: translateY(-1px);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .dash-action-tile, .dash-action-row, .dash-action-row--cta { transition: none; }
+        .dash-action-tile:hover, .dash-action-row--cta:hover { transform: none; }
+    }
 </style>
 @endpush
 
@@ -709,128 +790,129 @@
                 @endif
 
                 @php
-                    $dashChipMax = 8;
                     $consultGapPayload = $consultGapPayload ?? ['display_gaps' => [], 'suggested_only' => [], 'actual_gaps' => []];
                     $dashGapsDisplay = ! empty($consultGapPayload['display_gaps']) ? $consultGapPayload['display_gaps'] : ($dashboardSkillGaps ?? []);
-                    $dashSuggestedSet = array_fill_keys($consultGapPayload['suggested_only'] ?? [], true);
-                    $dashMatchedSlice = $primaryResume && $skillFocusRole ? array_slice($dashboardSkillMatched ?? [], 0, $dashChipMax) : [];
-                    $dashGapsSlice = $primaryResume && $skillFocusRole ? array_slice($dashGapsDisplay, 0, $dashChipMax) : [];
-                    $dashMatchedMore = $primaryResume && $skillFocusRole ? max(0, count($dashboardSkillMatched ?? []) - $dashChipMax) : 0;
-                    $dashGapsMore = $primaryResume && $skillFocusRole ? max(0, count($dashGapsDisplay) - $dashChipMax) : 0;
+                    $dashboardRecommendMasters = $dashboardRecommendMasters ?? false;
+                    $dashboardMastersField = $dashboardMastersField ?? 'your field';
                 @endphp
 
                 <div class="dash-insight-grid mt-3">
                     <div class="dash-card dash-card--skills">
                         <div class="dash-card-inner">
                             @if(!$primaryResume)
-                                <span class="dash-badge">Growth radar</span>
-                                <h3 class="dash-card-title">Skills top employers pay for</h3>
-                                <p class="dash-card-sub">
-                                    Upload your resume and we’ll map what you already prove vs what’s missing for high-paying roles — so you know exactly what to learn next.
-                                </p>
-                                <div class="dash-card-actions">
-                                    <a href="{{ route('resume.upload') }}" class="dash-btn dash-btn-primary">Upload resume</a>
-                                    <a href="{{ route('job-list') }}" class="dash-btn dash-btn-ghost">Explore job goals</a>
-                                </div>
-                            @elseif($skillFocusRole && $dashboardSkillMatchPct !== null)
-                                <span class="dash-badge">Skills for this role</span>
-                                <h3 class="dash-card-title">{{ $skillFocusRole->title }}</h3>
-                                <p class="dash-card-sub">
-                                    What you already cover vs what’s left to learn — closing the gaps moves you toward stronger offers and senior {{ \Illuminate\Support\Str::lower($skillFocusRole->title) }} roles.
-                                </p>
-                                <div class="dash-match-pill" aria-label="Role skill coverage">
-                                    <span>{{ $dashboardSkillMatchPct }}%</span> role skills matched from your resume
-                                </div>
+                                <span class="dash-badge">Upgrade path</span>
+                                <h3 class="dash-card-title">Level up your career</h3>
+                                <p class="dash-card-sub mb-2">Upload your resume so we can tailor upgrade steps — skills, programs, and next moves.</p>
 
-                                @if(count($dashboardSkillMatched ?? []) === 0 && count($dashboardSkillGaps ?? []) > 0)
-                                    <p class="small text-muted mb-2" style="max-width:32rem">
-                                        None of this role’s required skills were detected on your resume yet. Update your CV or add projects that mention these tools — it sharpens your profile for recruiters.
-                                    </p>
-                                @elseif(count($dashboardSkillGaps ?? []) === 0 && count($dashboardSkillMatched ?? []) > 0)
-                                    <p class="small text-success mb-2 fw-semibold" style="max-width:32rem">
-                                        You’re covering every required skill we track for this role. Keep current and highlight impact in interviews.
-                                    </p>
+                                @if($dashboardRecommendMasters)
+                                    <a href="{{ route('pricing') }}" class="dash-action-tile dash-action-tile--masters mb-2">
+                                        <span class="dash-action-tile__icon" aria-hidden="true"><i class="mdi mdi-school-outline"></i></span>
+                                        <span class="dash-action-tile__text">
+                                            <strong>Recommended: M.E. / M.Tech in {{ $dashboardMastersField }}</strong>
+                                            <span class="dash-action-tile__sub">You have B.E. / B.Tech — a masters in your field is a strong upgrade path. View programs &amp; pricing.</span>
+                                        </span>
+                                        <i class="mdi mdi-chevron-right dash-action-tile__chev" aria-hidden="true"></i>
+                                    </a>
                                 @endif
 
-                                <div class="dash-skill-block">
-                                    <p class="dash-skill-col-lbl">You have</p>
-                                    @if(count($dashboardSkillMatched ?? []) > 0)
-                                        <div class="dash-chip-row">
-                                            @foreach($dashMatchedSlice as $sk)
-                                                <span class="dash-chip dash-chip--have">{{ $sk }}</span>
-                                            @endforeach
-                                            @if($dashMatchedMore > 0)
-                                                <span class="dash-chip-more">+{{ $dashMatchedMore }} more</span>
-                                            @endif
-                                        </div>
-                                    @else
-                                        <p class="small text-muted mb-0">No overlap detected yet — your resume may need clearer skill keywords.</p>
-                                    @endif
+                                <div class="dash-action-stack">
+                                    <a href="{{ route('resume.upload') }}" class="dash-action-row">
+                                        <span><i class="mdi mdi-file-upload-outline me-1"></i> Upload resume</span>
+                                        <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+                                    </a>
+                                    <a href="{{ route('job-list') }}" class="dash-action-row">
+                                        <span><i class="mdi mdi-bullseye-arrow me-1"></i> Explore job goals</span>
+                                        <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+                                    </a>
                                 </div>
-                                <div class="dash-skill-block">
-                                    <p class="dash-skill-col-lbl strengthen">To strengthen</p>
-                                    @if(count($dashGapsDisplay) > 0)
-                                        <div class="dash-chip-row">
-                                            @foreach($dashGapsSlice as $sk)
-                                                <span class="dash-chip {{ isset($dashSuggestedSet[$sk]) ? 'dash-chip--suggest' : 'dash-chip--gap' }}">{{ $sk }}</span>
-                                            @endforeach
-                                            @if($dashGapsMore > 0)
-                                                <span class="dash-chip-more">+{{ $dashGapsMore }} more</span>
-                                            @endif
-                                        </div>
-                                        @if(! empty($consultGapPayload['suggested_only']))
-                                            <p class="small text-muted mb-0 mt-2" style="max-width:36rem">Purple dashed chips are <strong>suggested focus areas</strong> for senior-level growth — discuss them in a consult even when required skills look complete.</p>
-                                        @endif
-                                    @else
-                                        <p class="small text-muted mb-0">Nothing to show yet — pick a job goal with required skills.</p>
-                                    @endif
+                            @elseif($skillFocusRole && $dashboardSkillMatchPct !== null)
+                                <span class="dash-badge">Upgrade path</span>
+                                <h3 class="dash-card-title">{{ $skillFocusRole->title }}</h3>
+                                <p class="dash-card-sub mb-2">
+                                    <strong>{{ $dashboardSkillMatchPct }}%</strong> of this role’s skills show on your resume — open the full match to close gaps and move up.
+                                </p>
+
+                                @if($dashboardRecommendMasters)
+                                    <a href="{{ route('pricing') }}" class="dash-action-tile dash-action-tile--masters mb-2">
+                                        <span class="dash-action-tile__icon" aria-hidden="true"><i class="mdi mdi-school-outline"></i></span>
+                                        <span class="dash-action-tile__text">
+                                            <strong>Recommended: M.E. / M.Tech in {{ $dashboardMastersField }}</strong>
+                                            <span class="dash-action-tile__sub">Upgrade from B.E. / B.Tech with a masters aligned to your field — see programs.</span>
+                                        </span>
+                                        <i class="mdi mdi-chevron-right dash-action-tile__chev" aria-hidden="true"></i>
+                                    </a>
+                                @endif
+
+                                <div class="dash-action-stack">
+                                    <a href="{{ route('job-goal.show', $skillFocusRole) }}" class="dash-action-row">
+                                        <span><i class="mdi mdi-chart-box-outline me-1"></i> Full skill match &amp; gaps</span>
+                                        <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+                                    </a>
+                                    <a href="{{ route('resume.upload') }}" class="dash-action-row">
+                                        <span><i class="mdi mdi-file-document-edit-outline me-1"></i> Update resume</span>
+                                        <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+                                    </a>
+                                    <a href="{{ route('job-list') }}" class="dash-action-row">
+                                        <span><i class="mdi mdi-view-list-outline me-1"></i> Browse more job goals</span>
+                                        <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+                                    </a>
                                 </div>
 
-                                @if($skillFocusRole && $dashboardSkillMatchPct !== null && count($dashGapsDisplay) > 0)
-                                    <div class="dash-consult">
-                                        <p class="dash-consult-title"><i class="mdi mdi-comment-question-outline me-1"></i>Get consulted</p>
-                                        <p class="dash-card-sub mb-2 mb-0" style="font-size:0.8125rem;">Decode gaps, prioritize this goal vs openings — quick session.</p>
-                                        <form action="{{ route('career-consultation.store') }}" method="POST" class="mt-2">
-                                            @csrf
-                                            <input type="hidden" name="job_role_id" value="{{ $skillFocusRole->id }}">
-                                            <input type="hidden" name="source" value="dashboard">
-                                            <input type="hidden" name="match_percentage" value="{{ $dashboardSkillMatchPct }}">
-                                            @foreach($dashGapsDisplay as $g)
-                                                <input type="hidden" name="gap_skills[]" value="{{ $g }}">
-                                            @endforeach
-                                            @foreach($consultGapPayload['suggested_only'] ?? [] as $g)
-                                                <input type="hidden" name="suggested_gap_skills[]" value="{{ $g }}">
-                                            @endforeach
-                                            @foreach($dashboardSkillMatched ?? [] as $m)
-                                                <input type="hidden" name="matched_skills[]" value="{{ $m }}">
-                                            @endforeach
-                                            <button type="submit" class="dash-btn dash-btn-primary" style="border:none;cursor:pointer;">Request consultation</button>
-                                        </form>
-                                    </div>
+                                @if(count($dashGapsDisplay) > 0)
+                                    <form action="{{ route('career-consultation.store') }}" method="POST" class="dash-action-stack mt-2 mb-0">
+                                        @csrf
+                                        <input type="hidden" name="job_role_id" value="{{ $skillFocusRole->id }}">
+                                        <input type="hidden" name="source" value="dashboard">
+                                        <input type="hidden" name="match_percentage" value="{{ $dashboardSkillMatchPct }}">
+                                        @foreach($dashGapsDisplay as $g)
+                                            <input type="hidden" name="gap_skills[]" value="{{ $g }}">
+                                        @endforeach
+                                        @foreach($consultGapPayload['suggested_only'] ?? [] as $g)
+                                            <input type="hidden" name="suggested_gap_skills[]" value="{{ $g }}">
+                                        @endforeach
+                                        @foreach($dashboardSkillMatched ?? [] as $m)
+                                            <input type="hidden" name="matched_skills[]" value="{{ $m }}">
+                                        @endforeach
+                                        <button type="submit" class="dash-action-row dash-action-row--cta">
+                                            <span><i class="mdi mdi-account-voice me-1"></i> Request career consultation</span>
+                                            <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
                                 @endif
 
                                 @if($skillFocusSource === 'applied_goal')
-                                    <p class="dash-source-hint">Based on your most recent job goal application.</p>
+                                    <p class="dash-source-hint mb-0">Based on your latest job goal application.</p>
                                 @elseif($skillFocusSource === 'resume_top')
-                                    <p class="dash-source-hint">Based on your best-fit role from your resume.</p>
+                                    <p class="dash-source-hint mb-0">Based on your best-fit role from your resume.</p>
                                 @endif
                                 @if(($dashboardSkillMatchLayer ?? null) === 'ai')
-                                    <p class="dash-source-hint">Coverage refined with AI from your resume text (including common synonyms).</p>
+                                    <p class="dash-source-hint mb-0">Match uses AI on your resume text (synonyms included).</p>
+                                @endif
+                            @else
+                                <span class="dash-badge">Upgrade path</span>
+                                <h3 class="dash-card-title">Pick a goal to upgrade toward</h3>
+                                <p class="dash-card-sub mb-2">Choose a job goal and we’ll show how your resume lines up — plus masters and upskill options where they fit.</p>
+
+                                @if($dashboardRecommendMasters)
+                                    <a href="{{ route('pricing') }}" class="dash-action-tile dash-action-tile--masters mb-2">
+                                        <span class="dash-action-tile__icon" aria-hidden="true"><i class="mdi mdi-school-outline"></i></span>
+                                        <span class="dash-action-tile__text">
+                                            <strong>Recommended: M.E. / M.Tech in {{ $dashboardMastersField }}</strong>
+                                            <span class="dash-action-tile__sub">With B.E. / B.Tech, a masters in your field is a clear upgrade — explore programs.</span>
+                                        </span>
+                                        <i class="mdi mdi-chevron-right dash-action-tile__chev" aria-hidden="true"></i>
+                                    </a>
                                 @endif
 
-                                <div class="dash-card-actions">
-                                    <a href="{{ route('job-goal.show', $skillFocusRole) }}" class="dash-btn dash-btn-primary">Full skill match</a>
-                                    <a href="{{ route('resume.upload') }}" class="dash-btn dash-btn-ghost">Update resume</a>
-                                </div>
-                            @else
-                                <span class="dash-badge">Growth radar</span>
-                                <h3 class="dash-card-title">Map your skills to a high-value role</h3>
-                                <p class="dash-card-sub">
-                                    Apply to a job goal or pick one from our list — we’ll show “you have” vs “to strengthen” against real role requirements so you can target better-paid positions.
-                                </p>
-                                <div class="dash-card-actions">
-                                    <a href="{{ route('job-list') }}" class="dash-btn dash-btn-primary">Choose a job goal</a>
-                                    <a href="{{ route('resume.upload') }}" class="dash-btn dash-btn-ghost">Refresh resume</a>
+                                <div class="dash-action-stack">
+                                    <a href="{{ route('job-list') }}" class="dash-action-row">
+                                        <span><i class="mdi mdi-bullseye-arrow me-1"></i> Choose a job goal</span>
+                                        <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+                                    </a>
+                                    <a href="{{ route('resume.upload') }}" class="dash-action-row">
+                                        <span><i class="mdi mdi-refresh me-1"></i> Refresh resume</span>
+                                        <i class="mdi mdi-chevron-right" aria-hidden="true"></i>
+                                    </a>
                                 </div>
                             @endif
                         </div>
@@ -842,7 +924,7 @@
                             <h3 class="dash-card-title">💸 Earn up to ₹5,000 per successful referral</h3>
                             <p class="dash-card-sub mb-2">
                                 <strong class="text-white">Refer talent in your company & start earning.</strong>
-                                Know open roles? Refer candidates and earn rewards. Tell us your company and how many people you can refer — we’ll connect you with matching candidates.
+                                Know open roles? Refer candidates and earn rewards. Tell us your company and how many people you can refer  we’ll connect you with matching candidates.
                             </p>
                             <button
                                 type="button"

@@ -89,7 +89,7 @@
                                 <div class="hv2-trust-av" style="background:linear-gradient(135deg,#FF6B6B,#ff9b9b);color:#fff;">JR</div>
                                 <div class="hv2-trust-av" style="background:linear-gradient(135deg,#FFB347,#ffd080);color:#0A0A14;">SK</div>
                             </div>
-                            <div class="hv2-trust-copy"><strong>Resume-first</strong> clarity for early talent</div>
+                            <div class="hv2-trust-copy"><strong>Resume first</strong> clarity for early talent</div>
                         </div>
                     </div>
                 </div>
@@ -187,7 +187,7 @@
                                     <h2 class="h4 fw-bold mb-2" style="color:var(--hv2-text);">Start with your resume</h2>
                                     <p class="mb-0" style="color:var(--hv2-muted);max-width:36rem;">
                                         Know if your profile is working <em>before</em> you apply more.
-                                        Upload once — see strengths, gaps, and direction.
+                                        Upload once  see strengths, gaps, and direction.
                                         <strong style="color:var(--hv2-text);">Under two minutes. No account needed.</strong>
                                     </p>
                                 </div>
@@ -213,10 +213,10 @@
             <div class="text-center mb-5 hv2-reveal">
                 <div class="hv2-eyebrow hv2-eyebrow--pill hv2-eyebrow--violet">How it works</div>
                 <h2 class="hv2-display mt-3" style="font-size:clamp(1.75rem,3vw,2.55rem);">
-                    Three steps to <span class="hv2-teal">career-ready.</span>
+                    Three steps to <span class="hv2-teal">career ready.</span>
                 </h2>
                 <p class="hv2-lead mx-auto text-center mb-0" style="max-width:40rem;">
-                    Clarity first. Then direction. Then smarter applications — no guesswork.
+                    Clarity first. Then direction. Then smarter applications no guesswork.
                 </p>
             </div>
             <div class="hv2-steps">
@@ -224,7 +224,7 @@
                     <span class="hv2-step-num" aria-hidden="true">01</span>
                     <div class="hv2-step-icon hv2-step-icon--v">🔬</div>
                     <h3>Know your real profile</h3>
-                    <p>Upload your resume — we map skills, surface gaps, and benchmark you against realistic role expectations.</p>
+                    <p>Upload your resume we map skills, surface gaps, and benchmark you against realistic role expectations.</p>
                 </div>
                 <div class="hv2-step hv2-reveal hv2-reveal-d2">
                     <span class="hv2-step-num" aria-hidden="true">02</span>
@@ -236,7 +236,7 @@
                     <span class="hv2-step-num" aria-hidden="true">03</span>
                     <div class="hv2-step-icon hv2-step-icon--a">🚀</div>
                     <h3>Apply smarter</h3>
-                    <p>Focus on opportunities that match — fewer cold applications, better use of your time and energy.</p>
+                    <p>Focus on opportunities that match fewer cold applications, better use of your time and energy.</p>
                 </div>
             </div>
         </div>
@@ -248,7 +248,7 @@
             <div class="hv2-pain-grid">
                 <div class="hv2-reveal hv2-reveal--left">
                     <div class="hv2-eyebrow" style="color:var(--hv2-coral);">The problem</div>
-                    <h2 class="hv2-statement mb-4">You're not <em>unqualified.</em><br>You're under-guided.</h2>
+                    <h2 class="hv2-statement mb-4">You're not <em>unqualified.</em><br>You're under guided.</h2>
                     <p class="hv2-lead mb-4">
                         Most platforms push volume.
                         <strong>Hirevo pushes clarity</strong>  so you know what to fix, what to learn, and where to aim.
@@ -334,7 +334,7 @@
                         Popular <span>job goals</span>
                     </h2>
                     <p class="hv2-goals__lead">
-                        Pick a role — we surface <strong>what employers expect</strong>, map it to your profile, and highlight <strong>gaps you can close</strong> with purpose (not guesswork).
+                        Pick a role  we surface <strong>what employers expect</strong>, map it to your profile, and highlight <strong>gaps you can close</strong> with purpose (not guesswork).
                     </p>
                     <ul class="hv2-goals__flow list-unstyled mb-0" role="list">
                         <li class="hv2-goals__flow-item">
@@ -362,7 +362,7 @@
                             <span class="hv2-goals__panel-kicker">Why it matters</span>
                         </div>
                         <p class="hv2-goals__panel-copy mb-0">
-                            Every card is a <strong>live skill blueprint</strong> — not a generic job title. Tap in to compare against your resume and move with a plan.
+                            Every card is a <strong>live skill blueprint</strong> not a generic job title. Tap in to compare against your resume and move with a plan.
                         </p>
                         <div class="hv2-goals__panel-tags">
                             <span>ATS-aware</span>
@@ -444,7 +444,7 @@
                         Find work that <span class="hv2-accent">fits</span> your profile
                     </h2>
                     <p class="hv2-lead">
-                        Employer-posted roles you can explore and apply to  with the same clarity mindset, not spray-and-pray.
+                        Employer posted roles you can explore and apply to  with the same clarity mindset, not spray and pray.
                     </p>
                     <a href="{{ route('job-openings') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg">
                         <i class="uil uil-search"></i> Browse job openings
@@ -497,7 +497,7 @@
                         </p>
                         <ul class="hv2-list mb-3">
                             <li><strong style="color:var(--hv2-text);">1000+</strong> candidates exploring roles and skill matches</li>
-                            <li>Resume-first: know gaps before you apply</li>
+                            <li>Resume first: know gaps before you apply</li>
                             <li>Job &amp; internship signals you can act on</li>
                         </ul>
                         <p class="small mt-auto mb-0" style="color:var(--hv2-faint);">Growing community — relevant updates, not noise.</p>

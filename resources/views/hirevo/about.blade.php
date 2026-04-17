@@ -53,9 +53,9 @@
         <div class="container" style="max-width: 1080px;">
             <div class="about-hero mb-4 mb-lg-5">
                 <p class="text-uppercase small text-muted mb-1">Hirevoo</p>
-                <h1 class="h2 fw-bold mb-2">Career Acceleration Platform - About Us</h1>
+                <h1 class="h2 fw-bold mb-2">Career Acceleration Platform  About Us</h1>
                 <p class="text-muted mb-3">
-                    We built the platform that increases your chances of getting hired — with AI match scores, real employee referrals, and career insights that actually move the needle.
+                    We built the platform that increases your chances of getting hired  with AI match scores, real employee referrals, and career insights that actually move the needle.
                 </p>
                 <div class="mb-0">
                     <span class="about-chip">www.hirevoo.in</span>
@@ -68,13 +68,13 @@
                 <h2 class="h4 fw-bold mb-2">Who We Are</h2>
                 <p class="text-muted mb-3 fw-semibold">The hiring system is broken. We're fixing it.</p>
                 <p class="text-muted mb-2">
-                    Most job seekers apply to dozens of roles and hear nothing — not because they're unqualified, but because they're invisible. No referral, no match data, no edge.
+                    Most job seekers apply to dozens of roles and hear nothing  not because they're unqualified, but because they're invisible. No referral, no match data, no edge.
                 </p>
                 <p class="text-muted mb-2">
                     Hirevoo is <strong>not</strong> a job portal. Job portals list vacancies. That's it.
                 </p>
                 <p class="text-muted mb-0">
-                    Hirevoo is a career acceleration platform — we analyse your profile, score your match against real roles, connect you with employees who can refer you, and give you the tools to close skill gaps before you apply.
+                    Hirevoo is a career acceleration platform  we analyse your profile, score your match against real roles, connect you with employees who can refer you, and give you the tools to close skill gaps before you apply.
                     We don't just show you jobs. We help you increase your probability of getting hired.
                 </p>
             </div>
@@ -89,13 +89,13 @@
                 <div class="col-md-4">
                     <div class="about-card p-4">
                         <h3 class="h6 fw-bold mb-2">Referrals from Real Employees</h3>
-                        <p class="text-muted mb-0">Connect with employees at your target companies who can voluntarily refer your profile — the way top candidates have always gotten hired.</p>
+                        <p class="text-muted mb-0">Connect with employees at your target companies who can voluntarily refer your profile the way top candidates have always gotten hired.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="about-card p-4">
                         <h3 class="h6 fw-bold mb-2">Data-Driven Career Decisions</h3>
-                        <p class="text-muted mb-0">Understand exactly what's missing between your profile and your dream role — and how to close that gap.</p>
+                        <p class="text-muted mb-0">Understand exactly what's missing between your profile and your dream role and how to close that gap.</p>
                     </div>
                 </div>
             </div>
@@ -106,7 +106,7 @@
                 <div class="row g-3">
                     <div class="col-lg-4">
                         <div class="about-card p-4">
-                            <h3 class="h6 fw-bold mb-3">For Candidates - Accelerate your career</h3>
+                            <h3 class="h6 fw-bold mb-3">For Candidates  Accelerate your career</h3>
                             <ul class="text-muted ps-3 mb-0">
                                 <li>Discover relevant jobs curated to your profile</li>
                                 <li>See AI match scores before applying</li>
@@ -119,7 +119,7 @@
                     </div>
                     <div class="col-lg-4">
                         <div class="about-card p-4">
-                            <h3 class="h6 fw-bold mb-3">For Employees - Help great talent, get rewarded</h3>
+                            <h3 class="h6 fw-bold mb-3">For Employees  Help great talent, get rewarded</h3>
                             <ul class="text-muted ps-3 mb-0">
                                 <li>Voluntarily refer qualified candidates</li>
                                 <li>Earn incentives on successful referrals</li>
@@ -131,11 +131,11 @@
                     </div>
                     <div class="col-lg-4">
                         <div class="about-card p-4">
-                            <h3 class="h6 fw-bold mb-3">For Employers - Hire smarter, faster</h3>
+                            <h3 class="h6 fw-bold mb-3">For Employers  Hire smarter, faster</h3>
                             <ul class="text-muted ps-3 mb-0">
                                 <li>Post roles and reach pre-qualified candidates</li>
                                 <li>Leverage employee networks for referrals</li>
-                                <li>Access AI-matched candidate profiles</li>
+                                <li>Access AI matched candidate profiles</li>
                                 <li>Track hiring pipeline in real time</li>
                                 <li>Strengthen employer brand with top talent</li>
                             </ul>
@@ -148,15 +148,15 @@
                 <div class="col-lg-6">
                     <div class="about-card p-4">
                         <h2 class="h5 fw-bold mb-2">Our Mission</h2>
-                        <p class="text-muted mb-2">"Make every job seeker's effort count — by giving them the match data, the referrals, and the insights to get hired."</p>
+                        <p class="text-muted mb-2">"Make every job seeker's effort count  by giving them the match data, the referrals, and the insights to get hired."</p>
                         <p class="text-muted mb-0">We believe talent is everywhere. Opportunity isn't. We exist to close that gap and make career acceleration accessible to every professional.</p>
                     </div>
                 </div>
                 <div class="col-lg-6">
                     <div class="about-card p-4">
                         <h2 class="h5 fw-bold mb-2">Our Vision</h2>
-                        <p class="text-muted mb-2">"A world where the best candidate for a role actually gets it — regardless of who they know."</p>
-                        <p class="text-muted mb-0">We're building infrastructure for merit-based career mobility in India where profile, skills, and potential matter more than luck.</p>
+                        <p class="text-muted mb-2">"A world where the best candidate for a role actually gets it  regardless of who they know."</p>
+                        <p class="text-muted mb-0">We're building infrastructure for merit based career mobility in India where profile, skills, and potential matter more than luck.</p>
                     </div>
                 </div>
             </div>
@@ -239,7 +239,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="about-card p-4">
-                            <h3 class="h6 fw-bold mb-2">01 Referral-First Model</h3>
+                            <h3 class="h6 fw-bold mb-2">01 Referral First Model</h3>
                             <p class="text-muted mb-0">We put employee referrals at the center because referred candidates are significantly more likely to be hired.</p>
                         </div>
                     </div>
@@ -252,13 +252,13 @@
                     <div class="col-md-6">
                         <div class="about-card p-4">
                             <h3 class="h6 fw-bold mb-2">03 Career Acceleration, Not Job Listing</h3>
-                            <p class="text-muted mb-0">Resume analysis, skill-gap visibility, and upskill guidance make Hirevoo your continuous career co-pilot.</p>
+                            <p class="text-muted mb-0">Resume analysis, skill gap visibility, and upskill guidance make Hirevoo your continuous career co-pilot.</p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="about-card p-4">
-                            <h3 class="h6 fw-bold mb-2">04 Data-Driven Decisions</h3>
-                            <p class="text-muted mb-0">From role targeting to skill-building and referrals, each decision is guided by data.</p>
+                            <h3 class="h6 fw-bold mb-2">04 Data Driven Decisions</h3>
+                            <p class="text-muted mb-0">From role targeting to skill building and referrals, each decision is guided by data.</p>
                         </div>
                     </div>
                 </div>
@@ -282,7 +282,7 @@
                     <div class="col-md-4">
                         <div class="about-card p-4">
                             <h3 class="h6 fw-bold mb-2">Your data, handled with care</h3>
-                            <p class="text-muted mb-0">We follow DPDP Act 2023 principles and never sell personal data for independent third-party marketing.</p>
+                            <p class="text-muted mb-0">We follow DPDP Act 2023 principles and never sell personal data for independent third party marketing.</p>
                         </div>
                     </div>
                 </div>
@@ -299,7 +299,7 @@
                         </h3>
                         <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="faqOne" data-bs-parent="#aboutFaq">
                             <div class="accordion-body text-muted">
-                                Hirevoo is a career acceleration platform — not a job portal. Along with jobs, you get AI match scores, employee referrals, skill gap insights, and tools to continuously improve your candidacy.
+                                Hirevoo is a career acceleration platform  not a job portal. Along with jobs, you get AI match scores, employee referrals, skill gap insights, and tools to continuously improve your candidacy.
                             </div>
                         </div>
                     </div>
@@ -356,7 +356,7 @@
 
             <div class="about-hero text-center">
                 <h2 class="h4 fw-bold mb-2">Ready to accelerate your career?</h2>
-                <p class="text-muted mb-3">Join thousands of professionals applying smarter — with match scores, referrals, and real career insights.</p>
+                <p class="text-muted mb-3">Join thousands of professionals applying smarter with match scores, referrals, and real career insights.</p>
                 <div class="d-flex flex-wrap justify-content-center gap-2 mb-2">
                     <a href="{{ route('resume.upload') }}" class="btn btn-primary rounded-pill px-4">Upload Your Resume Free</a>
                     <a href="{{ route('job-openings') }}" class="btn btn-outline-primary rounded-pill px-4">Explore Job Openings</a>

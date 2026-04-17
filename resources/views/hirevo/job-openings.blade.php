@@ -915,7 +915,7 @@
                     <span class="jo-match-bento__icon flex-shrink-0" aria-hidden="true"><i class="uil uil-brain"></i></span>
                     <div class="min-w-0">
                         <p class="jo-match-bento__title mb-0">Match this board to your resume</p>
-                        <p class="jo-match-bento__hint mb-0">Same pipeline as Resume Score: upload a PDF, we analyze it, then reorder these listings for you — without leaving the page.</p>
+                        <p class="jo-match-bento__hint mb-0">Same pipeline as Resume Score: upload a PDF, we analyze it, then reorder these listings for you  without leaving the page.</p>
                     </div>
                 </div>
                 <div class="jo-match-actions">
