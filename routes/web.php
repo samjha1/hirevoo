@@ -20,6 +20,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReferralSignupController;
 use App\Http\Controllers\CareerConsultationController;
 use App\Http\Controllers\ResumeController;
+use App\Http\Controllers\ReferralIntentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -103,6 +104,7 @@ Route::get('/job-goals/{jobRole}/apply', [JobApplicationController::class, 'show
 Route::get('/job-goals/{jobRole}/match-score', [JobApplicationController::class, 'matchScore'])->middleware('auth')->name('job-goal.match-score');
 Route::post('/job-goals/{jobRole}/apply', [JobApplicationController::class, 'store'])->middleware('auth')->name('job-goal.apply.store');
 Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
+Route::get('/referral-intent', [ReferralIntentController::class, 'toPricing'])->name('referral.intent');
 Route::get('/about', fn () => view('hirevo.about'))->name('about');
 Route::get('/help', fn () => view('hirevo.help'))->name('help');
 Route::get('/faq', fn () => view('hirevo.faq'))->name('faq');

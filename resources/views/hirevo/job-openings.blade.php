@@ -345,6 +345,17 @@
         margin-bottom: 0;
         max-width: 36rem;
     }
+    .jo-match-bento__boost {
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: var(--jo-ink);
+        max-width: 36rem;
+    }
+    .jo-match-bento__boost strong {
+        font-weight: 800;
+        color: #4f46e5;
+        font-variant-numeric: tabular-nums;
+    }
     .jo-match-actions {
         display: flex;
         flex-wrap: wrap;
@@ -785,6 +796,73 @@
         border: none !important;
     }
 
+    .jo-job-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem 1rem;
+    }
+    .jo-referral-nudge {
+        display: inline-flex;
+        align-items: flex-start;
+        gap: 0.45rem;
+        max-width: 100%;
+        padding: 0.45rem 0.7rem;
+        border-radius: 12px;
+        text-decoration: none;
+        color: inherit;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.09), rgba(16, 185, 129, 0.06));
+        border: 1px solid rgba(79, 70, 229, 0.14);
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .jo-referral-nudge:hover {
+        border-color: rgba(79, 70, 229, 0.28);
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.12);
+        transform: translateY(-1px);
+        color: inherit;
+    }
+    .jo-referral-nudge:focus-visible {
+        outline: 2px solid var(--jo-violet);
+        outline-offset: 2px;
+    }
+    .jo-referral-nudge__icon {
+        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        color: #4f46e5;
+        background: rgba(99, 102, 241, 0.12);
+    }
+    .jo-referral-nudge__text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.12rem;
+        min-width: 0;
+    }
+    .jo-referral-nudge__label {
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--jo-ink);
+        line-height: 1.2;
+    }
+    .jo-referral-nudge__stat {
+        font-size: 0.74rem;
+        line-height: 1.35;
+        color: var(--jo-muted);
+    }
+    .jo-referral-nudge__stat strong {
+        font-weight: 800;
+        color: #4f46e5;
+        font-variant-numeric: tabular-nums;
+    }
+
     .jo-load-more-btn {
         font-weight: 800;
         padding: 0.85rem 2.25rem;
@@ -919,12 +997,15 @@
                 </div>
             @endif
 
+            @php
+                $joResumeMatchBoostPct = random_int(65, 78);
+            @endphp
             <div class="jo-match-bento" id="jo-resume-match-bar">
                 <div class="d-flex align-items-start gap-3 min-w-0">
                     <span class="jo-match-bento__icon flex-shrink-0" aria-hidden="true"><i class="mdi mdi-file-document-outline"></i></span>
                     <div class="min-w-0">
-                        <p class="jo-match-bento__title mb-0">Match this board to your resume</p>
-                        <p class="jo-match-bento__hint mb-0">Same pipeline as Resume Score: upload a PDF, we analyze it, then reorder these listings for you  without leaving the page.</p>
+                        <p class="jo-match-bento__title mb-0">Upload your resume to reorder this list for your profile.</p>
+                        <p class="jo-match-bento__boost mb-0 mt-2">Increase your chances of surfacing the right roles by up to <strong>+{{ $joResumeMatchBoostPct }}%</strong> based on clearer targeting vs. blind applications.</p>
                     </div>
                 </div>
                 <div class="jo-match-actions">

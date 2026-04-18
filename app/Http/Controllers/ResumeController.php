@@ -252,6 +252,7 @@ class ResumeController extends Controller
             'resume_id' => ['required', 'integer'],
             'job_role_id' => ['nullable', 'integer', 'exists:job_roles,id'],
             'employer_job_id' => ['nullable', 'integer', 'exists:employer_jobs,id'],
+            'referral_source' => ['nullable', 'string', 'max:100'],
         ]);
 
         if (($request->filled('job_role_id') ? 1 : 0) + ($request->filled('employer_job_id') ? 1 : 0) !== 1) {
@@ -259,13 +260,16 @@ class ResumeController extends Controller
         }
 
         $resume = Resume::where('user_id', auth()->id())->findOrFail($request->resume_id);
+        $referralSource = $request->input('referral_source') ?: 'resume_results';
 
         if ($request->filled('job_role_id')) {
             $jobRole = JobRole::with('requiredSkills')->findOrFail($request->job_role_id);
             $this->upsertSkillGapLeadForJobRole($resume, $jobRole);
+            $this->applyReferralSourceToLatestLead(auth()->id(), ['job_role_id' => $jobRole->id], $referralSource);
         } else {
             $job = EmployerJob::where('status', 'active')->findOrFail($request->employer_job_id);
             $this->upsertReferralLeadForEmployerJob($resume, $job);
+            $this->applyReferralSourceToLatestLead(auth()->id(), ['employer_job_id' => $job->id], $referralSource);
         }
 
         $planUrl = route('pricing');
@@ -286,7 +290,23 @@ class ResumeController extends Controller
         return redirect()->back();
     }
 
-    protected function upsertSkillGapLeadForJobRole(Resume $resume, JobRole $jobRole): void
+    /**
+     * Align with ReferralIntentController: persist which UI surface drove the referral click.
+     */
+    protected function applyReferralSourceToLatestLead(int $candidateId, array $where, string $source): void
+    {
+        if ($source === '') {
+            return;
+        }
+        $q = Lead::query()->where('candidate_id', $candidateId);
+        foreach ($where as $column => $value) {
+            $q->where($column, $value);
+        }
+        $lead = $q->latest('id')->first();
+        $lead?->update(['referral_source' => $source]);
+    }
+
+    public function upsertSkillGapLeadForJobRole(Resume $resume, JobRole $jobRole): void
     {
         $extracted = $resume->getExtractedSkillsList();
         $required = $jobRole->requiredSkills->pluck('skill_name')->map(fn ($s) => strtolower(trim($s)))->unique()->values()->all();
@@ -323,7 +343,7 @@ class ResumeController extends Controller
         );
     }
 
-    protected function upsertReferralLeadForEmployerJob(Resume $resume, EmployerJob $job): void
+    public function upsertReferralLeadForEmployerJob(Resume $resume, EmployerJob $job): void
     {
         $matchPercentage = $this->computeEmployerJobMatchForResume($resume, $job);
 

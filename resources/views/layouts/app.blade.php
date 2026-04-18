@@ -24,6 +24,8 @@
     <link rel="stylesheet" href="{{ asset($theme.'/assets/libs/swiper/swiper-bundle.min.css') }}">
     <link href="{{ asset($theme.'/assets/css/bootstrap.min.css') }}" id="bootstrap-style" rel="stylesheet">
     <link href="{{ asset($theme.'/assets/css/icons.min.css') }}" rel="stylesheet">
+    {{-- Unicons line (uil uil-*) used on marketing pages; theme icons bundle may not include these --}}
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <link href="{{ asset($theme.'/assets/css/app.min.css') }}" id="app-style" rel="stylesheet">
     <link href="{{ asset('css/hirevo-theme.css') }}" rel="stylesheet">
     @stack('styles')

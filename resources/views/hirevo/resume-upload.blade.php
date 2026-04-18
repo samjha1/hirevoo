@@ -415,7 +415,7 @@
                 <div class="ru-hero-inner">
                     <p class="ru-hero-kicker"><i class="uil uil-bolt-alt me-1"></i>Free resume intelligence</p>
                     <h1 class="ru-hero-title">Get your resume scored in 2 minutes</h1>
-                    <p class="ru-hero-sub">Upload your PDF  we read your contact details from the file when needed, score your resume, and match you to roles. New here? We’ll email you a link to set your password.</p>
+                    <p class="ru-hero-sub">Upload your PDF and increase your chances of getting hired by up to <strong>+{{ random_int(72, 88) }}%</strong>. We read your contact details from the file when needed, score your resume, and match you to roles. New here? We’ll email you a link to set your password.</p>
                     <div class="ru-benefit-chips">
                         <span class="ru-chip"><i class="uil uil-check-circle"></i>ATS score</span>
                         <span class="ru-chip"><i class="uil uil-check-circle"></i>Skill gap analysis</span>

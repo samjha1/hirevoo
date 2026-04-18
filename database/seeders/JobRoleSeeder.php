@@ -89,6 +89,74 @@ class JobRoleSeeder extends Seeder
                 'description' => 'Build and deploy ML models and data-driven systems.',
                 'skills' => ['Python', 'Machine Learning', 'Data Analysis', 'SQL', 'Git', 'Statistics'],
             ],
+
+            // Non-tech & cross-functional roles
+            [
+                'title' => 'HR Executive',
+                'slug' => 'hr-executive',
+                'description' => 'Recruit talent, support employee lifecycle, and align people practices with business goals.',
+                'skills' => ['Communication', 'Recruitment', 'Interviewing', 'HR Policies', 'Employee Relations', 'Onboarding', 'Compliance'],
+            ],
+            [
+                'title' => 'Sales Executive',
+                'slug' => 'sales-executive',
+                'description' => 'Generate pipeline, run discovery, and close deals while building long-term client relationships.',
+                'skills' => ['Communication', 'Negotiation', 'CRM', 'Presentation', 'Lead Generation', 'Prospecting', 'Closing'],
+            ],
+            [
+                'title' => 'Customer Support Specialist',
+                'slug' => 'customer-support-specialist',
+                'description' => 'Resolve customer issues across channels with empathy, speed, and clear documentation.',
+                'skills' => ['Communication', 'Problem Solving', 'Active Listening', 'Ticketing Systems', 'Email', 'Conflict Resolution', 'Product Knowledge'],
+            ],
+            [
+                'title' => 'Digital Marketing Specialist',
+                'slug' => 'digital-marketing-specialist',
+                'description' => 'Plan and execute campaigns across digital channels to grow awareness and conversions.',
+                'skills' => ['Communication', 'Content Marketing', 'SEO', 'Social Media', 'Analytics', 'Copywriting', 'Campaign Management'],
+            ],
+            [
+                'title' => 'Finance & Accounts Executive',
+                'slug' => 'finance-accounts-executive',
+                'description' => 'Manage bookkeeping, reporting, and compliance for accurate financial operations.',
+                'skills' => ['Excel', 'Accounting', 'Financial Reporting', 'Attention to Detail', 'Compliance', 'Invoicing', 'Budgeting'],
+            ],
+            [
+                'title' => 'Operations Coordinator',
+                'slug' => 'operations-coordinator',
+                'description' => 'Coordinate processes, vendors, and schedules to keep day-to-day operations running smoothly.',
+                'skills' => ['Communication', 'Project Management', 'Process Improvement', 'Reporting', 'Vendor Management', 'Scheduling', 'Problem Solving'],
+            ],
+            [
+                'title' => 'Healthcare Administrator',
+                'slug' => 'healthcare-administrator',
+                'description' => 'Support clinical and front-office workflows with scheduling, records, and regulatory awareness.',
+                'skills' => ['Communication', 'Compliance', 'Scheduling', 'Medical Terminology', 'Patient Coordination', 'Attention to Detail', 'Empathy'],
+            ],
+            [
+                'title' => 'Retail Store Manager',
+                'slug' => 'retail-store-manager',
+                'description' => 'Lead store teams, inventory, and customer experience to hit sales and service targets.',
+                'skills' => ['Leadership', 'Customer Service', 'Inventory Management', 'Sales', 'Team Management', 'Merchandising', 'Communication'],
+            ],
+            [
+                'title' => 'Logistics Executive',
+                'slug' => 'logistics-executive',
+                'description' => 'Coordinate shipments, warehousing, and vendors to keep goods moving on time and on budget.',
+                'skills' => ['Communication', 'Supply Chain', 'Vendor Management', 'Scheduling', 'Problem Solving', 'Reporting', 'Attention to Detail'],
+            ],
+            [
+                'title' => 'Teaching & Learning Coordinator',
+                'slug' => 'teaching-learning-coordinator',
+                'description' => 'Support curriculum delivery, learner engagement, and program administration in education or training.',
+                'skills' => ['Communication', 'Presentation', 'Curriculum', 'Facilitation', 'Documentation', 'Empathy', 'Organization'],
+            ],
+            [
+                'title' => 'Hospitality Manager',
+                'slug' => 'hospitality-manager',
+                'description' => 'Lead guest experience, service standards, and front-of-house operations in hospitality settings.',
+                'skills' => ['Customer Service', 'Leadership', 'Communication', 'Operations', 'Conflict Resolution', 'Scheduling', 'Quality Standards'],
+            ],
         ];
 
         foreach ($roles as $r) {

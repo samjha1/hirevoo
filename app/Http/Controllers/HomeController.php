@@ -28,7 +28,7 @@ class HomeController extends Controller
         $jobRoles = JobRole::where('is_active', true)
             ->withCount('requiredSkills')
             ->orderBy('title')
-            ->limit(8)
+            ->limit(11)
             ->get();
         return view('hirevo.index', compact('jobRoles'));
     }

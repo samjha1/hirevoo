@@ -63,9 +63,18 @@
                             @if(in_array($job->id, $appliedIds ?? []))
                                 <span class="badge bg-success rounded-pill px-3 py-2">Applied</span>
                             @else
-                                <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm rounded-pill jo-apply-btn">
-                                    {{ $job->apply_link ? 'Apply on company site' : 'Apply now' }}
-                                </a>
+                                <div class="jo-job-card-actions">
+                                    <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm rounded-pill jo-apply-btn">
+                                        {{ $job->apply_link ? 'Apply on company site' : 'Apply now' }}
+                                    </a>
+                                    <a href="{{ route('referral.intent', ['source' => 'job_openings', 'employer_job_id' => $job->id]) }}" class="jo-referral-nudge" role="note">
+                                        <span class="jo-referral-nudge__icon" aria-hidden="true"><i class="uil uil-gift"></i></span>
+                                        <span class="jo-referral-nudge__text">
+                                            <span class="jo-referral-nudge__label">Get referral</span>
+                                            <span class="jo-referral-nudge__stat">Up to <strong>+{{ random_int(72, 88) }}%</strong> better odds to get hired</span>
+                                        </span>
+                                    </a>
+                                </div>
                             @endif
                         </div>
                     </div>

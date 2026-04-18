@@ -223,7 +223,7 @@
                                             @else
                                                 <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm rounded-pill">{{ $job->apply_link ? 'Apply on site' : 'Apply' }}</a>
                                             @endif
-                                            <a href="{{ route('pricing') }}" class="btn btn-outline-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
+                                            <a href="{{ route('referral.intent', ['source' => 'skill_match_feed_opening', 'employer_job_id' => $job->id]) }}" class="btn btn-outline-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
                                         </div>
                                     @else
                                         @php
@@ -255,10 +255,10 @@
                                             <a href="{{ route('job-goal.show', $role) }}" class="btn btn-soft-primary btn-sm rounded-pill">View role</a>
                                             @if(in_array($role->id, $appliedJobIds ?? []))
                                                 <span class="badge bg-success px-3 py-2 rounded-pill align-self-center">Applied</span>
-                                                <a href="{{ route('pricing') }}" class="btn btn-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
+                                                <a href="{{ route('referral.intent', ['source' => 'skill_match_feed_goal', 'job_role_id' => $role->id]) }}" class="btn btn-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
                                             @else
                                                 <a href="{{ route('job-goal.apply', $role) }}" class="btn btn-primary btn-sm rounded-pill">Apply</a>
-                                                <a href="{{ route('pricing') }}" class="btn btn-outline-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
+                                                <a href="{{ route('referral.intent', ['source' => 'skill_match_feed_goal', 'job_role_id' => $role->id]) }}" class="btn btn-outline-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
                                             @endif
                                         </div>
                                     @endif
@@ -295,12 +295,14 @@
                                     @auth
                                         @if($hasApplied ?? false)
                                             <span class="badge bg-success rounded-pill px-3 py-2 align-self-center">Applied</span>
-                                            <a href="{{ route('pricing') }}" class="btn btn-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
+                                            <a href="{{ route('referral.intent', ['source' => 'skill_match_goal', 'job_role_id' => $jobRole->id]) }}" class="btn btn-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
                                         @else
                                             <a href="{{ route('job-goal.apply', $jobRole) }}" class="btn btn-primary btn-sm rounded-pill"><i class="uil uil-import me-1"></i> Apply to goal</a>
+                                            <a href="{{ route('referral.intent', ['source' => 'skill_match_goal', 'job_role_id' => $jobRole->id]) }}" class="btn btn-outline-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
                                         @endif
                                     @else
                                         <a href="{{ route('login', ['redirect' => route('job-goal.apply', $jobRole)]) }}" class="btn btn-primary btn-sm rounded-pill"><i class="uil uil-import me-1"></i> Apply to goal</a>
+                                        <a href="{{ route('referral.intent', ['source' => 'skill_match_goal', 'job_role_id' => $jobRole->id]) }}" class="btn btn-outline-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
                                     @endauth
                                 </div>
                             </div>
@@ -497,7 +499,7 @@
                                         <div class="card-body p-3">
                                             <h3 class="small fw-bold text-white mb-1">Referral</h3>
                                             <p class="small text-white text-opacity-90 mb-2" style="font-size: 0.78rem;">Premium referrals from verified employees.</p>
-                                            <a href="{{ route('pricing') }}" class="btn btn-light btn-sm rounded-pill w-100">Premium</a>
+                                            <a href="{{ route('referral.intent', ['source' => 'skill_match_funnel', 'job_role_id' => $jobRole->id]) }}" class="btn btn-light btn-sm rounded-pill w-100">Premium</a>
                                         </div>
                                     </div>
                                 </div>
@@ -523,7 +525,7 @@
                                             @empty
                                                 <p class="text-muted small mb-0"><a href="{{ route('contact') }}" class="text-decoration-none">Contact</a> for guidance.</p>
                                             @endforelse
-                                            <a href="{{ route('pricing') }}" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-2 fw-600">Premium &amp; more tracks</a>
+                                            <a href="{{ route('referral.intent', ['source' => 'skill_match_upskill', 'job_role_id' => $jobRole->id]) }}" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-2 fw-600">Premium &amp; more tracks</a>
                                         </div>
                                     </div>
                                 </div>

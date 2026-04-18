@@ -23,6 +23,7 @@ class Lead extends Model
         'won_by_edtech_id',
         'sold_amount',
         'sold_at',
+        'referral_source',
     ];
 
     protected function casts(): array

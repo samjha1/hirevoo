@@ -270,74 +270,6 @@
                 </div>
                 <small class="text-muted">www.hirevoo.in</small>
             </div>
-
-            <div class="section-block">
-                <span class="section-eyebrow">The Problem</span>
-                <h2 class="h4 fw-bold mb-3 section-title">Does this sound familiar?</h2>
-                <ul class="text-muted ps-3 mb-3">
-                    <li>You apply to 30+ jobs and get 1 response  or zero.</li>
-                    <li>Your resume disappears into a pile of hundreds. No feedback, no visibility.</li>
-                    <li>You have no idea if you're even a good fit for the role.</li>
-                    <li>You don't know anyone at the company you're applying to.</li>
-                    <li>You keep applying the same way and expecting different results.</li>
-                </ul>
-                <p class="text-muted mb-0">The problem isn't you. It's how you're applying. Hirevoo was built to change that.</p>
-            </div>
-
-            <div class="section-block">
-                <span class="section-eyebrow">The Solution</span>
-                <h2 class="h4 fw-bold mb-3 section-title">Meet Hirevoo your career advantage</h2>
-                <p class="text-muted mb-3">Hirevoo is not a job portal. It's a career acceleration platform that gives you data, referrals, and insights to apply smarter and get hired faster.</p>
-                <div class="row g-3">
-                    <div class="col-md-6 col-lg-3">
-                        <div class="pricing-card p-4">
-                            <h3 class="h6 fw-bold mb-2">See Your Chances</h3>
-                            <p class="text-muted mb-0">Know your match score before applying. No more guessing.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="pricing-card p-4">
-                            <h3 class="h6 fw-bold mb-2">Get Referrals</h3>
-                            <p class="text-muted mb-0">Request referrals from real employees at your target companies.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="pricing-card p-4">
-                            <h3 class="h6 fw-bold mb-2">Improve Your Profile</h3>
-                            <p class="text-muted mb-0">Identify skill gaps and get precise recommendations.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="pricing-card p-4">
-                            <h3 class="h6 fw-bold mb-2">Apply Strategically</h3>
-                            <p class="text-muted mb-0">Target roles where you have a real shot instead of blind applying.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-block">
-                <span class="section-eyebrow">How It Works</span>
-                <h2 class="h4 fw-bold mb-3 section-title">5 simple steps to go from applicant to hired</h2>
-                <div class="row g-3">
-                    <div class="col-md-6 col-lg-4">
-                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">1. Upload Your Resume</h3><p class="text-muted mb-0">Our AI analyses your profile and surfaces relevant jobs.</p></div>
-                    </div>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">2. See Your Match Score</h3><p class="text-muted mb-0">Get compatibility scores for each role before applying.</p></div>
-                    </div>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">3. Request a Referral</h3><p class="text-muted mb-0">Send referral requests to real employees at target companies.</p></div>
-                    </div>
-                    <div class="col-md-6 col-lg-6">
-                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">4. Improve Your Profile</h3><p class="text-muted mb-0">Use skill gap analysis and upskill recommendations.</p></div>
-                    </div>
-                    <div class="col-md-6 col-lg-6">
-                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">5. Get Hired</h3><p class="text-muted mb-0">Apply with confidence  referred, matched, and prepared.</p></div>
-                    </div>
-                </div>
-            </div>
-
             <div class="section-block">
                 <span class="section-eyebrow">Plans</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Hiring Advantage Plans</h2>
@@ -407,6 +339,103 @@
                 <p class="text-muted small mt-3 mb-0">* Unlimited referrals subject to fair usage policy. All plans provide access to tools and features  Hirevoo does not guarantee job placement, interviews, or referral responses.</p>
             </div>
 
+            <div class="mb-4 mb-lg-5">
+                <span class="section-eyebrow">Comparison</span>
+                <h2 class="h4 fw-bold mb-3 section-title">Plan comparison at a glance</h2>
+                <div class="table-responsive pricing-card p-3">
+                    <table class="table align-middle mb-0 pricing-table">
+                        <thead>
+                            <tr>
+                                <th>Feature Access</th>
+                                <th>₹149 Access</th>
+                                <th>₹499 Advantage</th>
+                                <th>₹999 Accelerator</th>
+                                <th>₹2,499 Elite</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Referral Requests</td><td>1</td><td>5</td><td>15</td><td>Unlimited*</td></tr>
+                            <tr><td>Match Score</td><td>Basic</td><td>Detailed</td><td>Advanced</td><td>Advanced</td></tr>
+                            <tr><td>Job Recommendations</td><td>Smart</td><td>Priority</td><td>Premium</td><td>Premium</td></tr>
+                            <tr><td>Skill Gap Report</td><td>-</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+                            <tr><td>Profile Visibility Boost</td><td>-</td><td>Priority</td><td>Priority</td><td>Priority</td></tr>
+                            <tr><td>Resume Analysis</td><td>-</td><td>-</td><td>Yes</td><td>Yes</td></tr>
+                            <tr><td>Interview Guidance</td><td>-</td><td>-</td><td>-</td><td>Yes</td></tr>
+                            <tr><td>Dedicated Support</td><td>-</td><td>-</td><td>-</td><td>Yes</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="section-block">
+                <span class="section-eyebrow">The Problem</span>
+                <h2 class="h4 fw-bold mb-3 section-title">Does this sound familiar?</h2>
+                <ul class="text-muted ps-3 mb-3">
+                    <li>You apply to 30+ jobs and get 1 response  or zero.</li>
+                    <li>Your resume disappears into a pile of hundreds. No feedback, no visibility.</li>
+                    <li>You have no idea if you're even a good fit for the role.</li>
+                    <li>You don't know anyone at the company you're applying to.</li>
+                    <li>You keep applying the same way and expecting different results.</li>
+                </ul>
+                <p class="text-muted mb-0">The problem isn't you. It's how you're applying. Hirevoo was built to change that.</p>
+            </div>
+
+            <div class="section-block">
+                <span class="section-eyebrow">The Solution</span>
+                <h2 class="h4 fw-bold mb-3 section-title">Meet Hirevoo your career advantage</h2>
+                <p class="text-muted mb-3">Hirevoo is not a job portal. It's a career acceleration platform that gives you data, referrals, and insights to apply smarter and get hired faster.</p>
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="pricing-card p-4">
+                            <h3 class="h6 fw-bold mb-2">See Your Chances</h3>
+                            <p class="text-muted mb-0">Know your match score before applying. No more guessing.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="pricing-card p-4">
+                            <h3 class="h6 fw-bold mb-2">Get Referrals</h3>
+                            <p class="text-muted mb-0">Request referrals from real employees at your target companies.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="pricing-card p-4">
+                            <h3 class="h6 fw-bold mb-2">Improve Your Profile</h3>
+                            <p class="text-muted mb-0">Identify skill gaps and get precise recommendations.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="pricing-card p-4">
+                            <h3 class="h6 fw-bold mb-2">Apply Strategically</h3>
+                            <p class="text-muted mb-0">Target roles where you have a real shot instead of blind applying.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-block">
+                <span class="section-eyebrow">How It Works</span>
+                <h2 class="h4 fw-bold mb-3 section-title">5 simple steps to go from applicant to hired</h2>
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">1. Upload Your Resume</h3><p class="text-muted mb-0">Our AI analyses your profile and surfaces relevant jobs.</p></div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">2. See Your Match Score</h3><p class="text-muted mb-0">Get compatibility scores for each role before applying.</p></div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">3. Request a Referral</h3><p class="text-muted mb-0">Send referral requests to real employees at target companies.</p></div>
+                    </div>
+                    <div class="col-md-6 col-lg-6">
+                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">4. Improve Your Profile</h3><p class="text-muted mb-0">Use skill gap analysis and upskill recommendations.</p></div>
+                    </div>
+                    <div class="col-md-6 col-lg-6">
+                        <div class="pricing-card p-4"><h3 class="h6 fw-bold mb-2">5. Get Hired</h3><p class="text-muted mb-0">Apply with confidence  referred, matched, and prepared.</p></div>
+                    </div>
+                </div>
+            </div>
+
+
+
             <div class="section-block">
                 <span class="section-eyebrow">Why It Matters</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Same candidate, better strategy, better outcomes</h2>
@@ -456,33 +485,7 @@
                 </div>
             </div>
 
-            <div class="mb-4 mb-lg-5">
-                <span class="section-eyebrow">Comparison</span>
-                <h2 class="h4 fw-bold mb-3 section-title">Plan comparison at a glance</h2>
-                <div class="table-responsive pricing-card p-3">
-                    <table class="table align-middle mb-0 pricing-table">
-                        <thead>
-                            <tr>
-                                <th>Feature Access</th>
-                                <th>₹149 Access</th>
-                                <th>₹499 Advantage</th>
-                                <th>₹999 Accelerator</th>
-                                <th>₹2,499 Elite</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>Referral Requests</td><td>1</td><td>5</td><td>15</td><td>Unlimited*</td></tr>
-                            <tr><td>Match Score</td><td>Basic</td><td>Detailed</td><td>Advanced</td><td>Advanced</td></tr>
-                            <tr><td>Job Recommendations</td><td>Smart</td><td>Priority</td><td>Premium</td><td>Premium</td></tr>
-                            <tr><td>Skill Gap Report</td><td>-</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
-                            <tr><td>Profile Visibility Boost</td><td>-</td><td>Priority</td><td>Priority</td><td>Priority</td></tr>
-                            <tr><td>Resume Analysis</td><td>-</td><td>-</td><td>Yes</td><td>Yes</td></tr>
-                            <tr><td>Interview Guidance</td><td>-</td><td>-</td><td>-</td><td>Yes</td></tr>
-                            <tr><td>Dedicated Support</td><td>-</td><td>-</td><td>-</td><td>Yes</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+
 
             <div class="section-block">
                 <span class="section-eyebrow">Why Hirevoo</span>

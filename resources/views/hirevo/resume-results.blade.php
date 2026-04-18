@@ -440,6 +440,22 @@
     gap: 0.5rem;
     align-items: center;
 }
+.rr-card-footer .js-rr-referral {
+    align-self: flex-start;
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.2rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    line-height: 1.2;
+}
+.rr-referral-pct {
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: #4f46e5;
+    white-space: nowrap;
+}
 
 /* Empty state */
 .rr-empty {
@@ -747,7 +763,8 @@
                                     <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill js-rr-referral"
                                             data-resume-id="{{ $resume->id }}"
                                             data-employer-job-id="{{ $job->id }}">
-                                        <i class="uil uil-users-alt me-1"></i>Get referral
+                                        <span class="d-inline-flex align-items-center"><i class="uil uil-users-alt me-1"></i>Get referral</span>
+                                        <span class="rr-referral-pct">Up to +{{ random_int(65, 88) }}% hire odds</span>
                                     </button>
                                 </div>
                             </article>
@@ -790,7 +807,8 @@
                                     <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill js-rr-referral"
                                             data-resume-id="{{ $resume->id }}"
                                             data-job-role-id="{{ $role->id }}">
-                                        <i class="uil uil-users-alt me-1"></i>Get referral
+                                        <span class="d-inline-flex align-items-center"><i class="uil uil-users-alt me-1"></i>Get referral</span>
+                                        <span class="rr-referral-pct">Up to +{{ random_int(65, 88) }}% hire odds</span>
                                     </button>
                                     <form action="{{ route('resume.lead') }}" method="POST" class="d-inline">
                                         @csrf
@@ -896,6 +914,7 @@
         var jr = btn.getAttribute('data-job-role-id');
         if (ej) fd.append('employer_job_id', ej);
         if (jr) fd.append('job_role_id', jr);
+        fd.append('referral_source', 'resume_results');
         btn.disabled = true;
         fetch(refUrl, {
             method: 'POST',

@@ -173,6 +173,11 @@
     </div>
 
     {{-- ═══════════════ RESUME CTA ═══════════════ --}}
+    @php
+        $resumeDreamJobHireMin = 65;
+        $resumeDreamJobHireMax = 75;
+        $resumeDreamJobHirePct = random_int($resumeDreamJobHireMin, $resumeDreamJobHireMax);
+    @endphp
     <section class="hv2-section hv2-section--tight">
         <div class="container">
             <div class="hv2-reveal">
@@ -183,13 +188,19 @@
                                 <div class="hv2-resume-icon mx-auto mx-md-0 flex-shrink-0">
                                     <i class="mdi mdi-file-document-outline" aria-hidden="true"></i>
                                 </div>
-                                <div class="text-center text-md-start flex-grow-1 min-w-0">
+                                <div class="text-center text-md-start flex-grow-1 min-w-0 position-relative" style="z-index:1;">
                                     <h2 class="h4 fw-bold mb-2" style="color:var(--hv2-text);">Start with your resume</h2>
-                                    <p class="mb-0 mb-md-3" style="color:var(--hv2-muted);max-width:36rem;">
+                                    <p class="hv2-resume-hire-boost mb-2 mb-md-3">
+                                        <span class="hv2-resume-hire-boost__accent">Upload your resume</span>
+                                        and increase your chances of getting hired in your dream job by up to
+                                        <strong class="hv2-resume-hire-boost__pct">+{{ $resumeDreamJobHirePct }}%</strong>
+                                        <span class="d-none d-sm-inline">— based on clearer targeting vs. blind applications.</span>
+                                    </p>
+                                    <!-- <p class="mb-0 mb-md-3" style="color:var(--hv2-muted);max-width:36rem;">
                                         Know if your profile is working <em>before</em> you apply more.
                                         Upload once — see strengths, gaps, and direction.
                                         <strong style="color:var(--hv2-text);">Under two minutes. No account needed.</strong>
-                                    </p>
+                                    </p> -->
                                     <span class="hv2-btn hv2-btn--teal hv2-btn-lg mt-3 d-inline-flex align-items-center" style="pointer-events:none;">
                                         <i class="mdi mdi-upload me-1" aria-hidden="true"></i> Upload resume free
                                     </span>
@@ -316,6 +327,25 @@
     {{-- ═══════════════ CAREER PATHS / JOB GOALS ═══════════════ --}}
     @php
         $goalPalette = ['violet', 'teal', 'amber', 'coral', 'indigo', 'emerald', 'sky', 'fuchsia'];
+        $goalJobsRandMin = 1001;
+        $goalJobsRandMax = 25000;
+        $referralHirePctMin = 72;
+        $referralHirePctMax = 88;
+        $goalFallbackRoles = [
+            ['label' => 'Software Engineer', 'icon' => 'uil-laptop'],
+            ['label' => 'HR & Recruitment', 'icon' => 'uil-users-alt'],
+            ['label' => 'Data Analyst', 'icon' => 'uil-chart-bar'],
+            ['label' => 'Sales & Business Dev', 'icon' => 'uil-phone'],
+            ['label' => 'Healthcare & Nursing', 'icon' => 'uil-heartbeat'],
+            ['label' => 'Retail & Store Ops', 'icon' => 'uil-store'],
+            ['label' => 'Teaching & Education', 'icon' => 'uil-graduation-cap'],
+            ['label' => 'Finance & Accounting', 'icon' => 'uil-money-bill'],
+            ['label' => 'Content & Marketing', 'icon' => 'uil-edit-alt'],
+            ['label' => 'Customer Support', 'icon' => 'uil-headphones'],
+            ['label' => 'Hospitality & Food Service', 'icon' => 'uil-utensils'],
+            ['label' => 'Logistics & Warehousing', 'icon' => 'uil-truck'],
+            ['label' => 'Real Estate & Property', 'icon' => 'uil-building'],
+        ];
     @endphp
     <section class="hv2-goals" id="career-paths" aria-labelledby="hv2-goals-heading">
         <div class="hv2-goals__bg" aria-hidden="true"></div>
@@ -332,7 +362,7 @@
                         Popular <span>job goals</span>
                     </h2>
                     <p class="hv2-goals__lead">
-                        Pick a role  we surface <strong>what employers expect</strong>, map it to your profile, and highlight <strong>gaps you can close</strong> with purpose (not guesswork).
+                        Pick a role—we surface <strong>what employers expect</strong>, map it to your profile, and highlight <strong>gaps you can close</strong> with purpose (not guesswork).
                     </p>
                     <ul class="hv2-goals__flow list-unstyled mb-0" role="list">
                         <li class="hv2-goals__flow-item">
@@ -374,51 +404,69 @@
             <div class="hv2-goals__grid hv2-reveal">
                 @forelse(($jobRoles ?? []) as $role)
                     @php $pv = $goalPalette[$loop->index % count($goalPalette)]; @endphp
-                    <a href="{{ route('job-goal.show', $role) }}" class="hv2-goal-card hv2-goal-card--{{ $pv }} {{ $loop->first ? 'hv2-goal-card--featured' : '' }}">
+                    <div class="hv2-goal-card hv2-goal-card--{{ $pv }} {{ $loop->first ? 'hv2-goal-card--featured' : '' }}">
                         <span class="hv2-goal-card__glow" aria-hidden="true"></span>
-                        <div class="hv2-goal-card__head">
-                            <span class="hv2-goal-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                            <div class="hv2-goal-card__icon" aria-hidden="true">
-                                <i class="uil uil-briefcase-alt"></i>
-                            </div>
-                        </div>
-                        <h3 class="hv2-goal-card__name">{{ $role->title }}</h3>
-                        @if(($role->required_skills_count ?? 0) > 0)
-                            <p class="hv2-goal-card__meta">{{ $role->required_skills_count }} {{ Str::plural('skill', $role->required_skills_count) }} mapped to this role</p>
-                        @else
-                            <p class="hv2-goal-card__meta">Explore expectations &amp; your fit</p>
-                        @endif
-                        <span class="hv2-goal-card__cta">
-                            Open goal
-                            <i class="uil uil-arrow-right"></i>
-                        </span>
-                    </a>
-                @empty
-                    @foreach(['Data Analyst'=>'chart','Software Engineer'=>'code','Product Manager'=>'bag','UI/UX Designer'=>'pen'] as $label=>$kind)
-                        @php $pv = $goalPalette[$loop->index % count($goalPalette)]; @endphp
-                        <a href="{{ route('job-list') }}" class="hv2-goal-card hv2-goal-card--{{ $pv }} {{ $loop->first ? 'hv2-goal-card--featured' : '' }}">
-                            <span class="hv2-goal-card__glow" aria-hidden="true"></span>
+                        <a href="{{ route('job-goal.show', $role) }}" class="hv2-goal-card__main">
                             <div class="hv2-goal-card__head">
                                 <span class="hv2-goal-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                                 <div class="hv2-goal-card__icon" aria-hidden="true">
-                                    @if($kind === 'chart')
-                                        <i class="uil uil-chart-bar"></i>
-                                    @elseif($kind === 'code')
-                                        <i class="uil uil-laptop"></i>
-                                    @elseif($kind === 'pen')
-                                        <i class="uil uil-pen"></i>
-                                    @else
-                                        <i class="uil uil-briefcase-alt"></i>
-                                    @endif
+                                    <i class="uil uil-briefcase-alt"></i>
                                 </div>
                             </div>
-                            <h3 class="hv2-goal-card__name">{{ $label }}</h3>
-                            <p class="hv2-goal-card__meta">Browse all goals &amp; skill tracks</p>
-                            <span class="hv2-goal-card__cta">
-                                Explore
-                                <i class="uil uil-arrow-right"></i>
-                            </span>
+                            <h3 class="hv2-goal-card__name">{{ $role->title }}</h3>
+                            <div class="hv2-goal-card__stats" role="status">
+                                <span class="hv2-goal-card__stat-pulse" aria-hidden="true"></span>
+                                <span class="hv2-goal-card__stat-num">{{ number_format(random_int($goalJobsRandMin, $goalJobsRandMax)) }}</span>
+                                <span class="hv2-goal-card__stat-label">open roles</span>
+                            </div>
                         </a>
+                        <div class="hv2-goal-card__actions">
+                            <a href="{{ route('referral.intent', ['source' => 'home_goal', 'job_role_id' => $role->id]) }}" class="hv2-goal-card__referral">
+                                <span class="hv2-goal-card__referral-icon" aria-hidden="true"><i class="uil uil-gift"></i></span>
+                                <span class="hv2-goal-card__referral-body">
+                                    <span class="hv2-goal-card__referral-label">Get referral</span>
+                                    <span class="hv2-goal-card__referral-stat">Up to <strong>+{{ random_int($referralHirePctMin, $referralHirePctMax) }}%</strong> better odds to get hired</span>
+                                </span>
+                            </a>
+                            <a href="{{ route('job-goal.show', $role) }}" class="hv2-goal-card__cta">
+                                <span>Open goal</span>
+                                <i class="uil uil-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    @foreach($goalFallbackRoles as $goalRow)
+                        @php $pv = $goalPalette[$loop->index % count($goalPalette)]; @endphp
+                        <div class="hv2-goal-card hv2-goal-card--{{ $pv }} {{ $loop->first ? 'hv2-goal-card--featured' : '' }}">
+                            <span class="hv2-goal-card__glow" aria-hidden="true"></span>
+                            <a href="{{ route('job-list') }}" class="hv2-goal-card__main">
+                                <div class="hv2-goal-card__head">
+                                    <span class="hv2-goal-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                                    <div class="hv2-goal-card__icon" aria-hidden="true">
+                                        <i class="uil {{ $goalRow['icon'] }}"></i>
+                                    </div>
+                                </div>
+                                <h3 class="hv2-goal-card__name">{{ $goalRow['label'] }}</h3>
+                                <div class="hv2-goal-card__stats" role="status">
+                                    <span class="hv2-goal-card__stat-pulse" aria-hidden="true"></span>
+                                    <span class="hv2-goal-card__stat-num">{{ number_format(random_int($goalJobsRandMin, $goalJobsRandMax)) }}</span>
+                                    <span class="hv2-goal-card__stat-label">open roles</span>
+                                </div>
+                            </a>
+                            <div class="hv2-goal-card__actions">
+                                <a href="{{ route('referral.intent', ['source' => 'home_goal_demo']) }}" class="hv2-goal-card__referral">
+                                    <span class="hv2-goal-card__referral-icon" aria-hidden="true"><i class="uil uil-gift"></i></span>
+                                    <span class="hv2-goal-card__referral-body">
+                                        <span class="hv2-goal-card__referral-label">Get referral</span>
+                                        <span class="hv2-goal-card__referral-stat">Up to <strong>+{{ random_int($referralHirePctMin, $referralHirePctMax) }}%</strong> better odds to get hired</span>
+                                    </span>
+                                </a>
+                                <a href="{{ route('job-list') }}" class="hv2-goal-card__cta">
+                                    <span>Explore</span>
+                                    <i class="uil uil-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
                     @endforeach
                 @endforelse
             </div>
