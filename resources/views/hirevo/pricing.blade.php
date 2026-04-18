@@ -555,7 +555,7 @@
             </div>
 
             <div class="pricing-hero text-center">
-                <h2 class="h4 fw-bold mb-2">Stop applying blindly. Start applying smart.</h2>
+                <h2 class="h4 fw-bold mb-2">Stop applying blindly. Start applying smartly.</h2>
                 <p class="text-muted mb-3">Upload your resume, see your match score, and request your first referral.</p>
                 <div class="d-flex flex-wrap justify-content-center gap-2 mb-2">
                     <a href="{{ route('resume.upload') }}" class="btn btn-primary rounded-pill px-4">Get Started with Hirevoo</a>

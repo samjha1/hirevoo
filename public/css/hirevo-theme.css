@@ -39,6 +39,11 @@
     padding-bottom: 0;
     transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
 }
+@media (min-width: 992px) {
+    .hirevo-navbar {
+        min-height: 82px;
+    }
+}
 /* On scroll — elevated feel */
 .hirevo-navbar.nav-scrolled {
     background: rgba(255, 255, 255, 0.97) !important;
@@ -62,17 +67,21 @@
 }
 /* Logo — readable size in the bar */
 .hirevo-navbar .navbar-brand .hirevo-logo {
-    height: 46px !important;
-    min-height: 46px;
-    max-width: 188px !important;
+    height: 56px !important;
+    min-height: 56px;
+    max-width: 275px !important;
     width: auto;
     object-fit: contain;
 }
 @media (min-width: 768px) {
-    .hirevo-navbar .navbar-brand .hirevo-logo { height: 50px !important; max-width: 205px !important; }
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 62px !important; max-width: 310px !important; }
 }
 @media (min-width: 992px) {
-    .hirevo-navbar .navbar-brand .hirevo-logo { height: 52px !important; max-width: 220px !important; }
+    .hirevo-navbar .navbar-brand .hirevo-logo { height: 68px !important; max-width: 350px !important; }
+}
+/* Wide Hirevoo / samjha PNG wordmark */
+.hirevo-navbar .navbar-brand .hirevo-logo--hirevoo {
+    max-width: min(500px, 92vw) !important;
 }
 
 /* Nav links — underline-slide hover */

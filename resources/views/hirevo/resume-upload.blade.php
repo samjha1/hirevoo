@@ -552,7 +552,7 @@
         <ul class="ru-ai-steps">
             <li class="ru-ai-step" data-step="0"><span><i class="uil uil-cloud-upload"></i> Uploading your PDF</span><small>Queued</small></li>
             <li class="ru-ai-step" data-step="1"><span><i class="uil uil-file-search-alt"></i> Reading and parsing content</span><small>Queued</small></li>
-            <li class="ru-ai-step" data-step="2"><span><i class="uil uil-brain"></i> Running AI scoring and insights</span><small>Queued</small></li>
+            <li class="ru-ai-step" data-step="2"><span><i class="mdi mdi-robot-outline"></i> Running AI scoring and insights</span><small>Queued</small></li>
             <li class="ru-ai-step" data-step="3"><span><i class="uil uil-check-circle"></i> Preparing your report</span><small>Queued</small></li>
         </ul>
         <p class="ru-ai-note mb-0"><i class="uil uil-shield-check me-1"></i>Please keep this tab open. This usually takes a few seconds.</p>

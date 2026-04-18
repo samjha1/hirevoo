@@ -324,7 +324,12 @@
         background: linear-gradient(145deg, rgba(99, 102, 241, 0.18), rgba(16, 185, 129, 0.12));
         border: 1px solid rgba(99, 102, 241, 0.2);
         color: #4338ca;
-        font-size: 1.35rem;
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+    .jo-match-bento__icon .mdi {
+        font-size: 1.5rem;
+        line-height: 1;
     }
     .jo-match-bento__title {
         font-size: 0.9375rem;
@@ -616,7 +621,11 @@
         justify-content: center;
         background: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(16, 185, 129, 0.08));
         color: #4f46e5;
-        font-size: 1rem;
+        font-size: 1.05rem;
+        line-height: 1;
+    }
+    .jo-filters-head h2 i.mdi::before {
+        font-size: inherit;
     }
     .jo-filter-reset {
         font-size: 0.75rem;
@@ -912,7 +921,7 @@
 
             <div class="jo-match-bento" id="jo-resume-match-bar">
                 <div class="d-flex align-items-start gap-3 min-w-0">
-                    <span class="jo-match-bento__icon flex-shrink-0" aria-hidden="true"><i class="uil uil-brain"></i></span>
+                    <span class="jo-match-bento__icon flex-shrink-0" aria-hidden="true"><i class="mdi mdi-file-document-outline"></i></span>
                     <div class="min-w-0">
                         <p class="jo-match-bento__title mb-0">Match this board to your resume</p>
                         <p class="jo-match-bento__hint mb-0">Same pipeline as Resume Score: upload a PDF, we analyze it, then reorder these listings for you  without leaving the page.</p>
@@ -1000,7 +1009,7 @@
                     <div class="card jo-filters-card border-0 sticky-top" style="top: 92px;">
                         <div class="card-body p-4">
                             <div class="jo-filters-head">
-                                <h2><i class="uil uil-slider-h"></i> Refine</h2>
+                                <h2><i class="mdi mdi-tune-variant" aria-hidden="true"></i> Refine</h2>
                                 @if($hasActiveFilters)
                                     <a href="{{ route('job-openings') }}" class="jo-filter-reset">Reset</a>
                                 @endif
@@ -1044,7 +1053,7 @@
                     <div class="jo-results-bar mb-3">
                         <p class="mb-0 small d-flex flex-wrap align-items-center gap-2" style="color: var(--jo-muted);">
                             @if($jobs->total() > 0)
-                                <span class="jo-results-count"><i class="uil uil-layers-alt"></i> List</span>
+                                <span class="jo-results-count"><i class="mdi mdi-view-list-outline" aria-hidden="true"></i> List</span>
                                 <span id="jo-showing-line">
                                     <strong class="text-dark" id="jo-range-from">{{ $jobs->firstItem() }}</strong>–<strong class="text-dark" id="jo-range-to">{{ $jobs->lastItem() }}</strong>
                                     of <strong class="text-dark" id="jo-range-total">{{ $jobs->total() }}</strong>
@@ -1058,9 +1067,9 @@
                         </p>
                         <span class="small jo-sort-chip d-none d-sm-inline" id="jo-sort-label">
                             @if(!empty($jobsPersonalized))
-                                <i class="uil uil-chart-line"></i>Resume-ranked
+                                <i class="mdi mdi-chart-line" aria-hidden="true"></i>Resume-ranked
                             @else
-                                <i class="uil uil-sort-amount-down"></i>Newest first
+                                <i class="mdi mdi-sort-descending" aria-hidden="true"></i>Newest first
                             @endif
                         </span>
                     </div>
@@ -1074,7 +1083,7 @@
                             <div class="card border-0 jo-filters-card jo-empty-state text-center py-5 px-3">
                                 <div class="card-body py-5">
                                     <div class="jo-empty-icon d-inline-flex align-items-center justify-content-center mb-4">
-                                        <i class="uil uil-rocket" style="font-size: 2rem; color: #4f46e5;"></i>
+                                        <i class="mdi mdi-rocket" style="font-size: 2rem; color: #4f46e5;" aria-hidden="true"></i>
                                     </div>
                                     <h2 class="h5 fw-bold mb-2" style="color: var(--jo-ink); letter-spacing:-0.02em;">Nothing in frame</h2>
                                     @if($hasActiveFilters)

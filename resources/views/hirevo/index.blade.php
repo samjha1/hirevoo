@@ -179,23 +179,21 @@
                 <a href="{{ route('resume.upload') }}" class="hv2-resume-card">
                     <div class="row align-items-center g-4">
                         <div class="col-lg-8">
-                            <div class="d-flex flex-column flex-md-row align-items-md-center gap-4">
-                                <div class="hv2-resume-icon mx-auto mx-md-0">
-                                    <i class="uil uil-file-search-alt"></i>
+                            <div class="d-flex flex-column flex-md-row align-items-md-start gap-4">
+                                <div class="hv2-resume-icon mx-auto mx-md-0 flex-shrink-0">
+                                    <i class="mdi mdi-file-document-outline" aria-hidden="true"></i>
                                 </div>
-                                <div class="text-center text-md-start">
+                                <div class="text-center text-md-start flex-grow-1 min-w-0">
                                     <h2 class="h4 fw-bold mb-2" style="color:var(--hv2-text);">Start with your resume</h2>
-                                    <p class="mb-0" style="color:var(--hv2-muted);max-width:36rem;">
+                                    <p class="mb-0 mb-md-3" style="color:var(--hv2-muted);max-width:36rem;">
                                         Know if your profile is working <em>before</em> you apply more.
-                                        Upload once  see strengths, gaps, and direction.
+                                        Upload once — see strengths, gaps, and direction.
                                         <strong style="color:var(--hv2-text);">Under two minutes. No account needed.</strong>
                                     </p>
+                                    <span class="hv2-btn hv2-btn--teal hv2-btn-lg mt-3 d-inline-flex align-items-center" style="pointer-events:none;">
+                                        <i class="mdi mdi-upload me-1" aria-hidden="true"></i> Upload resume free
+                                    </span>
                                 </div>
-                            </div>
-                            <div class="mt-4 text-center text-md-start">
-                                <span class="hv2-btn hv2-btn--teal hv2-btn-lg" style="pointer-events:none;">
-                                    <i class="uil uil-upload"></i> Upload resume free
-                                </span>
                             </div>
                         </div>
                         <div class="col-lg-4 text-center">

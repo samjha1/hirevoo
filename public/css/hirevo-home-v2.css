@@ -496,6 +496,11 @@
   font-size: 1.6rem; flex-shrink: 0;
   box-shadow: 0 6px 20px rgba(16,185,129,0.35);
 }
+.hirevo-home-page .hv2-resume-icon .mdi {
+  font-size: 1.75rem;
+  line-height: 1;
+  color: inherit;
+}
 
 /* ─── How It Works ────────────────────────────────────── */
 .hirevo-home-page .hv2-steps {
@@ -805,33 +810,12 @@
   .hirevo-home-page .hv2-goals__grid {
     grid-template-columns: repeat(4, 1fr);
   }
+  /* Featured = wider card only; keep default flex column so __head matches other cards
+     (index left, icon top-right). Inner grid was pinning the icon to column 1 only. */
   .hirevo-home-page .hv2-goal-card--featured {
     grid-column: span 2;
     grid-row: span 1;
     min-height: 200px;
-    display: grid;
-    grid-template-columns: 1fr 1.1fr;
-    grid-template-rows: auto auto 1fr auto;
-    column-gap: 1.25rem;
-    align-items: start;
-  }
-  .hirevo-home-page .hv2-goal-card--featured .hv2-goal-card__head {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .hirevo-home-page .hv2-goal-card--featured .hv2-goal-card__name {
-    grid-column: 2;
-    grid-row: 1;
-    margin-top: 0;
-  }
-  .hirevo-home-page .hv2-goal-card--featured .hv2-goal-card__meta {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-  .hirevo-home-page .hv2-goal-card--featured .hv2-goal-card__cta {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    margin-top: 0.25rem;
   }
 }
 .hirevo-home-page .hv2-goal-card {

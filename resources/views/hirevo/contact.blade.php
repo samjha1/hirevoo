@@ -33,7 +33,7 @@
                 <div class="col-lg-6">
                     <div class="section-title mt-4 mt-lg-0">
                         <h3 class="title">Get in touch</h3>
-                        <p class="text-muted">Reach out for support, partnership, or any questions about Hirevo.</p>
+                        <p class="text-muted">Reach out for support, partnership, or any questions about Hirevoo.</p>
                         <form method="post" action="{{ route('contact.submit') }}" class="contact-form mt-4">
                             @csrf
                             <div class="row">
@@ -70,7 +70,7 @@
                 </div>
                 <div class="col-lg-5 ms-auto order-first order-lg-last">
                     <div class="text-center rounded-4 overflow-hidden shadow-sm">
-                        <img src="{{ asset('images/webisteimages/' . rawurlencode('jefferson-santos-9SoCnyQmkzI-unsplash.jpg')) }}" alt="We’re here to help — reach out anytime" class="img-fluid w-100 hirevo-site-photo" style="max-height: 320px; object-fit: cover;" loading="lazy" width="800" height="320">
+                        <img src="{{ asset('images/webisteimages/' . rawurlencode('jefferson-santos-9SoCnyQmkzI-unsplash.jpg')) }}" alt="We’re here to help. Reach out anytime" class="img-fluid w-100 hirevo-site-photo" style="max-height: 320px; object-fit: cover;" loading="lazy" width="800" height="320">
                     </div>
                     <div class="mt-4 pt-3">
                         <div class="d-flex text-muted align-items-center mt-2">
@@ -86,7 +86,7 @@
                                 <i class="uil uil-envelope"></i>
                             </div>
                             <div class="flex-grow-1 ms-2">
-                                <p class="mb-0">contact@hirevo.com</p>
+                                <p class="mb-0">contact@hirevoo.com</p>
                             </div>
                         </div>
                         <div class="d-flex text-muted align-items-center mt-2">
