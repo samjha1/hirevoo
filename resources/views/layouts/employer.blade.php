@@ -126,7 +126,6 @@
             width: 100%;
             max-width: 190px;
             height: auto;
-            filter: brightness(0) invert(1);
             object-fit: contain;
             object-position: left center;
         }
@@ -634,7 +633,7 @@
         <aside class="es" id="es" aria-label="Employer navigation">
             <div class="es-brand">
                 <a href="{{ route('home') }}" aria-label="Hirevo home">
-                    <img src="{{ asset('images/sam.png') }}" alt="Hirevo" width="150" height="68" decoding="async">
+                    <img src="{{ asset('images/20260419_104558_0000.png') }}" alt="Hirevo" width="150" height="68" decoding="async">
                 </a>
                 <button class="es-brand-close" id="es-close" aria-label="Close menu">
                     <i class="mdi mdi-close" style="font-size:1.25rem;"></i>

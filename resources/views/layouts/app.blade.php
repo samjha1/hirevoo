@@ -45,7 +45,7 @@
             <div class="container-fluid custom-container">
                 <a class="navbar-brand hirevo-nav-brand d-flex align-items-center" href="{{ route('home') }}">
                     {{-- Logo must live under public/images/ (not resources/views) so asset() can load it --}}
-                    <img src="{{ asset('images/samjha2026.png') }}" alt="Hirevoo" class="hirevo-logo hirevo-logo--hirevoo" width="350" height="68" loading="eager">
+                    <img src="{{ asset('images/20260419_104749_0000ss.png') }}" alt="Hirevoo" class="hirevo-logo hirevo-logo--hirevoo" width="350" height="68" loading="eager">
                 </a>
                 <button class="navbar-toggler hirevo-nav-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-label="Toggle navigation">
                     <i class="mdi mdi-menu fs-28"></i>

@@ -362,7 +362,7 @@
                         Popular <span>job goals</span>
                     </h2>
                     <p class="hv2-goals__lead">
-                        Pick a role—we surface <strong>what employers expect</strong>, map it to your profile, and highlight <strong>gaps you can close</strong> with purpose (not guesswork).
+                        Pick a role we surface <strong>what employers expect</strong>, map it to your profile, and highlight <strong>gaps you can close</strong> with purpose (not guesswork).
                     </p>
                     <ul class="hv2-goals__flow list-unstyled mb-0" role="list">
                         <li class="hv2-goals__flow-item">

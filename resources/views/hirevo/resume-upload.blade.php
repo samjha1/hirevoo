@@ -464,14 +464,14 @@
                                 <input type="email" name="contact_email" id="contact_email"
                                        class="ru-field @error('contact_email') is-invalid @enderror"
                                        value="{{ old('contact_email') }}"
-                                       placeholder="you@example.com — use if your CV is scanned or email wasn’t detected"
+                                       placeholder="you@example.com  use if your CV is scanned or email wasn’t detected"
                                        autocomplete="email">
                                 @error('contact_email')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                                 <p class="text-muted small mb-0 mt-2" style="font-size:0.78rem;">
                                     <i class="uil uil-info-circle text-primary me-1"></i>
-                                    We read your email from the resume when possible. If the PDF has no selectable text (image scan), enter your email here — same upload button.
+                                    We read your email from the resume when possible. If the PDF has no selectable text (image scan), enter your email here the same upload button.
                                 </p>
                             </div>
                             @endguest
