@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Employer\ApplicationController as EmployerApplicationController;
@@ -26,6 +27,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sign-in', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/sign-in', [LoginController::class, 'login']);
+Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('password.update');
 Route::post('/sign-out', [LoginController::class, 'logout'])->name('logout');
 Route::get('/sign-up', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/sign-up', [RegisterController::class, 'register']);

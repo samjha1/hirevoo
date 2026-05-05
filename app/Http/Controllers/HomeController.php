@@ -12,11 +12,13 @@ use App\Models\Resume;
 use App\Models\UpskillOpportunity;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
+use App\Mail\EmployerJobApplicationSubmitted;
 use App\Support\CandidateOnboarding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -578,6 +580,14 @@ class HomeController extends Controller
             'job_match_score' => $jobMatchScore,
             'job_match_explanation' => $jobMatchExplanation,
         ]);
+
+        if (filled($user->email)) {
+            try {
+                Mail::to($user->email)->send(new EmployerJobApplicationSubmitted($user, $job));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         $applyLink = is_string($job->apply_link ?? null) ? trim((string) $job->apply_link) : null;
         if ($applyLink !== '') {

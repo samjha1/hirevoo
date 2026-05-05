@@ -36,7 +36,7 @@
                     </p>
                     <div class="d-flex flex-wrap gap-2 mb-4">
                         <a href="{{ route('resume.upload') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg">
-                            Analyse my resume free <i class="uil uil-arrow-right"></i>
+                            Analyse your resume free <i class="uil uil-arrow-right"></i>
                         </a>
                         <a href="{{ route('job-openings') }}" class="hv2-btn hv2-btn--ghost hv2-btn-lg">
                             Explore openings
@@ -44,26 +44,27 @@
                     </div>
 
                     <div class="hv2-search-wrap">
-                        <form action="{{ route('job-list') }}" method="GET" class="mb-0">
+                        <form action="{{ route('job-openings') }}" method="GET" class="mb-0">
                             <div class="hv2-search-bar">
                                 <div class="hv2-search-field flex-grow-1">
                                     <i class="uil uil-briefcase-alt" aria-hidden="true"></i>
                                     <input type="search" name="q" class="form-control border-0 rounded-0 shadow-none"
-                                           placeholder="Job goal e.g. Data Analyst, Developer…"
+                                           placeholder="Title, stack, company e.g. Data Analyst, Developer…"
                                            id="job-title" autocomplete="off">
                                 </div>
                                 <div class="hv2-search-field" style="min-width:140px;">
                                     <i class="uil uil-map-marker d-none d-md-inline" aria-hidden="true"></i>
                                     <select class="form-select border-0 rounded-0 shadow-none flex-grow-1"
-                                            name="location" id="choices-single-location" aria-label="Location">
-                                        <option value="IN">India</option>
-                                        <option value="US">United States</option>
-                                        <option value="GB">United Kingdom</option>
-                                        <option value="AE">UAE</option>
+                                            name="country" id="choices-single-location" aria-label="Region">
+                                        <option value="">All regions</option>
+                                        <option value="ca">Canada</option>
+                                        <option value="us">United States</option>
+                                        <option value="gb">United Kingdom</option>
+                                        <option value="ae">UAE</option>
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-search d-flex align-items-center justify-content-center gap-1">
-                                    <i class="uil uil-search"></i> Find job goals
+                                    <i class="uil uil-search"></i> Find openings
                                 </button>
                             </div>
                         </form>

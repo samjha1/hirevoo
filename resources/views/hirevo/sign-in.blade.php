@@ -29,6 +29,9 @@
                                     @if($errors->any())
                                         <div class="alert alert-danger py-2 mb-3">{{ $errors->first() }}</div>
                                     @endif
+                                    @if(session('status'))
+                                        <div class="alert alert-success py-2 mb-3">{{ session('status') }}</div>
+                                    @endif
                                     @if(request('role') !== 'referrer')
                                     <div class="d-grid gap-2 mb-3">
                                         <a href="{{ route('auth.google.redirect') }}{{ request()->has('redirect') ? '?redirect=' . urlencode(request('redirect')) : '' }}" class="btn btn-light btn-hover d-flex align-items-center justify-content-center gap-2">
@@ -59,6 +62,11 @@
                                             <label for="password" class="form-label">Password</label>
                                             <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
                                             @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+                                        <div class="mb-3 text-end">
+                                            <a href="{{ route('password.request', request('role') === 'referrer' ? ['role' => 'referrer'] : []) }}" class="small text-white text-decoration-underline">
+                                                Forgot password?
+                                            </a>
                                         </div>
                                         <div class="mb-4">
                                             <div class="form-check">

@@ -17,15 +17,26 @@ class RegisterController extends Controller
     public function showRegistrationForm(Request $request): View
     {
         $role = $request->query('role', 'candidate');
-        if (!in_array($role, ['candidate', 'referrer', 'edtech'], true)) {
+
+        // Keep "employer" as public-facing label, support legacy "referrer" param.
+        if ($role === 'referrer') {
+            $role = 'employer';
+        }
+
+        if (!in_array($role, ['candidate', 'employer', 'edtech'], true)) {
             $role = 'candidate';
         }
+
         return view('hirevo.sign-up', ['defaultRole' => $role]);
     }
 
     public function register(Request $request)
     {
         $role = $request->input('role', 'candidate');
+        if ($role === 'employer') {
+            $role = 'referrer';
+            $request->merge(['role' => $role]);
+        }
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
