@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <base href="{{ rtrim(config('app.asset_url') ?? config('app.url'), '/') }}/">
-    <title>@yield('title', 'Dashboard') | Hirevo — Own Your Next Career Move</title>
+    @include('partials.seo-head')
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#0f2a50">
     <link rel="shortcut icon" href="{{ asset($theme.'/assets/images/favicon.ico') }}">
     <!-- DM Sans: Clean, modern, readable -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -1,37 +1,45 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <base href="{{ rtrim(config('app.asset_url') ?? config('app.url'), '/') }}/">
-    <title>@yield('title', 'Home') | Hirevo — Own Your Next Career Move</title>
+    @include('partials.seo-head')
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Hirevo — Own Your Next Career Move. AI Career Intelligence, skill-gap analysis, referral marketplace & job goals.">
-    <meta property="og:title" content="@yield('og_title', 'Hirevo — Own Your Next Career Move')">
-    <meta property="og:description" content="@yield('og_description', 'AI Career Intelligence, skill-gap analysis, referral marketplace & job goals.')">
-    <meta property="og:type" content="website">
     <meta content="Hirevo" name="author">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#0B1F3B">
 
     <link rel="shortcut icon" href="{{ asset($theme.'/assets/images/favicon.ico') }}">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://unicons.iconscout.com" crossorigin>
+    <link rel="preload" href="{{ asset('images/20260419_104749_0000ss.png') }}" as="image" type="image/png">
 
     <!-- SN Pro by Tobias Whetton / Supernotes (Fontsource) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/400.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/500.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/600.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/700.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/400.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/500.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/600.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/700.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/400.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/500.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/600.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sn-pro@5.2.6/700.css">
+    </noscript>
 
     <link rel="stylesheet" href="{{ asset($theme.'/assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
     <link rel="stylesheet" href="{{ asset($theme.'/assets/libs/swiper/swiper-bundle.min.css') }}">
     <link href="{{ asset($theme.'/assets/css/bootstrap.min.css') }}" id="bootstrap-style" rel="stylesheet">
     <link href="{{ asset($theme.'/assets/css/icons.min.css') }}" rel="stylesheet">
     {{-- Unicons line (uil uil-*) used on marketing pages; theme icons bundle may not include these --}}
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"></noscript>
     <link href="{{ asset($theme.'/assets/css/app.min.css') }}" id="app-style" rel="stylesheet">
     <link href="{{ asset('css/hirevo-theme.css') }}" rel="stylesheet">
     @stack('styles')
 </head>
 <body class="@yield('body_class')">
-    <div id="preloader">
+    <a class="visually-hidden-focusable position-absolute top-0 start-0 z-3 btn btn-sm btn-primary m-2" href="#main-content">Skip to main content</a>
+    <div id="preloader" aria-hidden="true">
         <div id="status">
             <ul>
                 <li></li><li></li><li></li><li></li><li></li><li></li>
@@ -41,11 +49,11 @@
 
     <div>
         <!-- Navbar Start -->
-        <nav class="navbar navbar-expand-lg fixed-top sticky hirevo-navbar" id="navbar">
+        <nav class="navbar navbar-expand-lg fixed-top sticky hirevo-navbar" id="navbar" aria-label="Primary">
             <div class="container-fluid custom-container">
                 <a class="navbar-brand hirevo-nav-brand d-flex align-items-center" href="{{ route('home') }}">
                     {{-- Logo must live under public/images/ (not resources/views) so asset() can load it --}}
-                    <img src="{{ asset('images/20260419_104749_0000ss.png') }}" alt="Hirevoo" class="hirevo-logo hirevo-logo--hirevoo" width="350" height="68" loading="eager">
+                    <img src="{{ asset('images/20260419_104749_0000ss.png') }}" alt="Hirevo — career intelligence and job matching" class="hirevo-logo hirevo-logo--hirevoo" width="350" height="68" loading="eager" fetchpriority="high" decoding="async">
                 </a>
                 <button class="navbar-toggler hirevo-nav-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-label="Toggle navigation">
                     <i class="mdi mdi-menu fs-28"></i>
@@ -238,6 +246,7 @@
         @endguest
 
         <div class="main-content">
+            <main id="main-content" role="main">
             @if(session('referral_success'))
                 <div class="container mt-3">
                     <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
@@ -249,6 +258,7 @@
             <div class="page-content">
                 @yield('content')
             </div>
+            </main>
 
             <!-- START REFERRAL (Refer in your company & earn) -->
             <section class="py-5" style="background: linear-gradient(135deg, var(--hirevo-primary, #0B1F3B) 0%, #162d4d 100%);">
@@ -317,7 +327,7 @@
                     </div>
                 </div>
                 <div class="email-img d-none d-lg-block">
-                    <img src="{{ asset($theme.'/assets/images/subscribe.png') }}" alt="" class="img-fluid">
+                    <img src="{{ asset($theme.'/assets/images/subscribe.png') }}" alt="" class="img-fluid" loading="lazy" decoding="async" width="400" height="300">
                 </div>
             </section>
             <!-- END SUBSCRIBE -->
@@ -374,7 +384,7 @@
             </div>
 
             <!-- START FOOTER -->
-            <footer class="hirevo-footer">
+            <footer class="hirevo-footer" role="contentinfo">
                 <div class="hirevo-footer__main">
                     <div class="container">
                         <div class="row align-items-start">
@@ -454,7 +464,7 @@
             <!-- END FOOTER -->
 
             <!-- Style switcher -->
-            <div id="style-switcher" onclick="toggleSwitcher()" style="left: -165px;">
+            <div id="style-switcher" onclick="toggleSwitcher()" style="left: -165px;" aria-hidden="true" tabindex="-1">
                 <div>
                     <h6>Select your color</h6>
                     <ul class="pattern list-unstyled mb-0">
@@ -477,7 +487,7 @@
                 </div>
             </div>
 
-            <button onclick="topFunction()" id="back-to-top"><i class="mdi mdi-arrow-up"></i></button>
+            <button type="button" onclick="topFunction()" id="back-to-top" aria-label="Back to top"><i class="mdi mdi-arrow-up" aria-hidden="true"></i></button>
         </div>
     </div>
 

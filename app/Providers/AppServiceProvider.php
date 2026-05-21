@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\SeoMetaResolver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
@@ -19,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
         View::share('theme', config('hirevo.theme_path', 'theme'));
+
+        $seoResolver = fn ($view) => $view->with('seo', app(SeoMetaResolver::class)->resolve(request()));
+
+        View::composer(['layouts.app', 'layouts.employer'], $seoResolver);
 
         View::composer('layouts.app', function ($view) {
             $navUnreadCount = 0;

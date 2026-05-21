@@ -23,7 +23,11 @@ use App\Http\Controllers\CareerConsultationController;
 use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\ReferralIntentController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sign-in', [LoginController::class, 'showLoginForm'])->name('login');
