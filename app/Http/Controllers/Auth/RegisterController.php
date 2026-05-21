@@ -65,7 +65,8 @@ class RegisterController extends Controller
                     'credits' => 5,
                 ]
             );
-            return redirect(route('employer.dashboard'));
+            return redirect(route('verify-email'))
+                ->with('success', 'Welcome! Please verify your email to activate your account.');
         }
 
         return redirect()

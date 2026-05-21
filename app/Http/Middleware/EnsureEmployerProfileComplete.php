@@ -23,6 +23,13 @@ class EnsureEmployerProfileComplete
                 ->with('info', 'Please complete your company profile to continue.');
         }
 
+        // Check if email is verified
+        if (! $profile->is_approved) {
+            return redirect()
+                ->route('verify-email')
+                ->with('info', 'Please verify your email to continue.');
+        }
+
         return $next($request);
     }
 

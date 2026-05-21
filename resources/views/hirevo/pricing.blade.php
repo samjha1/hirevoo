@@ -298,6 +298,7 @@
                             <ul class="text-muted ps-3 mb-4">
                                 <li>5 Referral Requests</li>
                                 <li>Detailed Match Score</li>
+                                <li>LinkedIn Profile Analysis</li>
                                 <li>Priority Profile Visibility</li>
                                 <li>Smart Job Recommendations</li>
                                 <li>Skill Gap Report</li>
@@ -313,6 +314,7 @@
                             <ul class="text-muted ps-3 mb-4">
                                 <li>15 Referral Requests</li>
                                 <li>Advanced Insights</li>
+                                <li>LinkedIn Profile Analysis</li>
                                 <li>Priority Processing</li>
                                 <li>High-Quality Job Access</li>
                                 <li>Resume Analysis</li>
@@ -328,6 +330,8 @@
                             <ul class="text-muted ps-3 mb-4">
                                 <li>Unlimited Referrals*</li>
                                 <li>Dedicated Support</li>
+                                <li>LinkedIn Deep Analysis</li>
+                                <li>Priority Auto Apply</li>
                                 <li>Profile Optimisation</li>
                                 <li>Interview Guidance</li>
                                 <li>All Premium Features</li>
@@ -339,33 +343,119 @@
                 <p class="text-muted small mt-3 mb-0">* Unlimited referrals subject to fair usage policy. All plans provide access to tools and features  Hirevoo does not guarantee job placement, interviews, or referral responses.</p>
             </div>
 
-            <div class="mb-4 mb-lg-5">
-                <span class="section-eyebrow">Comparison</span>
-                <h2 class="h4 fw-bold mb-3 section-title">Plan comparison at a glance</h2>
-                <div class="table-responsive pricing-card p-3">
-                    <table class="table align-middle mb-0 pricing-table">
-                        <thead>
-                            <tr>
-                                <th>Feature Access</th>
-                                <th>₹149 Access</th>
-                                <th>₹499 Advantage</th>
-                                <th>₹999 Accelerator</th>
-                                <th>₹2,499 Elite</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>Referral Requests</td><td>1</td><td>5</td><td>15</td><td>Unlimited*</td></tr>
-                            <tr><td>Match Score</td><td>Basic</td><td>Detailed</td><td>Advanced</td><td>Advanced</td></tr>
-                            <tr><td>Job Recommendations</td><td>Smart</td><td>Priority</td><td>Premium</td><td>Premium</td></tr>
-                            <tr><td>Skill Gap Report</td><td>-</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
-                            <tr><td>Profile Visibility Boost</td><td>-</td><td>Priority</td><td>Priority</td><td>Priority</td></tr>
-                            <tr><td>Resume Analysis</td><td>-</td><td>-</td><td>Yes</td><td>Yes</td></tr>
-                            <tr><td>Interview Guidance</td><td>-</td><td>-</td><td>-</td><td>Yes</td></tr>
-                            <tr><td>Dedicated Support</td><td>-</td><td>-</td><td>-</td><td>Yes</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<div class="mb-4 mb-lg-5">
+    <span class="section-eyebrow">Comparison</span>
+
+    <h2 class="h4 fw-bold mb-3 section-title">
+        Plan comparison at a glance
+    </h2>
+
+    <div class="table-responsive pricing-card p-3">
+
+        <table class="table align-middle mb-0 pricing-table">
+
+            <thead>
+                <tr>
+                    <th>Feature Access</th>
+                    <th>₹149 Access</th>
+                    <th>₹499 Advantage</th>
+                    <th>₹999 Accelerator</th>
+                    <th>₹2,499 Elite</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>Referral Requests</td>
+                    <td>1</td>
+                    <td>5</td>
+                    <td>15</td>
+                    <td>Unlimited*</td>
+                </tr>
+
+                <tr>
+                    <td>Match Score</td>
+                    <td>Basic</td>
+                    <td>Detailed</td>
+                    <td>Advanced</td>
+                    <td>Advanced</td>
+                </tr>
+
+                <tr>
+                    <td>Job Recommendations</td>
+                    <td>Smart</td>
+                    <td>Priority</td>
+                    <td>Premium</td>
+                    <td>Premium</td>
+                </tr>
+
+                <tr>
+                    <td>Skill Gap Report</td>
+                    <td>-</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                </tr>
+
+                <tr>
+                    <td>Profile Visibility Boost</td>
+                    <td>-</td>
+                    <td>Priority</td>
+                    <td>Priority</td>
+                    <td>Priority</td>
+                </tr>
+
+                <tr>
+                    <td>Resume Analysis</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                </tr>
+
+                <!-- NEW ROW -->
+
+                <tr>
+                    <td>LinkedIn Analysis</td>
+                    <td>-</td>
+                    <td>Basic</td>
+                    <td>Advanced</td>
+                    <td>Deep Analysis</td>
+                </tr>
+
+                <!-- NEW ROW -->
+
+                <tr>
+                    <td>Auto Apply Feature</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>Standard</td>
+                    <td>Priority</td>
+                </tr>
+
+                <tr>
+                    <td>Interview Guidance</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>Yes</td>
+                </tr>
+
+                <tr>
+                    <td>Dedicated Support</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>Yes</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+</div>
             
             <div class="section-block">
                 <span class="section-eyebrow">The Problem</span>

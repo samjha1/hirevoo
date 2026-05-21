@@ -12,6 +12,42 @@
 
 @section('content')
     @if(!$isApproved)
+        <!-- Email Verification Section -->
+        <div class="card employer-card mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-sm bg-danger-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                        <i class="mdi mdi-email-alert-outline text-danger fs-24"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1 fw-600">Email Verification Required</h5>
+                        <p class="text-muted small mb-0">{{ $profile->company_name ?? 'Company' }}</p>
+                        <span class="badge bg-danger text-white">Action Required</span>
+                    </div>
+                </div>
+                <p class="text-muted mb-3">
+                    We sent a One-Time Password (OTP) to your signup email <strong>{{ auth()->user()->email }}</strong>. 
+                    Please verify your email to activate your account and start posting jobs.
+                </p>
+                <p class="text-muted small mb-3">
+                    <strong>Note:</strong> This step ensures only legitimate employers can use the Hirevo platform.
+                </p>
+                <div class="row g-2">
+                    <div class="col-auto">
+                        <a href="{{ route('verify-email') }}" class="btn btn-danger btn-sm">
+                            <i class="mdi mdi-check-circle me-1"></i> Verify Email Now
+                        </a>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ route('employer.profile') }}" class="btn btn-outline-secondary btn-sm">
+                            Edit company profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Original Account Under Review Section -->
         <div class="card employer-card">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center mb-3">
@@ -24,9 +60,8 @@
                         <span class="badge bg-warning text-dark">Pending approval</span>
                     </div>
                 </div>
-                <p class="text-muted mb-3">Your company profile has been submitted. Our team will verify your details and approve your account shortly. You will be able to post jobs and view applications once approved.</p>
+                <p class="text-muted mb-3">After email verification, our team will verify your company details and approve your account shortly. You will be able to post jobs and view applications once fully approved.</p>
                 <p class="text-muted small mb-0">Questions? <a href="{{ route('contact') }}">Contact us</a>.</p>
-                <a href="{{ route('employer.profile') }}" class="btn btn-soft-primary btn-sm mt-3">Edit company profile</a>
             </div>
         </div>
     @else

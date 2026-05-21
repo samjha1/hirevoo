@@ -22,6 +22,7 @@ use App\Http\Controllers\ReferralSignupController;
 use App\Http\Controllers\CareerConsultationController;
 use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\ReferralIntentController;
+use App\Http\Controllers\EmailVerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -42,6 +43,14 @@ Route::post('/resume/guest-upload', [GuestResumeController::class, 'upload'])->n
 // Password setup (from welcome email link)
 Route::get('/set-password', [SetPasswordController::class, 'show'])->name('auth.set-password');
 Route::post('/set-password', [SetPasswordController::class, 'store'])->name('auth.set-password.store');
+
+// Email verification routes (protected)
+Route::middleware('auth')->group(function () {
+    Route::get('/verify-email', [EmailVerificationController::class, 'show'])->name('verify-email');
+    Route::post('/send-otp', [EmailVerificationController::class, 'sendOtp'])->name('send-otp');
+    Route::post('/verify-email-otp', [EmailVerificationController::class, 'verifyOtp'])->name('verify-email-otp');
+    Route::post('/resend-otp', [EmailVerificationController::class, 'resendOtp'])->name('resend-otp');
+});
 
 Route::get('/auth/google/redirect', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');

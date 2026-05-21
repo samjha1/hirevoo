@@ -440,7 +440,7 @@
                         @php $pv = $goalPalette[$loop->index % count($goalPalette)]; @endphp
                         <div class="hv2-goal-card hv2-goal-card--{{ $pv }} {{ $loop->first ? 'hv2-goal-card--featured' : '' }}">
                             <span class="hv2-goal-card__glow" aria-hidden="true"></span>
-                            <a href="{{ route('job-list') }}" class="hv2-goal-card__main">
+                            <a href="{{ route('job-list', ['q' => $goalRow['label']]) }}" class="hv2-goal-card__main">
                                 <div class="hv2-goal-card__head">
                                     <span class="hv2-goal-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                                     <div class="hv2-goal-card__icon" aria-hidden="true">
@@ -462,7 +462,7 @@
                                         <span class="hv2-goal-card__referral-stat">Up to <strong>+{{ random_int($referralHirePctMin, $referralHirePctMax) }}%</strong> better odds to get hired</span>
                                     </span>
                                 </a>
-                                <a href="{{ route('job-list') }}" class="hv2-goal-card__cta">
+                                <a href="{{ route('job-list', ['q' => $goalRow['label']]) }}" class="hv2-goal-card__cta">
                                     <span>Explore</span>
                                     <i class="uil uil-arrow-right"></i>
                                 </a>
