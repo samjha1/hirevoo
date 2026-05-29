@@ -163,6 +163,8 @@
                 </div>
             @endif
 
+            @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'sidebar'])
+
             <div class="rr-hero mb-4">
                 <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
                     <div>

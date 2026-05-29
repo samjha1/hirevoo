@@ -270,6 +270,9 @@
                 </div>
                 <small class="text-muted">www.hirevoo.in</small>
             </div>
+
+            @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'strip'])
+
             <div class="section-block">
                 <span class="section-eyebrow">Plans</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Hiring Advantage Plans</h2>

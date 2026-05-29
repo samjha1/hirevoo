@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\LeadsmanagerAdService;
 use App\Support\SeoMetaResolver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +42,41 @@ class AppServiceProvider extends ServiceProvider
                     ->get();
             }
             $view->with('navUnreadCount', $navUnreadCount)->with('navNotifications', $navNotifications);
+        });
+
+        $sponsoredViews = array_keys(config('hirevo_sponsored_ads.views', []));
+        if ($sponsoredViews === []) {
+            $sponsoredViews = [
+                'hirevo.index',
+                'hirevo.job-openings',
+                'hirevo.job-list',
+                'hirevo.candidate.dashboard',
+                'hirevo.skill-match',
+                'hirevo.resume-results',
+                'hirevo.pricing',
+            ];
+        }
+
+        View::composer($sponsoredViews, function ($view) {
+            $map = config('hirevo_sponsored_ads.views', []);
+            $config = $map[$view->name()] ?? match ($view->name()) {
+                'hirevo.index' => ['placement' => 'hirevo_homepage', 'variant' => 'home'],
+                'hirevo.job-openings' => ['placement' => 'hirevo_jobs', 'variant' => 'sidebar'],
+                'hirevo.job-list' => ['placement' => 'hirevo_jobs', 'variant' => 'inline'],
+                'hirevo.candidate.dashboard' => ['placement' => 'hirevo_dashboard', 'variant' => 'dashboard'],
+                'hirevo.skill-match' => ['placement' => 'hirevo_sidebar', 'variant' => 'sidebar'],
+                'hirevo.resume-results' => ['placement' => 'hirevo_sidebar', 'variant' => 'inline'],
+                'hirevo.pricing' => ['placement' => 'hirevo_homepage', 'variant' => 'strip'],
+                default => null,
+            };
+            if (! $config) {
+                return;
+            }
+
+            $service = app(LeadsmanagerAdService::class);
+
+            $view->with('sponsoredAd', $service->forPlacement($config['placement']))
+                ->with('sponsoredAdVariant', $config['variant'] ?? 'default');
         });
 
         View::composer('layouts.employer', function ($view) {

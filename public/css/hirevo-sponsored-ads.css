@@ -1,0 +1,418 @@
+/* Sponsored ads — balanced size, smooth entrance */
+@keyframes hv-sp-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.hv-sponsored-wrap {
+    animation: hv-sp-fade-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hv-sponsored {
+    --hv-sp-border: rgba(15, 23, 42, 0.08);
+    --hv-sp-ink: #0f172a;
+    --hv-sp-muted: #64748b;
+    --hv-sp-accent: #4f46e5;
+    position: relative;
+    display: block;
+    border-radius: 14px;
+    border: 1px solid var(--hv-sp-border);
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+}
+
+.hv-sponsored:hover {
+    border-color: rgba(79, 70, 229, 0.28);
+    box-shadow: 0 8px 28px rgba(79, 70, 229, 0.12);
+    transform: translateY(-2px);
+    color: inherit;
+}
+
+.hv-sponsored__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hv-sp-muted);
+    margin-bottom: 0.5rem;
+}
+
+.hv-sponsored__media {
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+    overflow: hidden;
+}
+
+.hv-sponsored__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.hv-sponsored__body {
+    padding: 0.85rem 1rem 1rem;
+}
+
+.hv-sponsored__headline {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--hv-sp-ink);
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.02em;
+}
+
+.hv-sponsored__text {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--hv-sp-muted);
+    margin: 0 0 0.65rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.hv-sponsored__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--hv-sp-accent);
+}
+
+.hv-sponsored__cta i {
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+}
+
+.hv-sponsored:hover .hv-sponsored__cta i {
+    transform: translateX(2px);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Homepage — horizontal promo banner (Naukri-style)
+   ═══════════════════════════════════════════════════════════ */
+.hirevo-home-page .hv2-sponsored-band {
+    padding-top: 0.25rem !important;
+    padding-bottom: 2.25rem !important;
+}
+
+.hv-sp-banner {
+    position: relative;
+    width: 100%;
+    padding-top: 0.65rem;
+    animation: hv-sp-fade-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hv-sp-banner__ribbon {
+    position: absolute;
+    top: 0;
+    right: 1.25rem;
+    z-index: 3;
+    padding: 0.3rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #5b21b6;
+    background: #ede9fe;
+    border: 1px solid #ddd6fe;
+    box-shadow: 0 2px 8px rgba(91, 33, 182, 0.08);
+}
+
+.hv-sp-banner__card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    margin-top: 0.35rem;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #e8ecf1;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+}
+
+.hv-sp-banner__card:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+    color: inherit;
+}
+
+.hv-sp-banner__card:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 8px 28px rgba(15, 23, 42, 0.08);
+}
+
+.hv-sp-banner__brand {
+    flex-shrink: 0;
+}
+
+.hv-sp-banner__logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e8ecf1;
+    background: #f8fafc;
+    display: block;
+}
+
+.hv-sp-banner__logo--icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: #6366f1;
+    background: linear-gradient(145deg, #eef2ff, #f8fafc);
+}
+
+.hv-sp-banner__content {
+    flex: 1;
+    min-width: 0;
+    padding-right: 0.5rem;
+}
+
+.hv-sp-banner__eyebrow {
+    margin: 0 0 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.hv-sp-banner__title {
+    margin: 0 0 0.35rem;
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    font-weight: 700;
+    line-height: 1.35;
+    color: #111827;
+    letter-spacing: -0.02em;
+}
+
+.hv-sp-banner__desc {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #6b7280;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.hv-sp-banner__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.hv-sp-banner__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1f2937;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.hv-sp-banner__card:hover .hv-sp-banner__pill {
+    border-color: #d1d5db;
+}
+
+.hv-sp-banner__pill i {
+    font-size: 0.95rem;
+    color: #9ca3af;
+    line-height: 1;
+}
+
+.hv-sp-banner__action {
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.hv-sp-banner__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    padding: 0.7rem 1.35rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    background: #2563eb;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.hv-sp-banner__card:hover .hv-sp-banner__btn {
+    background: #1d4ed8;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    transform: scale(1.02);
+}
+
+@media (max-width: 991.98px) {
+    .hv-sp-banner__card {
+        flex-wrap: wrap;
+        padding: 1.15rem 1.2rem;
+        gap: 1rem;
+    }
+
+    .hv-sp-banner__action {
+        width: 100%;
+    }
+
+    .hv-sp-banner__btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .hv-sp-banner__ribbon {
+        right: 0.75rem;
+        font-size: 0.65rem;
+    }
+
+    .hv-sp-banner__logo {
+        width: 56px;
+        height: 56px;
+    }
+
+    .hv-sp-banner__pills {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.15rem;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Sidebar (job openings, skill match) */
+.hv-sponsored-wrap--sidebar {
+    margin-bottom: 1rem;
+}
+
+.hv-sponsored--sidebar {
+    max-width: 100%;
+}
+
+.hv-sponsored--sidebar .hv-sponsored__headline {
+    font-size: 0.88rem;
+}
+
+.hv-sponsored--sidebar .hv-sponsored__media {
+    aspect-ratio: 2 / 1;
+    max-height: 110px;
+}
+
+/* Inline row (job list, resume) */
+.hv-sponsored-wrap--inline {
+    margin-bottom: 1.25rem;
+}
+
+.hv-sponsored--inline {
+    display: grid;
+    grid-template-columns: minmax(100px, 160px) 1fr;
+    align-items: stretch;
+}
+
+.hv-sponsored--inline .hv-sponsored__media {
+    aspect-ratio: auto;
+    min-height: 88px;
+    max-height: 100px;
+}
+
+.hv-sponsored--inline .hv-sponsored__body {
+    padding: 0.65rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Full-width strip (pricing, etc.) */
+.hv-sponsored-wrap--strip {
+    margin: 0 auto 1.5rem;
+    max-width: 720px;
+}
+
+.hv-sponsored--strip {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    max-height: 96px;
+}
+
+.hv-sponsored--strip .hv-sponsored__media {
+    width: 140px;
+    flex-shrink: 0;
+    aspect-ratio: auto;
+    height: 96px;
+    max-height: 96px;
+}
+
+.hv-sponsored--strip .hv-sponsored__body {
+    flex: 1;
+    padding: 0.65rem 1rem;
+}
+
+.hv-sponsored--strip .hv-sponsored__text {
+    display: none;
+}
+
+@media (max-width: 575.98px) {
+    .hv-sponsored--inline {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+    .hv-sponsored--inline .hv-sponsored__media {
+        aspect-ratio: 16 / 9;
+        max-height: none;
+    }
+    .hv-sponsored--strip {
+        flex-direction: column;
+        max-height: none;
+    }
+    .hv-sponsored--strip .hv-sponsored__media {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+    .hv-sponsored--strip .hv-sponsored__text {
+        display: -webkit-box;
+    }
+}
+
+/* Candidate dashboard */
+.hv-sponsored-wrap--dashboard {
+    max-width: 340px;
+    margin: 0 0 1rem auto;
+}
+
+@media (max-width: 767.98px) {
+    .hv-sponsored-wrap--dashboard {
+        max-width: 100%;
+        margin-left: 0;
+    }
+}

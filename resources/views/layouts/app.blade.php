@@ -35,6 +35,7 @@
     <noscript><link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"></noscript>
     <link href="{{ asset($theme.'/assets/css/app.min.css') }}" id="app-style" rel="stylesheet">
     <link href="{{ asset('css/hirevo-theme.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/hirevo-sponsored-ads.css') }}" rel="stylesheet">
     @stack('styles')
 </head>
 <body class="@yield('body_class')">

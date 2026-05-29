@@ -19,6 +19,8 @@
                     <span class="current">My Applications</span>
                 </div>
 
+                @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'dashboard'])
+
                 <div class="hero-inner">
                     <div class="hero-title-block">
                         <p class="hero-label">Career tracker</p>

@@ -158,6 +158,14 @@
         </div>
     </section>
 
+    @if(!empty($sponsoredAd))
+    <section class="hv2-section hv2-section--tight hv2-sponsored-band" aria-label="Sponsored">
+        <div class="container" style="max-width: 1120px;">
+            @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd, 'variant' => $sponsoredAdVariant ?? 'home'])
+        </div>
+    </section>
+    @endif
+
     {{-- ═══════════════ SOCIAL-PROOF TICKER ═══════════════ --}}
     <div class="hv2-ticker">
         <div class="hv2-ticker-track">

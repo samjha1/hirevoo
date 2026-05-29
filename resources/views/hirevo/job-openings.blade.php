@@ -1087,6 +1087,8 @@
 
             <div class="row jo-layout-row">
                 <div class="col-lg-3 mb-4 mb-lg-0 order-2 order-lg-1">
+                    @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'sidebar'])
+
                     <div class="card jo-filters-card border-0 sticky-top" style="top: 92px;">
                         <div class="card-body p-4">
                             <div class="jo-filters-head">

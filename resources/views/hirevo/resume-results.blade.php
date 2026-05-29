@@ -541,6 +541,8 @@
             </div>
         @endif
 
+        @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'inline'])
+
         @php
             $score      = $resume->ai_score ?? 0;
             $bandKey    = $score >= 70 ? 'high' : ($score >= 50 ? 'mid' : 'low');

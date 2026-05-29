@@ -59,6 +59,8 @@
                 </p>
             @endif
 
+            @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'inline'])
+
             <div class="row g-3 g-lg-4">
                 @forelse(($jobRoles ?? []) as $role)
                 @php
