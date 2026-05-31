@@ -10,6 +10,7 @@ use App\Models\JobApplication;
 use App\Models\JobRole;
 use App\Models\Resume;
 use App\Models\UpskillOpportunity;
+use App\Services\CandidateLeadService;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
 use App\Mail\EmployerJobApplicationSubmitted;
@@ -580,6 +581,15 @@ class HomeController extends Controller
             'job_match_score' => $jobMatchScore,
             'job_match_explanation' => $jobMatchExplanation,
         ]);
+
+        if ($resume) {
+            app(CandidateLeadService::class)->recordEmployerJobLead(
+                $resume,
+                $job,
+                $jobMatchScore,
+                'job_application',
+            );
+        }
 
         if (filled($user->email)) {
             try {

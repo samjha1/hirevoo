@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\EmployerJob;
 use App\Models\JobRole;
-use App\Models\Lead;
 use App\Models\Resume;
+use App\Services\CandidateLeadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -15,7 +15,7 @@ class ReferralIntentController extends Controller
      * Record referral interest in `leads`, then redirect to pricing.
      * GET /referral-intent?source=...&job_role_id=...&employer_job_id=...
      */
-    public function toPricing(Request $request, ResumeController $resumeController): RedirectResponse
+    public function toPricing(Request $request, CandidateLeadService $candidateLeads): RedirectResponse
     {
         $request->validate([
             'source' => ['required', 'string', 'max:100'],
@@ -38,17 +38,17 @@ class ReferralIntentController extends Controller
             if ($resumeModel) {
                 if ($request->filled('job_role_id')) {
                     $jobRole = JobRole::with('requiredSkills')->findOrFail($request->job_role_id);
-                    $resumeController->upsertSkillGapLeadForJobRole($resumeModel, $jobRole);
-                    $this->tagLatestLead($user->id, ['job_role_id' => $jobRole->id], $source);
+                    $candidateLeads->recordSkillGapLead($resumeModel, $jobRole);
+                    $candidateLeads->tagLatestLead($user->id, ['job_role_id' => $jobRole->id], $source);
                 } elseif ($request->filled('employer_job_id')) {
                     $job = EmployerJob::where('status', 'active')->findOrFail($request->employer_job_id);
-                    $resumeController->upsertReferralLeadForEmployerJob($resumeModel, $job);
-                    $this->tagLatestLead($user->id, ['employer_job_id' => $job->id], $source);
+                    $candidateLeads->recordEmployerJobLead($resumeModel, $job, null, $source);
+                    $candidateLeads->tagLatestLead($user->id, ['employer_job_id' => $job->id], $source);
                 } else {
-                    $this->storeGenericReferralLead($user->id, $source);
+                    $candidateLeads->recordGenericReferralLead($user->id, $source);
                 }
             } else {
-                $this->storeReferralLeadWithoutResume(
+                $candidateLeads->recordReferralLeadWithoutResume(
                     $user->id,
                     $source,
                     $request->filled('job_role_id') ? (int) $request->job_role_id : null,
@@ -56,7 +56,7 @@ class ReferralIntentController extends Controller
                 );
             }
         } else {
-            $this->storeGuestOrNonCandidateReferral(
+            $candidateLeads->recordGuestReferral(
                 $source,
                 $request->filled('job_role_id') ? (int) $request->job_role_id : null,
                 $request->filled('employer_job_id') ? (int) $request->employer_job_id : null
@@ -64,67 +64,5 @@ class ReferralIntentController extends Controller
         }
 
         return redirect()->route('pricing')->with('info', 'Explore plans to unlock referrals and career tools.');
-    }
-
-    protected function tagLatestLead(int $candidateId, array $where, string $source): void
-    {
-        $q = Lead::query()->where('candidate_id', $candidateId);
-        foreach ($where as $column => $value) {
-            $q->where($column, $value);
-        }
-        $lead = $q->latest('id')->first();
-        $lead?->update(['referral_source' => $source]);
-    }
-
-    protected function storeGenericReferralLead(int $candidateId, string $source): void
-    {
-        Lead::query()->create([
-            'candidate_id' => $candidateId,
-            'skill_analysis_id' => null,
-            'job_role_id' => null,
-            'employer_job_id' => null,
-            'match_percentage' => null,
-            'missing_skills' => null,
-            'status' => 'available',
-            'referral_source' => $source,
-            'lead_summary' => 'referral_intent_generic',
-        ]);
-    }
-
-    protected function storeReferralLeadWithoutResume(int $candidateId, string $source, ?int $jobRoleId, ?int $employerJobId): void
-    {
-        Lead::query()->create([
-            'candidate_id' => $candidateId,
-            'skill_analysis_id' => null,
-            'job_role_id' => $jobRoleId,
-            'employer_job_id' => $employerJobId,
-            'match_percentage' => null,
-            'missing_skills' => null,
-            'status' => 'available',
-            'referral_source' => $source,
-            'lead_summary' => 'referral_intent_no_resume',
-        ]);
-    }
-
-    protected function storeGuestOrNonCandidateReferral(string $source, ?int $jobRoleId, ?int $employerJobId): void
-    {
-        $meta = ['source' => $source];
-        if (auth()->check()) {
-            $meta['user_id'] = auth()->id();
-            $u = auth()->user();
-            $meta['account'] = $u->isCandidate() ? 'candidate' : ($u->isReferrer() ? 'referrer' : 'other');
-        }
-
-        Lead::query()->create([
-            'candidate_id' => null,
-            'skill_analysis_id' => null,
-            'job_role_id' => $jobRoleId,
-            'employer_job_id' => $employerJobId,
-            'match_percentage' => null,
-            'missing_skills' => null,
-            'status' => 'available',
-            'referral_source' => $source,
-            'lead_summary' => json_encode($meta),
-        ]);
     }
 }

@@ -9,6 +9,7 @@ use App\Models\JobRole;
 use App\Models\Lead;
 use App\Models\Resume;
 use App\Models\SkillAnalysis;
+use App\Services\CandidateLeadService;
 use App\Services\CandidateProfileFillerFromResume;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
@@ -25,7 +26,8 @@ class ResumeController extends Controller
     public function __construct(
         protected ResumeAnalysisService $resumeAnalysis,
         protected GptService $gptService,
-        protected CandidateProfileFillerFromResume $profileFiller
+        protected CandidateProfileFillerFromResume $profileFiller,
+        protected CandidateLeadService $candidateLeads,
     ) {}
 
     public function showUploadForm(): View|RedirectResponse
@@ -78,6 +80,8 @@ class ResumeController extends Controller
 
         $user->refresh();
         $user->syncCandidateProfileCompletion();
+
+        $this->candidateLeads->ensureCandidateCrmLead($user->id, 'resume_upload');
 
         if ($request->input('return_to') === 'profile') {
             return redirect()->route('profile')
@@ -237,7 +241,7 @@ class ResumeController extends Controller
         $resume = Resume::where('user_id', auth()->id())->findOrFail($request->resume_id);
         $jobRole = JobRole::with('requiredSkills')->findOrFail($request->job_role_id);
 
-        $this->upsertSkillGapLeadForJobRole($resume, $jobRole);
+        $this->candidateLeads->recordSkillGapLead($resume, $jobRole);
 
         return redirect()->route('resume.results', $resume)
             ->with('success', 'You have opted in for learning help. EdTech partners can now bid for your lead.');
@@ -264,12 +268,12 @@ class ResumeController extends Controller
 
         if ($request->filled('job_role_id')) {
             $jobRole = JobRole::with('requiredSkills')->findOrFail($request->job_role_id);
-            $this->upsertSkillGapLeadForJobRole($resume, $jobRole);
-            $this->applyReferralSourceToLatestLead(auth()->id(), ['job_role_id' => $jobRole->id], $referralSource);
+            $this->candidateLeads->recordSkillGapLead($resume, $jobRole);
+            $this->candidateLeads->tagLatestLead(auth()->id(), ['job_role_id' => $jobRole->id], $referralSource);
         } else {
             $job = EmployerJob::where('status', 'active')->findOrFail($request->employer_job_id);
-            $this->upsertReferralLeadForEmployerJob($resume, $job);
-            $this->applyReferralSourceToLatestLead(auth()->id(), ['employer_job_id' => $job->id], $referralSource);
+            $this->candidateLeads->recordEmployerJobLead($resume, $job, null, $referralSource);
+            $this->candidateLeads->tagLatestLead(auth()->id(), ['employer_job_id' => $job->id], $referralSource);
         }
 
         $planUrl = route('pricing');
@@ -308,97 +312,17 @@ class ResumeController extends Controller
 
     public function upsertSkillGapLeadForJobRole(Resume $resume, JobRole $jobRole): void
     {
-        $extracted = $resume->getExtractedSkillsList();
-        $required = $jobRole->requiredSkills->pluck('skill_name')->map(fn ($s) => strtolower(trim($s)))->unique()->values()->all();
-        $matched = array_values(array_intersect($required, $extracted));
-        $missing = array_values(array_diff($required, $extracted));
-        $matchPercentage = count($required) > 0
-            ? (int) round((count($matched) / count($required)) * 100)
-            : 0;
-
-        $skillAnalysis = SkillAnalysis::updateOrCreate(
-            [
-                'user_id' => auth()->id(),
-                'job_role_id' => $jobRole->id,
-            ],
-            [
-                'resume_id' => $resume->id,
-                'match_percentage' => $matchPercentage,
-                'matched_skills' => json_encode($matched),
-                'missing_skills' => json_encode($missing),
-            ]
-        );
-
-        Lead::firstOrCreate(
-            [
-                'candidate_id' => auth()->id(),
-                'skill_analysis_id' => $skillAnalysis->id,
-            ],
-            [
-                'job_role_id' => $jobRole->id,
-                'match_percentage' => $matchPercentage,
-                'missing_skills' => json_encode($missing),
-                'status' => 'available',
-            ]
-        );
+        $this->candidateLeads->recordSkillGapLead($resume, $jobRole);
     }
 
     public function upsertReferralLeadForEmployerJob(Resume $resume, EmployerJob $job): void
     {
-        $matchPercentage = $this->computeEmployerJobMatchForResume($resume, $job);
-
-        Lead::firstOrCreate(
-            [
-                'candidate_id' => auth()->id(),
-                'employer_job_id' => $job->id,
-            ],
-            [
-                'skill_analysis_id' => null,
-                'job_role_id' => null,
-                'match_percentage' => $matchPercentage,
-                'missing_skills' => null,
-                'status' => 'available',
-            ]
-        );
+        $this->candidateLeads->recordEmployerJobLead($resume, $job);
     }
 
-    /**
-     * Same scoring as {@see getRecommendedEmployerJobs} for a single job.
-     */
     protected function computeEmployerJobMatchForResume(Resume $resume, EmployerJob $job): int
     {
-        $skills = $resume->getExtractedSkillsList();
-        $summaryWords = [];
-        if (! empty($resume->ai_summary)) {
-            $summaryWords = array_filter(
-                preg_split('/[\s,;.\-\/]+/', strip_tags($resume->ai_summary), -1, PREG_SPLIT_NO_EMPTY),
-                fn ($w) => strlen($w) > 2
-            );
-            $summaryWords = array_map('strtolower', array_unique(array_slice($summaryWords, 0, 50)));
-        }
-
-        $jobText = strtolower(($job->title ?? '') . ' ' . strip_tags($job->description ?? ''));
-        $skillsMatched = 0;
-        $totalSkills = count(array_filter($skills, fn ($s) => strlen($s) >= 2));
-        foreach ($skills as $skill) {
-            if (strlen($skill) >= 2 && str_contains($jobText, $skill)) {
-                $skillsMatched++;
-            }
-        }
-        $matchPercentage = $totalSkills > 0
-            ? (int) round(($skillsMatched / $totalSkills) * 100)
-            : 0;
-        if ($matchPercentage === 0 && ! empty($summaryWords)) {
-            $summaryMatches = 0;
-            foreach (array_slice($summaryWords, 0, 20) as $word) {
-                if (str_contains($jobText, $word)) {
-                    $summaryMatches++;
-                }
-            }
-            $matchPercentage = (int) round(min(100, (count(array_slice($summaryWords, 0, 20)) > 0 ? ($summaryMatches / 20) * 100 : 0)));
-        }
-
-        return min(100, $matchPercentage);
+        return $this->candidateLeads->computeEmployerJobMatchForResume($resume, $job);
     }
 
     protected function getRecommendedJobGoals(Resume $resume): array
