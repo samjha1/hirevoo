@@ -3,6 +3,13 @@
 @section('title', 'Sign In')
 
 @section('content')
+@php
+    $authRole = request('role') === 'referrer' ? 'referrer' : 'candidate';
+    $registerParams = ['role' => $authRole];
+    if (request()->has('redirect')) {
+        $registerParams['redirect'] = request('redirect');
+    }
+@endphp
 <section class="bg-auth">
     <div class="container">
         <div class="row justify-content-center">
@@ -79,7 +86,7 @@
                                         </div>
                                     </form>
                                     <div class="mt-4 text-center">
-                                        <p class="mb-0">Don't have an account? <a href="{{ route('register') }}" class="fw-medium text-white text-decoration-underline">Sign Up</a></p>
+                                        <p class="mb-0">Don't have an account? <a href="{{ route('register', $registerParams) }}" class="fw-medium text-white text-decoration-underline">{{ $authRole === 'referrer' ? 'Sign up as employer' : 'Sign Up' }}</a></p>
                                     </div>
                                 </div>
                             </div>

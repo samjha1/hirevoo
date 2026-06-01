@@ -134,7 +134,13 @@
                                         </div>
                                     </form>
                                     <div class="mt-3 text-center">
-                                        <p class="mb-0">Already a member? <a href="{{ route('login') }}" class="fw-medium text-white text-decoration-underline">Sign In</a></p>
+                                        @php
+                                            $loginParams = $isEmployer ? ['role' => 'referrer'] : [];
+                                            if (request()->has('redirect')) {
+                                                $loginParams['redirect'] = request('redirect');
+                                            }
+                                        @endphp
+                                        <p class="mb-0">Already a member? <a href="{{ route('login', $loginParams) }}" class="fw-medium text-white text-decoration-underline">{{ $isEmployer ? 'Log in as employer' : 'Sign In' }}</a></p>
                                     </div>
                                 </div>
                             </div>
