@@ -653,6 +653,24 @@
                 </ul>
 
                 @if(auth()->user()->referrerProfile?->is_approved)
+                    <p class="es-section-label">Talent</p>
+                    <ul class="es-nav">
+                        <li>
+                            <a class="es-link {{ request()->routeIs('employer.talent-pool.*') ? 'active' : '' }}"
+                               href="{{ route('employer.talent-pool.index') }}">
+                                <i class="mdi mdi-account-search-outline es-icon"></i>
+                                <span>Talent Pool</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="es-link {{ request()->routeIs('employer.plans.*') ? 'active' : '' }}"
+                               href="{{ route('employer.plans.index') }}">
+                                <i class="mdi mdi-tag-multiple-outline es-icon"></i>
+                                <span>Plans & Pricing</span>
+                            </a>
+                        </li>
+                    </ul>
+
                     @php
                         $pipelineJob = auth()->user()
                             ->employerJobs()
@@ -731,9 +749,9 @@
                     <div class="es-credits-label">Available credits</div>
                     <div class="es-credits-amount">{{ $credits }}</div>
                 @endif
-                <a href="{{ route('employer.credits.index') }}" class="es-credits-btn">
-                    <i class="mdi mdi-coin me-1"></i>
-                    {{ $credits < 1 ? 'Buy Credits' : 'Top Up' }}
+                <a href="{{ route('employer.plans.index') }}" class="es-credits-btn">
+                    <i class="mdi mdi-tag-multiple-outline me-1"></i>
+                    {{ $credits < 1 ? 'View Plans' : 'Plans & Pricing' }}
                 </a>
             </div>
         </aside>
@@ -750,7 +768,7 @@
                 </div>
 
                 <div class="et-right">
-                    <a href="{{ route('employer.credits.index') }}" class="et-credits-pill">
+                    <a href="{{ route('employer.plans.index') }}" class="et-credits-pill" title="Plans & job posting credits">
                         <i class="mdi mdi-coin coin-icon"></i>
                         <span><span class="d-none d-sm-inline" style="color:var(--ink-500); font-weight:400;">Credits: </span><strong>{{ $credits }}</strong></span>
                     </a>

@@ -171,6 +171,18 @@
                             <input type="text" class="form-control @error('location_pincode') is-invalid @enderror" id="location_pincode" name="location_pincode" value="{{ old('location_pincode') }}" placeholder="e.g. 201301">
                             @error('location_pincode')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
+                        <div class="col-md-4">
+                            <label for="location_radius" class="form-label fw-500">Radius</label>
+                            <div class="input-group">
+                                <input type="number" min="1" max="500" step="1"
+                                       class="form-control @error('location_radius') is-invalid @enderror"
+                                       id="location_radius" name="location_radius"
+                                       value="{{ old('location_radius') }}" placeholder="e.g. 25">
+                                <span class="input-group-text">km</span>
+                            </div>
+                            <div class="form-text">How far from this location you want to hire (optional).</div>
+                            @error('location_radius')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
                     </div>
                 </div>
             </div>
@@ -457,7 +469,13 @@
                     document.getElementById('location_country')?.value || '',
                     document.getElementById('location_pincode')?.value || ''
                 ].map(function (v) { return v.trim(); }).filter(function (v) { return v !== ''; });
-                return parts.length ? parts.join(', ') : '—';
+                var radius = parseInt(document.getElementById('location_radius')?.value || '', 10);
+                if (!parts.length && !(radius > 0)) return '—';
+                var text = parts.length ? parts.join(', ') : '—';
+                if (radius > 0) {
+                    text += (parts.length ? ' · ' : '') + 'within ' + radius + ' km';
+                }
+                return text;
             }
 
             function updatePreview() {

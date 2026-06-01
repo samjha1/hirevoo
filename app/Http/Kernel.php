@@ -31,6 +31,7 @@ class Kernel extends HttpKernel
 
     protected $middlewareAliases = [
         'auth' => \App\Http\Middleware\Authenticate::class,
+        'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'role' => \App\Http\Middleware\CheckRole::class,
         'employer.profile.complete' => \App\Http\Middleware\EnsureEmployerProfileComplete::class,
         'candidate.onboarding' => \App\Http\Middleware\EnsureCandidateOnboardingComplete::class,

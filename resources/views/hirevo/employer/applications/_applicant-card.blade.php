@@ -111,13 +111,15 @@
             </div>
             <div class="col-12 col-lg-auto">
                 <div class="d-flex flex-column gap-2">
+                    <a href="{{ route('employer.applications.show', $app) }}" class="btn btn-primary btn-sm">
+                        Open
+                    </a>
                     @if($app->resume)
-                        <a href="{{ route('employer.applications.resume.view', $app) }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">View resume</a>
-                        <a href="{{ route('employer.applications.resume', $app) }}" class="btn btn-outline-primary btn-sm">Download resume</a>
+                        <a href="{{ route('employer.applications.resume.view', $app) }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">View resume</a>
+                        <a href="{{ route('employer.applications.resume', $app) }}" class="btn btn-outline-secondary btn-sm">Download resume</a>
                     @else
                         <span class="text-muted small">No resume attached</span>
                     @endif
-                    <a href="mailto:{{ $user->email }}" class="btn btn-outline-secondary btn-sm">Contact</a>
                 </div>
             </div>
         </div>

@@ -5,10 +5,11 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Employer\ApplicationController as EmployerApplicationController;
-use App\Http\Controllers\Employer\CreditsController as EmployerCreditsController;
 use App\Http\Controllers\Employer\DashboardController as EmployerDashboardController;
 use App\Http\Controllers\Employer\JobController as EmployerJobController;
 use App\Http\Controllers\Employer\ProfileController as EmployerProfileController;
+use App\Http\Controllers\Employer\PlansController as EmployerPlansController;
+use App\Http\Controllers\Employer\TalentPoolController as EmployerTalentPoolController;
 use App\Http\Controllers\Auth\SetPasswordController;
 use App\Http\Controllers\GuestResumeController;
 use App\Http\Controllers\HomeController;
@@ -106,7 +107,18 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
         Route::post('/jobs/{job}/duplicate', [EmployerJobController::class, 'duplicate'])->name('jobs.duplicate')->scopeBindings();
         Route::post('/jobs/{job}/repost', [EmployerJobController::class, 'repost'])->name('jobs.repost')->scopeBindings();
         Route::resource('jobs', EmployerJobController::class)->names('jobs')->except(['show']);
-        Route::get('/credits', [EmployerCreditsController::class, 'index'])->name('credits.index');
+        Route::redirect('credits', 'plans', 301)->name('credits.index');
+        Route::get('/plans', [EmployerPlansController::class, 'index'])->name('plans.index');
+        Route::get('/talent-pool', [EmployerTalentPoolController::class, 'index'])->name('talent-pool.index');
+        Route::get('/talent-pool/results', [EmployerTalentPoolController::class, 'results'])->name('talent-pool.results');
+        Route::get('/talent-pool/results/ajax', [EmployerTalentPoolController::class, 'search'])->name('talent-pool.search');
+        Route::get('/talent-pool/facets', [EmployerTalentPoolController::class, 'facets'])->name('talent-pool.facets');
+        Route::post('/talent-pool/unlock', [EmployerTalentPoolController::class, 'unlock'])->name('talent-pool.unlock');
+        Route::get('/talent-pool/{source}/{id}/details', [EmployerTalentPoolController::class, 'details'])
+            ->name('talent-pool.details')
+            ->whereIn('source', ['verified', 'talent_pool']);
+        Route::post('/talent-pool/save', [EmployerTalentPoolController::class, 'save'])->name('talent-pool.save');
+        Route::post('/talent-pool/shortlist', [EmployerTalentPoolController::class, 'shortlist'])->name('talent-pool.shortlist');
     });
 
 });

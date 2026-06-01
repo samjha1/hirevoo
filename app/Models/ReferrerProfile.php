@@ -13,6 +13,7 @@ class ReferrerProfile extends Model
         'designation', 'department', 'profile_photo',
         'gstin', 'gst_verified', 'company_legal_name', 'company_address', 'invoice_consent',
         'is_approved', 'approved_at', 'credits',
+        'subscription_plan', 'subscription_started_at', 'subscription_expires_at',
     ];
 
     protected $casts = [
@@ -21,6 +22,8 @@ class ReferrerProfile extends Model
         'invoice_consent' => 'boolean',
         'is_approved' => 'boolean',
         'approved_at' => 'datetime',
+        'subscription_started_at' => 'datetime',
+        'subscription_expires_at' => 'datetime',
     ];
 
     public function setReferralCodeAttribute(?string $value): void

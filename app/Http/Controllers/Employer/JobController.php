@@ -75,7 +75,7 @@ class JobController extends Controller
         if ($profile->credits < 1) {
             return redirect()
                 ->route('employer.jobs.create')
-                ->with('error', 'You need at least 1 credit to post a job. Buy credits to continue.');
+                ->with('error', 'You need at least 1 credit to post a job. View Plans & Pricing to get job posting credits.');
         }
 
         $salaryMinFloor = (int) config('hirevo.employer_salary_min_floor_inr', 150_000);
@@ -92,6 +92,7 @@ class JobController extends Controller
             'location_state'      => ['nullable', 'string', 'max:120'],
             'location_country'    => ['nullable', 'string', 'max:120'],
             'location_pincode'    => ['nullable', 'string', 'max:20'],
+            'location_radius'     => ['nullable', 'integer', 'min:1', 'max:500'],
             'status'              => ['nullable', 'in:draft,active,closed'],
             'job_type'            => ['required', 'in:full_time,part_time,contract,internship,temporary,volunteer,other'],
             'is_night_shift'      => ['nullable', 'boolean'],
@@ -120,14 +121,8 @@ class JobController extends Controller
             'joining_fee_required'=> ['required', 'in:0,1'],
         ]);
 
-        $location = [
-            'area' => $validated['location_area'] ?? null,
-            'city' => $validated['location_city'] ?? null,
-            'state' => $validated['location_state'] ?? null,
-            'country' => $validated['location_country'] ?? null,
-            'pincode' => $validated['location_pincode'] ?? null,
-        ];
-        $hasLocationValue = collect($location)->contains(fn ($value) => ! is_null($value) && $value !== '');
+        $location = $this->buildJobLocationPayload($validated);
+        $hasLocationValue = $this->jobLocationHasValue($location);
         $salaryAmount = null;
         if (isset($validated['salary_min']) || isset($validated['salary_max'])) {
             $min = $validated['salary_min'] ?? null;
@@ -212,6 +207,7 @@ class JobController extends Controller
             'location_state'       => ['nullable', 'string', 'max:120'],
             'location_country'     => ['nullable', 'string', 'max:120'],
             'location_pincode'     => ['nullable', 'string', 'max:20'],
+            'location_radius'      => ['nullable', 'integer', 'min:1', 'max:500'],
             'status'               => ['required', 'in:draft,active,closed'],
             'job_type'             => ['nullable', 'in:full_time,part_time,contract,internship,temporary,volunteer,other'],
             'is_night_shift'       => ['nullable', 'boolean'],
@@ -240,14 +236,8 @@ class JobController extends Controller
             'joining_fee_required' => ['nullable', 'in:0,1'],
         ]);
 
-        $location = [
-            'area' => $validated['location_area'] ?? null,
-            'city' => $validated['location_city'] ?? null,
-            'state' => $validated['location_state'] ?? null,
-            'country' => $validated['location_country'] ?? null,
-            'pincode' => $validated['location_pincode'] ?? null,
-        ];
-        $hasLocationValue = collect($location)->contains(fn ($value) => ! is_null($value) && $value !== '');
+        $location = $this->buildJobLocationPayload($validated);
+        $hasLocationValue = $this->jobLocationHasValue($location);
         $salaryAmount = null;
         if (isset($validated['salary_min']) || isset($validated['salary_max'])) {
             $min = $validated['salary_min'] ?? null;
@@ -348,7 +338,7 @@ class JobController extends Controller
         if ($profile->credits < 1) {
             return redirect()
                 ->route('employer.jobs.index')
-                ->with('error', 'You need at least 1 credit to repost. Buy credits to continue.');
+                ->with('error', 'You need at least 1 credit to repost. View Plans & Pricing to get job posting credits.');
         }
 
         $profile->decrement('credits');
@@ -462,5 +452,42 @@ class JobController extends Controller
         }
 
         return count($normalized) > 0 ? array_slice($normalized, 0, 50) : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array{area: ?string, city: ?string, state: ?string, country: ?string, pincode: ?string, radius_km: ?int}
+     */
+    private function buildJobLocationPayload(array $validated): array
+    {
+        $radius = $validated['location_radius'] ?? null;
+        $radiusKm = $radius !== null && $radius !== '' ? (int) $radius : null;
+        if ($radiusKm !== null && $radiusKm < 1) {
+            $radiusKm = null;
+        }
+
+        return [
+            'area' => $validated['location_area'] ?? null,
+            'city' => $validated['location_city'] ?? null,
+            'state' => $validated['location_state'] ?? null,
+            'country' => $validated['location_country'] ?? null,
+            'pincode' => $validated['location_pincode'] ?? null,
+            'radius_km' => $radiusKm,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $location
+     */
+    private function jobLocationHasValue(array $location): bool
+    {
+        foreach (['area', 'city', 'state', 'country', 'pincode'] as $key) {
+            $value = $location[$key] ?? null;
+            if ($value !== null && $value !== '') {
+                return true;
+            }
+        }
+
+        return isset($location['radius_km']) && (int) $location['radius_km'] > 0;
     }
 }

@@ -81,8 +81,17 @@ class EmployerJob extends Model
                 ], static fn ($v) => $v !== null && $v !== '');
                 if ($parts !== []) {
                     $parts = array_map(fn ($p) => self::humanizeLocationBoundaries((string) $p), $parts);
+                    $formatted = self::humanizeLocationBoundaries(implode(', ', $parts));
+                    $radiusKm = (int) ($decoded['radius_km'] ?? 0);
+                    if ($radiusKm > 0) {
+                        $formatted .= ' (within '.$radiusKm.' km)';
+                    }
 
-                    return self::humanizeLocationBoundaries(implode(', ', $parts));
+                    return $formatted;
+                }
+                $radiusKm = (int) ($decoded['radius_km'] ?? 0);
+                if ($radiusKm > 0) {
+                    return 'Within '.$radiusKm.' km radius';
                 }
             }
 
