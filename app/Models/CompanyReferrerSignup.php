@@ -18,10 +18,7 @@ class CompanyReferrerSignup extends Model
         'source',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'max_candidates' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'max_candidates' => 'integer',
+    ];
 }

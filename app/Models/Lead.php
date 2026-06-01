@@ -26,14 +26,11 @@ class Lead extends Model
         'referral_source',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'missing_skills' => 'array',
-            'bidding_ends_at' => 'datetime',
-            'sold_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'missing_skills' => 'array',
+        'bidding_ends_at' => 'datetime',
+        'sold_at' => 'datetime',
+    ];
 
     public function candidate(): BelongsTo
     {

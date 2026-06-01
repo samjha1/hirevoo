@@ -11,7 +11,8 @@ class ValidEmployerReferralCode implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if ($value === null || trim((string) $value) === '') {
+        $normalized = strtoupper(trim((string) $value));
+        if ($normalized === '') {
             return;
         }
 
@@ -22,7 +23,7 @@ class ValidEmployerReferralCode implements ValidationRule
         }
 
         $exists = DB::table('admins')
-            ->whereRaw('UPPER(referral_code) = ?', [strtoupper(trim((string) $value))])
+            ->whereRaw('UPPER(referral_code) = ?', [$normalized])
             ->where('sales_team', 'employer')
             ->whereIn('role', ['sales_manager', 'sales_employee'])
             ->exists();

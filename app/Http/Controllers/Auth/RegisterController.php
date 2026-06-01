@@ -11,6 +11,7 @@ use App\Services\CrmEmployerProspectBridge;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -61,14 +62,19 @@ class RegisterController extends Controller
                 [
                     'company_name' => $validated['company_name'] ?? null,
                     'company_email' => $validated['email'],
-                    'referral_code' => isset($validated['referral_code']) ? trim($validated['referral_code']) : null,
+                    'referral_code' => $validated['referral_code'] ?? null,
                     'company_email_verified' => false,
                     'is_approved' => false,
                     'credits' => 5,
                 ]
             );
 
-            app(CrmEmployerProspectBridge::class)->syncReferrerSignup($user->fresh(['referrerProfile']));
+            if (! app(CrmEmployerProspectBridge::class)->syncReferrerSignup($user->fresh(['referrerProfile']))) {
+                Log::warning('CRM company prospect sync did not complete for referrer signup', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
+            }
             return redirect(route('verify-email'))
                 ->with('success', 'Welcome! Please verify your email to activate your account.');
         }

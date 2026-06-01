@@ -19,13 +19,10 @@ class Resume extends Model
         'is_primary',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'extracted_skills' => 'array',
-            'is_primary' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'extracted_skills' => 'array',
+        'is_primary' => 'boolean',
+    ];
 
     public function user(): BelongsTo
     {

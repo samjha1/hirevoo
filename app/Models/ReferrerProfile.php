@@ -15,15 +15,18 @@ class ReferrerProfile extends Model
         'is_approved', 'approved_at', 'credits',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'company_email_verified' => 'boolean',
+        'gst_verified' => 'boolean',
+        'invoice_consent' => 'boolean',
+        'is_approved' => 'boolean',
+        'approved_at' => 'datetime',
+    ];
+
+    public function setReferralCodeAttribute(?string $value): void
     {
-        return [
-            'company_email_verified' => 'boolean',
-            'gst_verified' => 'boolean',
-            'invoice_consent' => 'boolean',
-            'is_approved' => 'boolean',
-            'approved_at' => 'datetime',
-        ];
+        $trimmed = $value !== null ? trim($value) : '';
+        $this->attributes['referral_code'] = $trimmed !== '' ? strtoupper($trimmed) : null;
     }
 
     public function user(): BelongsTo

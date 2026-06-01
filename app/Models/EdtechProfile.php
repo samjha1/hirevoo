@@ -12,14 +12,11 @@ class EdtechProfile extends Model
         'courses_offered', 'is_verified', 'verified_at', 'balance',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_verified' => 'boolean',
-            'verified_at' => 'datetime',
-            'balance' => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'is_verified' => 'boolean',
+        'verified_at' => 'datetime',
+        'balance' => 'decimal:2',
+    ];
 
     public function user(): BelongsTo
     {

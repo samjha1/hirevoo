@@ -35,17 +35,14 @@ class EmployerJob extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_night_shift' => 'boolean',
-            'joining_fee_required' => 'boolean',
-            'required_skills' => 'array',
-            'salary_min' => 'integer',
-            'salary_max' => 'integer',
-            'experience_years' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'is_night_shift' => 'boolean',
+        'joining_fee_required' => 'boolean',
+        'required_skills' => 'array',
+        'salary_min' => 'integer',
+        'salary_max' => 'integer',
+        'experience_years' => 'integer',
+    ];
 
     public static function humanizeLocationBoundaries(string $text): string
     {

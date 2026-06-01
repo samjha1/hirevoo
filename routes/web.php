@@ -31,29 +31,29 @@ Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/sign-in', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/sign-in', [LoginController::class, 'login']);
+Route::post('/sign-in', [LoginController::class, 'login'])->middleware('throttle:10,1');
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:5,1')->name('password.email');
 Route::get('/reset-password/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
-Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('password.update');
+Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->middleware('throttle:10,1')->name('password.update');
 Route::post('/sign-out', [LoginController::class, 'logout'])->name('logout');
 Route::get('/sign-up', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/sign-up', [RegisterController::class, 'register']);
+Route::post('/sign-up', [RegisterController::class, 'register'])->middleware('throttle:10,1');
 
 // Guest resume upload (no login required)
 Route::get('/resume/upload', [ResumeController::class, 'showUploadForm'])->name('resume.upload');
-Route::post('/resume/guest-upload', [GuestResumeController::class, 'upload'])->name('resume.guest-upload');
+Route::post('/resume/guest-upload', [GuestResumeController::class, 'upload'])->middleware('throttle:5,1')->name('resume.guest-upload');
 
 // Password setup (from welcome email link)
 Route::get('/set-password', [SetPasswordController::class, 'show'])->name('auth.set-password');
-Route::post('/set-password', [SetPasswordController::class, 'store'])->name('auth.set-password.store');
+Route::post('/set-password', [SetPasswordController::class, 'store'])->middleware('throttle:10,1')->name('auth.set-password.store');
 
 // Email verification routes (protected)
 Route::middleware('auth')->group(function () {
     Route::get('/verify-email', [EmailVerificationController::class, 'show'])->name('verify-email');
-    Route::post('/send-otp', [EmailVerificationController::class, 'sendOtp'])->name('send-otp');
-    Route::post('/verify-email-otp', [EmailVerificationController::class, 'verifyOtp'])->name('verify-email-otp');
-    Route::post('/resend-otp', [EmailVerificationController::class, 'resendOtp'])->name('resend-otp');
+    Route::post('/send-otp', [EmailVerificationController::class, 'sendOtp'])->middleware('throttle:5,1')->name('send-otp');
+    Route::post('/verify-email-otp', [EmailVerificationController::class, 'verifyOtp'])->middleware('throttle:10,1')->name('verify-email-otp');
+    Route::post('/resend-otp', [EmailVerificationController::class, 'resendOtp'])->middleware('throttle:5,1')->name('resend-otp');
 });
 
 Route::get('/auth/google/redirect', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
@@ -131,5 +131,5 @@ Route::get('/privacy', fn () => view('hirevo.legal.privacy'))->name('privacy');
 Route::get('/cookies', fn () => view('hirevo.legal.cookies'))->name('cookies');
 Route::get('/disclaimer', fn () => view('hirevo.legal.disclaimer'))->name('disclaimer');
 Route::get('/contact', fn () => view('hirevo.contact'))->name('contact');
-Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
-Route::post('/referral-signup', [ReferralSignupController::class, 'store'])->name('referral-signup.store');
+Route::post('/contact', [ContactController::class, 'submit'])->middleware('throttle:10,1')->name('contact.submit');
+Route::post('/referral-signup', [ReferralSignupController::class, 'store'])->middleware('throttle:10,1')->name('referral-signup.store');

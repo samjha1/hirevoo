@@ -18,15 +18,12 @@ class EmailOtp extends Model
         'expires_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'verified_at' => 'datetime',
-            'expires_at' => 'datetime',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'verified_at' => 'datetime',
+        'expires_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {

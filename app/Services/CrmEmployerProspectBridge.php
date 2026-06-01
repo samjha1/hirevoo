@@ -4,65 +4,89 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 /**
  * Writes employer signups into the shared CRM tables (adminpanal company pipeline).
  */
 class CrmEmployerProspectBridge
 {
-    public function syncReferrerSignup(User $user): void
+    public function syncReferrerSignup(User $user): bool
     {
         if (! $user->isReferrer() || ! Schema::hasTable('crm_employer_prospects')) {
-            return;
+            return false;
         }
 
-        $user->loadMissing('referrerProfile');
-        $profile = $user->referrerProfile;
-        if (! $profile) {
-            return;
-        }
+        try {
+            return DB::transaction(function () use ($user): bool {
+                $user->loadMissing('referrerProfile');
+                $profile = $user->referrerProfile;
+                if (! $profile) {
+                    return false;
+                }
 
-        $now = now();
-        $existing = DB::table('crm_employer_prospects')->where('user_id', $user->id)->first();
+                $now = now();
+                $existing = DB::table('crm_employer_prospects')
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
 
-        $payload = [
-            'company_name' => $profile->company_name ?? $user->name ?? ('Company #'.$user->id),
-            'contact_name' => $user->name,
-            'email' => $profile->company_email ?? $user->email,
-            'phone' => $user->phone,
-            'source' => 'hirevo_signup',
-            'updated_at' => $now,
-        ];
+                $profilePayload = [
+                    'company_name' => $profile->company_name ?? $user->name ?? ('Company #'.$user->id),
+                    'contact_name' => $user->name,
+                    'email' => $profile->company_email ?? $user->email,
+                    'phone' => $user->phone,
+                    'updated_at' => $now,
+                ];
 
-        if ($existing) {
-            DB::table('crm_employer_prospects')->where('id', $existing->id)->update($payload);
-            $prospectId = (int) $existing->id;
-            $assignedTo = $existing->assigned_to;
-            $pipelineStage = $existing->pipeline_stage;
-        } else {
-            $payload['user_id'] = $user->id;
-            $payload['pipeline_stage'] = 'lead_generated';
-            $payload['win_probability'] = 10;
-            $payload['assignment_status'] = 'new';
-            $payload['sales_status'] = 'pending';
-            $payload['crm_stage'] = 'new';
-            $payload['created_at'] = $now;
-            $prospectId = (int) DB::table('crm_employer_prospects')->insertGetId($payload);
-            $assignedTo = null;
-            $pipelineStage = 'lead_generated';
-        }
+                if ($existing) {
+                    DB::table('crm_employer_prospects')
+                        ->where('id', $existing->id)
+                        ->update($profilePayload);
 
-        if (! $pipelineStage) {
-            DB::table('crm_employer_prospects')->where('id', $prospectId)->update([
-                'pipeline_stage' => 'lead_generated',
-                'win_probability' => 10,
-                'updated_at' => $now,
+                    $prospectId = (int) $existing->id;
+                    $assignedTo = $existing->assigned_to;
+                    $pipelineStage = $existing->pipeline_stage;
+                } else {
+                    $insert = array_merge($profilePayload, [
+                        'user_id' => $user->id,
+                        'source' => 'hirevo_signup',
+                        'pipeline_stage' => 'lead_generated',
+                        'win_probability' => 10,
+                        'assignment_status' => 'new',
+                        'sales_status' => 'pending',
+                        'crm_stage' => 'new',
+                        'created_at' => $now,
+                    ]);
+
+                    $prospectId = (int) DB::table('crm_employer_prospects')->insertGetId($insert);
+                    $assignedTo = null;
+                    $pipelineStage = 'lead_generated';
+                }
+
+                if (! $pipelineStage) {
+                    DB::table('crm_employer_prospects')->where('id', $prospectId)->update([
+                        'pipeline_stage' => 'lead_generated',
+                        'win_probability' => 10,
+                        'updated_at' => $now,
+                    ]);
+                }
+
+                if (! $assignedTo && filled($profile->referral_code)) {
+                    $this->assignFromReferralCode($prospectId, (string) $profile->referral_code);
+                }
+
+                return true;
+            });
+        } catch (Throwable $e) {
+            Log::error('CRM employer prospect sync failed after referrer signup', [
+                'user_id' => $user->id,
+                'message' => $e->getMessage(),
             ]);
-        }
 
-        if (! $assignedTo && $profile->referral_code) {
-            $this->assignFromReferralCode($prospectId, $profile->referral_code);
+            return false;
         }
     }
 
@@ -72,8 +96,13 @@ class CrmEmployerProspectBridge
             return;
         }
 
+        $normalized = strtoupper(trim($code));
+        if ($normalized === '') {
+            return;
+        }
+
         $admin = DB::table('admins')
-            ->whereRaw('UPPER(referral_code) = ?', [strtoupper(trim($code))])
+            ->whereRaw('UPPER(referral_code) = ?', [$normalized])
             ->where('sales_team', 'employer')
             ->whereIn('role', ['sales_manager', 'sales_employee'])
             ->first();
@@ -98,6 +127,9 @@ class CrmEmployerProspectBridge
             $update['assignment_status'] = 'in_progress';
         }
 
-        DB::table('crm_employer_prospects')->where('id', $prospectId)->update($update);
+        DB::table('crm_employer_prospects')
+            ->where('id', $prospectId)
+            ->whereNull('assigned_to')
+            ->update($update);
     }
 }

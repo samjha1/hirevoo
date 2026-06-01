@@ -52,12 +52,9 @@ class EmployerJobApplication extends Model
         'job_match_explanation',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'info_accurate_confirmed_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'info_accurate_confirmed_at' => 'datetime',
+    ];
 
     public function employerJob(): BelongsTo
     {

@@ -117,18 +117,15 @@ class CandidateProfile extends Model
         'referral_requests_limit',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_premium' => 'boolean',
-            'premium_expires_at' => 'datetime',
-            'date_of_birth' => 'date',
-            'work_experience' => 'array',
-            'education_history' => 'array',
-            'projects' => 'array',
-            'certifications' => 'array',
-        ];
-    }
+    protected $casts = [
+        'is_premium' => 'boolean',
+        'premium_expires_at' => 'datetime',
+        'date_of_birth' => 'date',
+        'work_experience' => 'array',
+        'education_history' => 'array',
+        'projects' => 'array',
+        'certifications' => 'array',
+    ];
 
     public function user(): BelongsTo
     {

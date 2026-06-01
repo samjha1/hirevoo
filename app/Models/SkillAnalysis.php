@@ -22,13 +22,10 @@ class SkillAnalysis extends Model
         'intent_score',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'matched_skills' => 'array',
-            'missing_skills' => 'array',
-        ];
-    }
+    protected $casts = [
+        'matched_skills' => 'array',
+        'missing_skills' => 'array',
+    ];
 
     public function user(): BelongsTo
     {

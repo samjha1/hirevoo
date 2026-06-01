@@ -17,13 +17,10 @@ class UpskillOpportunity extends Model
         'is_active',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'skills' => 'array',
-            'is_active' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'skills' => 'array',
+        'is_active' => 'boolean',
+    ];
 
     /**
      * Get skills as array (empty if null or not array).
