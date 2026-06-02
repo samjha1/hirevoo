@@ -171,7 +171,7 @@
                                             <div class="text-muted small text-center py-4 px-3">No notifications yet. When an employer updates your application stage, you’ll see it here.</div>
                                         @endforelse
                                     @else
-                                        <div class="text-muted small text-center py-4 px-3">Candidate application alerts appear when you apply to jobs on Hirevo.</div>
+                                        <div class="text-muted small text-center py-4 px-3">Candidate application alerts appear when you apply to jobs on Hirevoo.</div>
                                     @endif
                                 </div>
                             </div>
@@ -228,7 +228,7 @@
                             <div class="w-100">
                                 <div class="text-center mb-4">
                                     <h5>Sign Up</h5>
-                                    <p class="text-muted">Sign Up and get access to all the features of Hirevo</p>
+                                    <p class="text-muted">Sign Up and get access to all the features of Hirevoo</p>
                                 </div>
                                 <form action="{{ route('register') }}" method="GET" class="auth-form">
                                     <div class="text-center">
@@ -458,7 +458,7 @@
                 <div class="hirevo-footer__bottom">
                     <div class="container">
                         <p class="hirevo-footer__copyright">
-                            <script>document.write(new Date().getFullYear())</script> &copy; Hirevo. Own Your Next Career Move. All rights reserved.
+                            <script>document.write(new Date().getFullYear())</script> &copy; Hirevoo. Own Your Next Career Move. All rights reserved.
                         </p>
                     </div>
                 </div>

@@ -3,7 +3,9 @@
 return [
 
     'openai' => [
-        'key' => env('OPENAI_API_KEY'),
+        // Prefer legacy/project-specific key name if present (some installs store it in lowercase).
+        // Fallback to the standard OPENAI_API_KEY.
+        'key' => env('openai_api_key_main', env('OPENAI_API_KEY')),
         'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
     ],
 

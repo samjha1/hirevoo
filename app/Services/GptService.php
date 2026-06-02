@@ -822,7 +822,7 @@ class GptService
         }
 
         if ($trail === []) {
-            $this->lastError = 'No AI API keys configured. Set AWS IAM credentials (or BEDROCK_USE_IAM=false + AWS_BEARER_TOKEN_BEDROCK), OPENAI_API_KEY, and/or OPENROUTER_API_KEY in .env.';
+            $this->lastError = 'No AI API keys configured. Set AWS IAM credentials (or BEDROCK_USE_IAM=false + AWS_BEARER_TOKEN_BEDROCK), openai_api_key_main/OPENAI_API_KEY, and/or OPENROUTER_API_KEY in .env.';
         } else {
             $this->lastError = implode(' ', $trail);
         }

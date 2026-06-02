@@ -428,7 +428,7 @@
             <div class="about-hero-inner">
                 <div class="about-kicker">
                     <span class="about-kicker-dot" aria-hidden="true"></span>
-                    Hirevo
+                    Hirevoo
                 </div>
                 <h1 class="about-title">Career acceleration: <span>built for real outcomes</span></h1>
                 <p class="about-lead">
@@ -452,10 +452,10 @@
                     </p>
                 </div>
                 <p class="text-muted mb-2" style="font-size: 0.95rem; line-height: 1.6;">
-                    Hirevo is <strong>not</strong> a job portal. Job portals list vacancies. That&apos;s it.
+                    Hirevoo is <strong>not</strong> a job portal. Job portals list vacancies. That&apos;s it.
                 </p>
                 <p class="text-muted mb-0" style="font-size: 0.95rem; line-height: 1.65;">
-                    Hirevo is a career acceleration platform. We analyse your profile, score your match against real roles, connect you with employees who can refer you, and give you tools to close skill gaps before you apply.
+                    Hirevoo is a career acceleration platform. We analyse your profile, score your match against real roles, connect you with employees who can refer you, and give you tools to close skill gaps before you apply.
                     We don&apos;t just show you jobs. We help you increase your probability of getting hired.
                 </p>
             </section>
@@ -655,7 +655,7 @@
                     <div class="col-md-6">
                         <div class="about-diff-card">
                             <h3>03. Career acceleration, not job listing</h3>
-                            <p>Resume analysis, skill gaps, and upskill guidance make Hirevo your continuous career co-pilot.</p>
+                            <p>Resume analysis, skill gaps, and upskill guidance make Hirevoo your continuous career co-pilot.</p>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -703,19 +703,19 @@
                     <div class="accordion-item">
                         <h3 class="accordion-header" id="faqOne">
                             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                What is Hirevo and how is it different from a job portal?
+                                What is Hirevoo and how is it different from a job portal?
                             </button>
                         </h3>
                         <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="faqOne" data-bs-parent="#aboutFaq">
                             <div class="accordion-body text-muted">
-                                Hirevo is a career acceleration platform, not a job portal. Along with jobs, you get AI match scores, employee referrals, skill gap insights, and tools to continuously improve your candidacy.
+                                Hirevoo is a career acceleration platform, not a job portal. Along with jobs, you get AI match scores, employee referrals, skill gap insights, and tools to continuously improve your candidacy.
                             </div>
                         </div>
                     </div>
                     <div class="accordion-item">
                         <h3 class="accordion-header" id="faqTwo">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                                How does the job referral system work on Hirevo?
+                                How does the job referral system work on Hirevoo?
                             </button>
                         </h3>
                         <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="faqTwo" data-bs-parent="#aboutFaq">
@@ -727,19 +727,19 @@
                     <div class="accordion-item">
                         <h3 class="accordion-header" id="faqThree">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                                Does Hirevo guarantee a job or referral?
+                                Does Hirevoo guarantee a job or referral?
                             </button>
                         </h3>
                         <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="faqThree" data-bs-parent="#aboutFaq">
                             <div class="accordion-body text-muted">
-                                No. Hirevo provides tools, insights, and connections. It does not guarantee job placement, interviews, or referral acceptance.
+                                No. Hirevoo provides tools, insights, and connections. It does not guarantee job placement, interviews, or referral acceptance.
                             </div>
                         </div>
                     </div>
                     <div class="accordion-item">
                         <h3 class="accordion-header" id="faqFour">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-                                What is an AI match score on Hirevo?
+                                What is an AI match score on Hirevoo?
                             </button>
                         </h3>
                         <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="faqFour" data-bs-parent="#aboutFaq">
@@ -751,12 +751,12 @@
                     <div class="accordion-item">
                         <h3 class="accordion-header" id="faqFive">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
-                                Is Hirevo available outside India?
+                                Is Hirevoo available outside India?
                             </button>
                         </h3>
                         <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="faqFive" data-bs-parent="#aboutFaq">
                             <div class="accordion-body text-muted">
-                                Hirevo is currently focused on the Indian job market, with global expansion as a long-term vision.
+                                Hirevoo is currently focused on the Indian job market, with global expansion as a long-term vision.
                             </div>
                         </div>
                     </div>
@@ -770,7 +770,7 @@
                     <a href="{{ route('resume.upload') }}" class="btn btn-primary rounded-pill px-4">Upload your resume free</a>
                     <a href="{{ route('job-openings') }}" class="btn btn-outline-light rounded-pill px-4">Explore job openings</a>
                 </div>
-                <small>Hirevo provides tools, insights, and referral access. We do not guarantee job placement, interviews, or hiring outcomes. All hiring decisions rest with employers.</small>
+                <small>Hirevoo provides tools, insights, and referral access. We do not guarantee job placement, interviews, or hiring outcomes. All hiring decisions rest with employers.</small>
             </section>
         </div>
     </div>

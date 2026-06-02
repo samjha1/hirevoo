@@ -30,7 +30,7 @@
                         Land the <span class="hv2-teal">right</span> role.
                     </h1>
                     <p class="hv2-lead">
-                        Stop applying blindly. Hirevo shows where your profile stands,
+                        Stop applying blindly. Hirevoo shows where your profile stands,
                         <strong>what to improve</strong>, and <strong>real roles</strong> that fit 
                         so every application counts.
                     </p>
@@ -269,7 +269,7 @@
                     <h2 class="hv2-statement mb-4">You're not <em>unqualified.</em><br>You're under guided.</h2>
                     <p class="hv2-lead mb-4">
                         Most platforms push volume.
-                        <strong>Hirevo pushes clarity</strong>  so you know what to fix, what to learn, and where to aim.
+                        <strong>Hirevoo pushes clarity</strong>  so you know what to fix, what to learn, and where to aim.
                     </p>
                     <a href="{{ route('resume.upload') }}" class="hv2-btn hv2-btn--primary hv2-btn-lg">
                         Fix this for me <i class="uil uil-arrow-right"></i>
@@ -536,7 +536,7 @@
     <section class="hv2-section">
         <div class="container">
             <div class="text-center mb-5 hv2-reveal">
-                <div class="hv2-eyebrow" style="letter-spacing:0.08em;">Why Hirevo</div>
+                <div class="hv2-eyebrow" style="letter-spacing:0.08em;">Why Hirevoo</div>
                 <p class="hv2-lead mx-auto text-center mb-0" style="max-width:34rem;">
                     For learners, job seekers, and employers  one platform, clearer outcomes.
                 </p>
@@ -639,7 +639,7 @@
                 </div>
                 <div class="hv2-testi-card hv2-reveal hv2-reveal-d2">
                     <div class="hv2-testi-stars">★★★★★</div>
-                    <p class="hv2-testi-text">"I had no idea why I kept getting rejected. Hirevo showed exactly which skills were missing for Product Manager roles. Changed my approach completely."</p>
+                    <p class="hv2-testi-text">"I had no idea why I kept getting rejected. Hirevoo showed exactly which skills were missing for Product Manager roles. Changed my approach completely."</p>
                     <div class="hv2-testi-author">
                         <div class="hv2-testi-av" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;">RS</div>
                         <div>
@@ -650,7 +650,7 @@
                 </div>
                 <div class="hv2-testi-card hv2-reveal hv2-reveal-d3">
                     <div class="hv2-testi-stars">★★★★★</div>
-                    <p class="hv2-testi-text">"Stop applying to 100 jobs and getting nowhere. Hirevo made me realise my profile was strong for 3 specific roles. That focus made all the difference."</p>
+                    <p class="hv2-testi-text">"Stop applying to 100 jobs and getting nowhere. Hirevoo made me realise my profile was strong for 3 specific roles. That focus made all the difference."</p>
                     <div class="hv2-testi-author">
                         <div class="hv2-testi-av" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;">AM</div>
                         <div>

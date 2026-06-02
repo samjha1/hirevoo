@@ -242,6 +242,12 @@
                                                 </span>
 
                                                 @if($int->status !== 'cancelled')
+                                                    <form method="POST" action="{{ route('employer.interviews.resend-email', $int) }}">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                            Resend email
+                                                        </button>
+                                                    </form>
                                                     <form method="POST" action="{{ route('employer.interviews.cancel', $int) }}">
                                                         @csrf
                                                         @method('PATCH')

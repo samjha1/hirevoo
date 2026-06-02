@@ -104,6 +104,9 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
         Route::get('/interviews/{interview}/calendar', [EmployerApplicationController::class, 'calendarInvite'])
             ->name('interviews.calendar')
             ->scopeBindings();
+        Route::post('/interviews/{interview}/resend-email', [EmployerApplicationController::class, 'resendInterviewEmail'])
+            ->name('interviews.resend-email')
+            ->scopeBindings();
         Route::post('/jobs/{job}/duplicate', [EmployerJobController::class, 'duplicate'])->name('jobs.duplicate')->scopeBindings();
         Route::post('/jobs/{job}/repost', [EmployerJobController::class, 'repost'])->name('jobs.repost')->scopeBindings();
         Route::resource('jobs', EmployerJobController::class)->names('jobs')->except(['show']);

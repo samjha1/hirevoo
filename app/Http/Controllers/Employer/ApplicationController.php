@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EmployerJob;
 use App\Models\EmployerJobApplication;
 use App\Models\InterviewSchedule;
+use App\Mail\InterviewScheduledMail;
 use App\Notifications\ApplicationStatusChangedNotification;
 use App\Services\GptService;
 use App\Services\ResumeAnalysisService;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\View\View;
@@ -168,50 +170,45 @@ class ApplicationController extends Controller
         try {
             $candidateEmail = $application->user?->email;
             $companyEmail = $application->employerJob?->user?->email;
-            $candidateName = $application->user?->name ?: 'Candidate';
-            $jobTitle = $application->employerJob?->title ?: 'Job';
-            $when = $interview->scheduled_at instanceof \Carbon\CarbonInterface
-                ? $interview->scheduled_at->format('d M Y, g:i A')
-                : (string) $interview->scheduled_at;
-            $duration = (int) ($interview->duration_minutes ?? 30);
-            $typeLabel = $interviewType === 'in_person' ? 'In-Person' : ucfirst($interviewType);
-            $meetLine = $meetingUrl ? "Meeting link: {$meetingUrl}\n" : '';
-            $interviewerLine = ! empty($validated['interviewer_name'])
-                ? "Interviewer: {$validated['interviewer_name']}\n"
-                : '';
+
+            Log::info('Interview mail: schedule created', [
+                'interview_id' => $interview->id,
+                'application_id' => $application->id,
+                'candidate_email' => $candidateEmail,
+                'employer_email' => $companyEmail,
+                'mail_mailer' => config('mail.default'),
+            ]);
 
             if ($candidateEmail) {
-                Mail::raw(
-                    "Hi {$candidateName},\n\nYour interview has been scheduled.\n\n"
-                    . "Job: {$jobTitle}\n"
-                    . "Type: {$typeLabel}\n"
-                    . "When: {$when}\n"
-                    . "Duration: {$duration} mins\n"
-                    . $interviewerLine
-                    . $meetLine,
-                    function ($m) use ($candidateEmail) {
-                        $m->to($candidateEmail)->subject('Interview Scheduled');
-                    }
-                );
+                Mail::to($candidateEmail)->send(new InterviewScheduledMail(
+                    application: $application->fresh(['employerJob.user', 'user']),
+                    interview: $interview->fresh(),
+                    recipientRole: 'candidate',
+                ));
+                Log::info('Interview mail: sent to candidate', [
+                    'interview_id' => $interview->id,
+                    'to' => $candidateEmail,
+                ]);
             }
 
             if ($companyEmail) {
-                Mail::raw(
-                    "Interview scheduled.\n\n"
-                    . "Candidate: {$candidateName}\n"
-                    . "Job: {$jobTitle}\n"
-                    . "Type: {$typeLabel}\n"
-                    . "When: {$when}\n"
-                    . "Duration: {$duration} mins\n"
-                    . $interviewerLine
-                    . $meetLine,
-                    function ($m) use ($companyEmail) {
-                        $m->to($companyEmail)->subject('Interview Scheduled');
-                    }
-                );
+                Mail::to($companyEmail)->send(new InterviewScheduledMail(
+                    application: $application->fresh(['employerJob.user', 'user']),
+                    interview: $interview->fresh(),
+                    recipientRole: 'employer',
+                ));
+                Log::info('Interview mail: sent to employer', [
+                    'interview_id' => $interview->id,
+                    'to' => $companyEmail,
+                ]);
             }
         } catch (\Throwable $e) {
-            // Ignore notification failures for now.
+            Log::error('Interview mail: failed to send', [
+                'interview_id' => $interview->id ?? null,
+                'application_id' => $application->id ?? null,
+                'message' => $e->getMessage(),
+                'exception' => $e::class,
+            ]);
         }
 
         return redirect()->back()->with('success', 'Interview scheduled successfully.');
@@ -310,6 +307,70 @@ class ApplicationController extends Controller
             'Content-Type' => 'text/calendar; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
+    }
+
+    /**
+     * Resend interview email to both candidate + employer.
+     */
+    public function resendInterviewEmail(Request $request, InterviewSchedule $interview): RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user->isReferrer()) {
+            abort(403);
+        }
+
+        $interview->load(['application.employerJob.user', 'application.user']);
+        $application = $interview->application;
+
+        if (! $application || ! $application->employerJob || $application->employerJob->user_id !== $user->id) {
+            abort(403);
+        }
+
+        if ($interview->status === 'cancelled') {
+            return redirect()->back()->with('info', 'This interview is cancelled. Resend is not available.');
+        }
+
+        try {
+            $candidateEmail = $application->user?->email;
+            $companyEmail = $application->employerJob?->user?->email;
+
+            Log::info('Interview mail: resend requested', [
+                'interview_id' => $interview->id,
+                'application_id' => $application->id,
+                'candidate_email' => $candidateEmail,
+                'employer_email' => $companyEmail,
+                'mail_mailer' => config('mail.default'),
+            ]);
+
+            if ($candidateEmail) {
+                Mail::to($candidateEmail)->send(new InterviewScheduledMail(
+                    application: $application,
+                    interview: $interview,
+                    recipientRole: 'candidate',
+                ));
+                Log::info('Interview mail: resent to candidate', ['interview_id' => $interview->id, 'to' => $candidateEmail]);
+            }
+
+            if ($companyEmail) {
+                Mail::to($companyEmail)->send(new InterviewScheduledMail(
+                    application: $application,
+                    interview: $interview,
+                    recipientRole: 'employer',
+                ));
+                Log::info('Interview mail: resent to employer', ['interview_id' => $interview->id, 'to' => $companyEmail]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Interview mail: resend failed', [
+                'interview_id' => $interview->id ?? null,
+                'application_id' => $application->id ?? null,
+                'message' => $e->getMessage(),
+                'exception' => $e::class,
+            ]);
+
+            return redirect()->back()->with('error', 'Could not resend interview email. Please check mail configuration/logs.');
+        }
+
+        return redirect()->back()->with('success', 'Interview email resent successfully.');
     }
 
     public function index(Request $request, EmployerJob $job): View|RedirectResponse
