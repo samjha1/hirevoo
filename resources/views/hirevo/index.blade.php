@@ -458,7 +458,10 @@
                                 <h3 class="hv2-goal-card__name">{{ $goalRow['label'] }}</h3>
                                 <div class="hv2-goal-card__stats" role="status">
                                     <span class="hv2-goal-card__stat-pulse" aria-hidden="true"></span>
-                                    <span class="hv2-goal-card__stat-num">{{ number_format($role->displayOpenRolesCount()) }}</span>
+                                    @php
+                                        $fallbackOpenRoles = $goalJobsRandMin + (abs(crc32($goalRow['label'])) % ($goalJobsRandMax - $goalJobsRandMin + 1));
+                                    @endphp
+                                    <span class="hv2-goal-card__stat-num">{{ number_format($fallbackOpenRoles) }}</span>
                                     <span class="hv2-goal-card__stat-label">open roles</span>
                                 </div>
                             </a>
