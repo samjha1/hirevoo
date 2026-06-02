@@ -7,10 +7,10 @@ return [
         'title_highlight' => 'Hiring Results.',
         'subtitle' => 'From early-stage startups to enterprise organizations — choose the plan that scales with your hiring ambition.',
         'stats' => [
-            ['value' => '3,000', 'suffix' => '+', 'label' => 'Verified Candidates'],
+            ['value' => '200,000', 'suffix' => '+', 'label' => 'Verified Candidates'],
             ['value' => '48', 'suffix' => 'h', 'label' => 'Avg. Time to Shortlist'],
-            ['value' => '92', 'suffix' => '%', 'label' => 'Client Satisfaction'],
-            ['value' => '500', 'suffix' => '+', 'label' => 'Hires Made'],
+            ['value' => '96', 'suffix' => '%', 'label' => 'Client Satisfaction'],
+            ['value' => '15,000', 'suffix' => '+', 'label' => 'Hires Made'],
         ],
     ],
 

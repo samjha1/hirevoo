@@ -21,8 +21,8 @@ return new class extends Migration
                 ['employer_user_id', 'candidate_source', 'candidate_ref_id'],
                 'employer_talent_pool_actions_unique'
             );
-            $table->index(['employer_user_id', 'is_saved']);
-            $table->index(['employer_user_id', 'is_shortlisted']);
+            $table->index(['employer_user_id', 'is_saved'], 'etpa_employer_saved_idx');
+            $table->index(['employer_user_id', 'is_shortlisted'], 'etpa_employer_shortlisted_idx');
         });
     }
 
