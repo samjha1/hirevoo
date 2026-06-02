@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <base href="{{ rtrim(config('app.asset_url') ?? config('app.url'), '/') }}/">
     @include('partials.seo-head')
+    @include('partials.meta-pixel')
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="Hirevo" name="author">
     <meta name="csrf-token" content="{{ csrf_token() }}">
