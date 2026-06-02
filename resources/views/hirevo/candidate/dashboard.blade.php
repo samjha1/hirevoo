@@ -3,7 +3,32 @@
 @section('title', 'My Applications')
 
 @push('styles')
-<link href="{{ asset('css/hirevo-candidate-dashboard.css') }}" rel="stylesheet">
+@php
+    $candidateDashCss = public_path('css/hirevo-candidate-dashboard.css');
+    $candidateDashCssVer = is_file($candidateDashCss) ? (string) filemtime($candidateDashCss) : '1';
+@endphp
+<link href="{{ asset('css/hirevo-candidate-dashboard.css') }}?v={{ $candidateDashCssVer }}" rel="stylesheet">
+{{-- Fallback layout if the external CSS file is missing on production --}}
+<style>
+.apps-page{background:var(--hirevo-accent,#f3f4f6);min-height:100vh;padding-bottom:3rem;color:#0f172a}
+.apps-hero{background:#fff;border-bottom:1px solid rgba(0,0,0,.06);padding:.85rem 0 1.15rem}
+.hero-inner{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.stats-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin-top:1.5rem}
+.stat-pill{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:12px;padding:1rem 1.15rem;display:flex;align-items:center;gap:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;font-size:1rem}
+.stat-icon.purple{background:rgba(11,31,59,.08);color:var(--hirevo-primary,#0B1F3B)}
+.stat-icon.blue{background:rgba(59,130,246,.12);color:#2563eb}
+.stat-icon.green{background:rgba(16,185,129,.15);color:var(--hirevo-secondary,#10B981)}
+.stat-icon.amber{background:rgba(245,158,11,.15);color:#d97706}
+.stat-num{font-size:1.25rem;font-weight:700;line-height:1;color:#0f172a}
+.stat-lbl{font-size:.6875rem;color:#64748b;margin-top:.15rem}
+.dash-insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.25rem}
+@media (max-width:991px){.dash-insight-grid{grid-template-columns:1fr}}
+.dash-card{border-radius:12px;padding:.85rem 1rem;position:relative;overflow:hidden;box-shadow:0 2px 14px rgba(11,31,59,.06);border:1px solid rgba(0,0,0,.06)}
+.apps-grid{display:flex;flex-direction:column;gap:.6rem}
+.app-card{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:1.15rem 1.35rem;display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center}
+@media (max-width:640px){.stats-strip{grid-template-columns:1fr 1fr}.app-card{grid-template-columns:1fr}}
+</style>
 @endpush
 
 @section('content')

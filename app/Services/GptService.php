@@ -33,18 +33,20 @@ class GptService
 
     protected string $bedrockModelId;
 
-    protected int $timeout = 120;
+    // Tuned for UX: faster failures and retries, not long hangs.
+    protected int $timeout = 60;
 
-    protected int $connectTimeout = 30;
+    protected int $connectTimeout = 15;
 
-    protected int $maxTokens = 1200;
+    // Default completion budget: keep small for speed + cost. Individual calls override this when needed.
+    protected int $maxTokens = 500;
 
     protected ?string $lastError = null;
 
     public function __construct()
     {
         $this->openAiApiKey = config('services.openai.key') ?: null;
-        $this->openAiModel = (string) config('services.openai.model', 'gpt-4o-mini');
+        $this->openAiModel = (string) config('services.openai.model', 'gpt-5.4-mini');
         $this->primaryApiKey = config('services.primary_llm.key') ?: null;
         $this->primaryBaseUrl = rtrim((string) config('services.primary_llm.base_url', 'https://openrouter.ai/api/v1'), '/');
         $this->primaryModel = (string) config('services.primary_llm.model', 'openai/gpt-oss-20b:free');
@@ -54,8 +56,8 @@ class GptService
         $this->bedrockUseIam = (bool) config('services.bedrock.use_iam', true);
         $this->bedrockRegion = (string) config('services.bedrock.region', 'us-east-1');
         $this->bedrockModelId = (string) config('services.bedrock.model_id', 'amazon.nova-2-lite-v1:0');
-        $this->timeout = max(10, (int) config('hirevo.llm_http_timeout_seconds', 120));
-        $this->connectTimeout = max(5, (int) config('hirevo.llm_http_connect_timeout_seconds', 30));
+        $this->timeout = max(10, (int) config('hirevo.llm_http_timeout_seconds', 60));
+        $this->connectTimeout = max(5, (int) config('hirevo.llm_http_connect_timeout_seconds', 15));
     }
 
     public function getLastError(): ?string

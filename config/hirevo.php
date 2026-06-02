@@ -4,7 +4,7 @@ return [
     'theme_path' => env('THEME_PATH', 'theme'),
 
     /** Total HTTP timeout per LLM request (read/transfer). Raise if models are slow; keep below PHP max_execution_time. */
-    'llm_http_timeout_seconds' => max(15, (int) env('LLM_HTTP_TIMEOUT', 120)),
+    'llm_http_timeout_seconds' => max(15, (int) env('LLM_HTTP_TIMEOUT', 60)),
 
     /** Max completion tokens for employer “generate job description” (smaller = faster, still enough for one page). */
     'llm_job_description_max_tokens' => max(400, min(1200, (int) env('LLM_JOB_DESCRIPTION_MAX_TOKENS', 750))),
@@ -13,7 +13,7 @@ return [
     'llm_job_description_timeout_seconds' => max(45, min(180, (int) env('LLM_JOB_DESCRIPTION_TIMEOUT', 90))),
 
     /** Connection phase only (DNS + TCP + TLS). */
-    'llm_http_connect_timeout_seconds' => max(5, (int) env('LLM_HTTP_CONNECT_TIMEOUT', 30)),
+    'llm_http_connect_timeout_seconds' => max(5, (int) env('LLM_HTTP_CONNECT_TIMEOUT', 15)),
 
     /** PHP time limit for resume upload + analysis + profile fill (seconds). */
     'resume_analysis_time_limit' => max(60, (int) env('RESUME_ANALYSIS_TIME_LIMIT', 180)),
