@@ -18,7 +18,11 @@
     </div>
 @else
     @if(isset($paginator))
-        @include('hirevo.employer.talent-pool._toolbar', ['paginator' => $paginator, 'perPage' => $perPage ?? 20])
+        @include('hirevo.employer.talent-pool._toolbar', [
+            'paginator' => $paginator,
+            'perPage' => $perPage ?? 20,
+            'totalCount' => empty($requiresSearch) ? ($totalCount ?? null) : null,
+        ])
     @endif
 
     <div class="tp-results-list">
@@ -33,7 +37,11 @@
 
     @if(isset($paginator) && ($paginator->hasMorePages() || $paginator->currentPage() > 1))
         <div class="mt-3">
-            @include('hirevo.employer.talent-pool._toolbar', ['paginator' => $paginator, 'perPage' => $perPage ?? 20])
+            @include('hirevo.employer.talent-pool._toolbar', [
+                'paginator' => $paginator,
+                'perPage' => $perPage ?? 20,
+                'totalCount' => empty($requiresSearch) ? ($totalCount ?? null) : null,
+            ])
         </div>
     @endif
 @endif

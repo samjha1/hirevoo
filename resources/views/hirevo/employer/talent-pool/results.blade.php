@@ -22,6 +22,10 @@
         display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
     }
     .tp-results-summary .tp-query { font-weight: 600; color: var(--ink-900); }
+    .tp-results-count {
+        font-size: .875rem; font-weight: 600; color: var(--tp-green);
+        margin-left: auto; white-space: nowrap;
+    }
     .tp-chip {
         display: inline-flex; align-items: center;
         font-size: .75rem; padding: .2rem .55rem;
@@ -282,9 +286,6 @@
         <input type="hidden" name="per_page" value="{{ $perPage }}">
         <input type="hidden" name="q" value="{{ $filters['q'] ?? '' }}">
         <input type="hidden" name="skills" value="{{ $filters['skills'] ?? '' }}">
-        @if(!empty($filters['location']))
-            <input type="hidden" name="location" value="{{ $filters['location'] }}">
-        @endif
 
         @if(empty($canAccessTalentPool))
             <div class="alert alert-warning mb-3">
@@ -312,6 +313,11 @@
             @if(!empty($filters['education']))
                 <span class="tp-chip">{{ $filters['education'] }}</span>
             @endif
+            @if(empty($requiresSearch))
+                <span class="tp-results-count" id="tp-total-count">
+                    {{ number_format($totalCount ?? 0) }} {{ ($totalCount ?? 0) === 1 ? 'candidate' : 'candidates' }}
+                </span>
+            @endif
         </div>
 
         <div class="tp-layout">
@@ -336,7 +342,9 @@
                         'candidates' => $candidates,
                         'paginator' => $paginator,
                         'perPage' => $perPage,
+                        'totalCount' => $totalCount ?? 0,
                         'matchingSkills' => $matchingSkills,
+                        'requiresSearch' => $requiresSearch ?? false,
                         'canAccessTalentPool' => $canAccessTalentPool,
                     ])
                 </div>

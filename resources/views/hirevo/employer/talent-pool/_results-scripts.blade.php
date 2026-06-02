@@ -12,8 +12,8 @@
     var highlightTerms = @json($tpHighlightTerms ?? []);
     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     var debounceTimer;
-    var locPanelOpen = false;
     var activeRow = null;
+    var totalCountEl = document.getElementById('tp-total-count');
 
     var backdrop = document.getElementById('tp-drawer-backdrop');
     var drawer = document.getElementById('tp-drawer');
@@ -40,6 +40,10 @@
             .then(function (data) {
                 if (data.html) resultsEl.innerHTML = data.html;
                 if (data.filters_html && filtersEl) filtersEl.innerHTML = data.filters_html;
+                if (typeof data.total_count === 'number' && totalCountEl) {
+                    var n = data.total_count;
+                    totalCountEl.textContent = n.toLocaleString() + ' ' + (n === 1 ? 'candidate' : 'candidates');
+                }
                 bindAll();
                 history.replaceState(null, '', form.action + '?' + collectParams(page || 1).toString());
             })
@@ -53,39 +57,11 @@
 
     form?.addEventListener('submit', function (e) { e.preventDefault(); fetchResults(1); });
 
-    function bindLocationDropdown() {
-        var trigger = document.getElementById('tp-loc-trigger');
-        var panel = document.getElementById('tp-loc-panel-dropdown');
-        var searchInput = panel?.querySelector('.tp-loc-search');
-        if (!trigger || !panel) return;
-        trigger.onclick = function (e) {
-            e.stopPropagation();
-            locPanelOpen = !locPanelOpen;
-            panel.hidden = !locPanelOpen;
-            if (locPanelOpen && searchInput) searchInput.focus();
-        };
-        document.addEventListener('click', function (e) {
-            if (!panel.contains(e.target) && e.target !== trigger) {
-                panel.hidden = true;
-                locPanelOpen = false;
-            }
-        });
-        if (searchInput) {
-            searchInput.oninput = function () {
-                var q = this.value.toLowerCase();
-                panel.querySelectorAll('.tp-loc-option').forEach(function (opt) {
-                    var label = opt.querySelector('.tp-loc-label')?.textContent?.toLowerCase() || '';
-                    opt.style.display = label.indexOf(q) >= 0 ? '' : 'none';
-                });
-            };
-        }
-        panel.querySelectorAll('.tp-loc-checkbox').forEach(function (cb) {
-            cb.onchange = function () {
-                var n = panel.querySelectorAll('.tp-loc-checkbox:checked').length;
-                trigger.textContent = n > 0 ? n + ' selected' : 'Select location';
-                debouncedFetch();
-            };
-        });
+    function bindLocationSelect() {
+        var locSelect = document.getElementById('tp-location');
+        if (!locSelect || locSelect.dataset.tpBound) return;
+        locSelect.dataset.tpBound = '1';
+        locSelect.onchange = debouncedFetch;
     }
 
     function bindExperienceRadios() {
@@ -380,7 +356,7 @@
     }
 
     function bindAll() {
-        bindLocationDropdown();
+        bindLocationSelect();
         bindExperienceRadios();
         bindEducationRadios();
         bindFilters();

@@ -63,10 +63,17 @@
                        placeholder="e.g. Flutter, Dart, Laravel">
             </div>
             <div class="mb-3">
-                <label class="form-label" for="tp-location">Location</label>
-                <input type="text" class="form-control" id="tp-location" name="location"
-                       value="{{ old('location', request('location')) }}"
-                       placeholder="City or region">
+                <label class="form-label" for="tp-location">City</label>
+                @include('hirevo.employer.talent-pool._location-city-select', [
+                    'locationFacets' => $locationFacets ?? [],
+                    'filters' => $filters ?? [],
+                    'selectId' => 'tp-location',
+                    'selectClass' => 'form-control',
+                    'formId' => null,
+                ])
+                @if(!empty($totalCount))
+                    <p class="small text-success fw-600 mb-0 mt-1">{{ number_format($totalCount) }} candidates match this search</p>
+                @endif
             </div>
             <div class="row g-3 mb-3">
                 <div class="col-6">

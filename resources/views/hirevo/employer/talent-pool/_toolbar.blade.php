@@ -2,10 +2,15 @@
     $perPage = $perPage ?? 20;
     $currentPage = $paginator->currentPage();
     $hasMore = $paginator->hasMorePages();
+    $totalCount = $totalCount ?? null;
 @endphp
 <div class="tp-toolbar">
     <div class="tp-toolbar-left">
-        <span class="text-muted small">Showing {{ $perPage }} per page</span>
+        @if($totalCount !== null)
+            <span class="text-muted small"><strong class="text-dark">{{ number_format($totalCount) }}</strong> matching · {{ $perPage }} per page</span>
+        @else
+            <span class="text-muted small">Showing {{ $perPage }} per page</span>
+        @endif
     </div>
     <div class="tp-toolbar-right">
         <div class="tp-page-nav" aria-label="Pagination">

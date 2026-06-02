@@ -19,31 +19,12 @@
             <i class="mdi mdi-chevron-down"></i>
         </button>
         <div class="collapse show" id="tp-loc-panel">
-            <div class="tp-loc-dropdown">
-                <button type="button" class="tp-loc-trigger form-select form-select-sm text-start" id="tp-loc-trigger" aria-haspopup="listbox">
-                    @if(count($selectedLocations) > 0)
-                        {{ count($selectedLocations) }} selected
-                    @else
-                        Select location
-                    @endif
-                </button>
-                <div class="tp-loc-panel" id="tp-loc-panel-dropdown" hidden>
-                    <input type="search" class="form-control form-control-sm tp-loc-search" placeholder="Search city or area" autocomplete="off">
-                    <div class="tp-loc-list" role="listbox">
-                        @forelse($facets['locations'] as $loc)
-                            <label class="tp-loc-option">
-                                <input type="checkbox" class="tp-loc-checkbox tp-filter-pending" name="locations[]" value="{{ $loc['label'] }}"
-                                       form="tp-search-form"
-                                       {{ in_array($loc['label'], $selectedLocations, true) ? 'checked' : '' }}>
-                                <span class="tp-loc-label">{{ $loc['label'] }}</span>
-                                <span class="tp-facet-count">({{ number_format($loc['count']) }})</span>
-                            </label>
-                        @empty
-                            <p class="small text-muted mb-0 px-2 py-2">No locations in current results.</p>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
+            @include('hirevo.employer.talent-pool._location-city-select', [
+                'locationFacets' => $facets['locations'] ?? [],
+                'filters' => $filters,
+                'selectedLocations' => $selectedLocations,
+                'onchangeFilter' => true,
+            ])
         </div>
     </div>
 

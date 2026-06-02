@@ -40,6 +40,7 @@ class TalentPoolSearchService
                 ]),
                 'active_filter_count' => $this->countActiveFilters($filters),
                 'facets' => $withFacets ? ['locations' => [], 'education' => [], 'experience' => []] : null,
+                'total_count' => 0,
                 'requires_search' => true,
             ];
         }
@@ -79,6 +80,7 @@ class TalentPoolSearchService
             'items' => $items,
             'paginator' => $paginator,
             'active_filter_count' => $this->countActiveFilters($filters),
+            'total_count' => $this->countMatchingCandidates($filters),
             'requires_search' => false,
         ];
 
@@ -87,6 +89,23 @@ class TalentPoolSearchService
         }
 
         return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    public function countMatchingCandidates(array $filters): int
+    {
+        if (! $this->hasSearchCriteria($filters)) {
+            return 0;
+        }
+
+        $verified = $this->verifiedCandidatesQuery($filters)->select('users.id');
+        $talent = $this->talentPoolCandidatesQuery($filters)->select('talent_pool_candidates.id');
+
+        return (int) DB::query()
+            ->fromSub($verified->unionAll($talent), 'merged_candidates')
+            ->count();
     }
 
     /**
@@ -505,6 +524,7 @@ class TalentPoolSearchService
             return [];
         }
 
+        $cityExpr = $this->citySqlExpression('location');
         $counts = [];
         $userSub = $this->verifiedCandidatesQuery($filters)->select('users.id');
 
@@ -512,10 +532,11 @@ class TalentPoolSearchService
             ->whereIn('user_id', $userSub)
             ->whereNotNull('location')
             ->where('location', '!=', '')
-            ->selectRaw('TRIM(location) as label, COUNT(*) as aggregate')
+            ->selectRaw("{$cityExpr} as label, COUNT(*) as aggregate")
             ->groupBy('label')
+            ->having('label', '!=', '')
             ->orderByDesc('aggregate')
-            ->limit(20)
+            ->limit(40)
             ->get();
 
         foreach ($locRows as $row) {
@@ -524,13 +545,13 @@ class TalentPoolSearchService
 
         $talentSub = $this->talentPoolCandidatesQuery($filters);
         $talentLocs = DB::query()
-            ->fromSub($talentSub->selectRaw('TRIM(location) as label'), 't')
+            ->fromSub($talentSub->selectRaw("{$cityExpr} as label"), 't')
             ->whereNotNull('label')
             ->where('label', '!=', '')
             ->selectRaw('label, COUNT(*) as aggregate')
             ->groupBy('label')
             ->orderByDesc('aggregate')
-            ->limit(20)
+            ->limit(40)
             ->get();
 
         foreach ($talentLocs as $row) {
@@ -540,10 +561,15 @@ class TalentPoolSearchService
         arsort($counts);
 
         return collect($counts)
-            ->take(25)
+            ->take(50)
             ->map(fn (int $count, string $label) => ['label' => $label, 'count' => $count])
             ->values()
             ->all();
+    }
+
+    protected function citySqlExpression(string $column): string
+    {
+        return "TRIM(SUBSTRING_INDEX(TRIM({$column}), ',', 1))";
     }
 
     /**

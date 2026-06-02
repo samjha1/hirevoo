@@ -28,9 +28,19 @@ class TalentPoolController extends Controller
             return $user;
         }
 
+        $filters = $this->filtersFromRequest($request, $user->id);
+        $locationFacets = $this->searchService->hasSearchCriteria($filters)
+            ? ($this->searchService->filterFacets($filters)['locations'] ?? [])
+            : [];
+
         return view('hirevo.employer.talent-pool.search', [
             'educationOptions' => CandidateProfile::educationDegreeValues(),
             'canAccessTalentPool' => $this->planService->canAccessTalentPool($user->referrerProfile),
+            'filters' => $filters,
+            'locationFacets' => $locationFacets,
+            'totalCount' => $this->searchService->hasSearchCriteria($filters)
+                ? $this->searchService->countMatchingCandidates($filters)
+                : null,
         ]);
     }
 
@@ -45,13 +55,14 @@ class TalentPoolController extends Controller
         $canAccess = $this->planService->canAccessTalentPool($profile);
 
         $filters = $this->filtersFromRequest($request, $user->id);
+        $hasCriteria = $this->searchService->hasSearchCriteria($filters);
         $perPage = max(10, min(30, (int) $request->input('per_page', 20)));
         $result = $this->searchService->search(
             $user->id,
             $filters,
             $perPage,
             (int) $request->input('page', 1),
-            withFacets: $canAccess
+            withFacets: $hasCriteria
         );
 
         $items = $result['items']->map(fn (array $row) => $this->planService->maskCandidateRow($row, $user, true));
@@ -65,6 +76,7 @@ class TalentPoolController extends Controller
             'candidates' => $items,
             'paginator' => $result['paginator'],
             'perPage' => $perPage,
+            'totalCount' => (int) ($result['total_count'] ?? 0),
             'matchingSkills' => $this->searchService->parseListFilterPublic($filters['skills'] ?? ''),
             'requiresSearch' => (bool) ($result['requires_search'] ?? false),
             'canAccessTalentPool' => $canAccess,
@@ -79,14 +91,18 @@ class TalentPoolController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if (! $this->planService->canAccessTalentPool($user->referrerProfile)) {
-            return response()->json(['facets' => ['locations' => [], 'education' => [], 'experience' => []]]);
-        }
-
         $filters = $this->filtersFromRequest($request, $user->id);
+
+        if (! $this->searchService->hasSearchCriteria($filters)) {
+            return response()->json([
+                'facets' => ['locations' => [], 'education' => [], 'experience' => []],
+                'total_count' => 0,
+            ]);
+        }
 
         return response()->json([
             'facets' => $this->searchService->filterFacets($filters),
+            'total_count' => $this->searchService->countMatchingCandidates($filters),
         ]);
     }
 
@@ -100,13 +116,14 @@ class TalentPoolController extends Controller
         $profile = $user->referrerProfile;
         $canAccess = $this->planService->canAccessTalentPool($profile);
         $filters = $this->filtersFromRequest($request, $user->id);
+        $hasCriteria = $this->searchService->hasSearchCriteria($filters);
         $perPage = max(10, min(30, (int) $request->input('per_page', 20)));
         $result = $this->searchService->search(
             $user->id,
             $filters,
             $perPage,
             (int) $request->input('page', 1),
-            withFacets: $canAccess
+            withFacets: $hasCriteria
         );
 
         $items = $result['items']->map(fn (array $row) => $this->planService->maskCandidateRow($row, $user, true));
@@ -115,6 +132,7 @@ class TalentPoolController extends Controller
             'candidates' => $items,
             'paginator' => $result['paginator'],
             'perPage' => $perPage,
+            'totalCount' => (int) ($result['total_count'] ?? 0),
             'matchingSkills' => $this->searchService->parseListFilterPublic($filters['skills'] ?? ''),
             'requiresSearch' => (bool) ($result['requires_search'] ?? false),
             'canAccessTalentPool' => $canAccess,
@@ -132,6 +150,7 @@ class TalentPoolController extends Controller
             'html' => $html,
             'filters_html' => $filtersHtml,
             'active_filter_count' => $result['active_filter_count'],
+            'total_count' => (int) ($result['total_count'] ?? 0),
             'requires_search' => (bool) ($result['requires_search'] ?? false),
         ]);
     }
