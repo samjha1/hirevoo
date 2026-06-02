@@ -12,6 +12,7 @@ use App\Models\Resume;
 use App\Models\UpskillOpportunity;
 use App\Services\CandidateLeadService;
 use App\Services\GptService;
+use App\Services\JobCatalogService;
 use App\Services\ResumeAnalysisService;
 use App\Mail\EmployerJobApplicationSubmitted;
 use App\Support\CandidateOnboarding;
@@ -26,29 +27,16 @@ use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function index(): View
+    public function index(JobCatalogService $jobCatalog): View
     {
-        $jobRoles = JobRole::where('is_active', true)
-            ->withCount('requiredSkills')
-            ->orderBy('title')
-            ->limit(11)
-            ->get();
+        $jobRoles = $jobCatalog->homeFeaturedJobGoals(11);
+
         return view('hirevo.index', compact('jobRoles'));
     }
 
-    public function jobList(Request $request): View
+    public function jobList(Request $request, JobCatalogService $jobCatalog): View
     {
-        $query = JobRole::where('is_active', true);
-
-        if ($request->filled('q')) {
-            $q = $request->get('q');
-            $query->where(function ($qry) use ($q) {
-                $qry->where('title', 'like', '%' . $q . '%')
-                    ->orWhere('description', 'like', '%' . $q . '%');
-            });
-        }
-
-        $jobRoles = $query->orderBy('title')->get();
+        $jobRoles = $jobCatalog->paginateJobGoals($request, 24);
         $appliedJobIds = auth()->check()
             ? \App\Models\JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all()
             : [];
@@ -58,7 +46,7 @@ class HomeController extends Controller
         return view('hirevo.job-list', compact('jobRoles', 'appliedJobIds', 'searchQuery', 'searchLocation'));
     }
 
-    public function skillMatch(JobRole $jobRole, ResumeAnalysisService $resumeAnalysis): View
+    public function skillMatch(JobRole $jobRole, ResumeAnalysisService $resumeAnalysis, JobCatalogService $jobCatalog): View
     {
         $jobRole->load('requiredSkills');
         $orderedSkillLabels = $jobRole->requiredSkills->isNotEmpty()
@@ -133,23 +121,9 @@ class HomeController extends Controller
             ? JobApplication::where('user_id', auth()->id())->where('job_role_id', $jobRole->id)->exists()
             : false;
 
-        // Related employer job openings: match by job role title and required skills keywords
-        $keywords = array_merge(
-            array_filter(explode(' ', preg_replace('/[^a-z0-9\s]/i', ' ', $jobRole->title))),
-            $jobRole->requiredSkills->pluck('skill_name')->take(5)->map(fn ($s) => trim($s))->all()
-        );
-        $keywords = array_values(array_unique(array_filter(array_map('strtolower', $keywords), fn ($kw) => strlen($kw) >= 2)));
-        $relatedJobs = collect();
-        if (count($keywords) > 0) {
-            $query = EmployerJob::where('status', 'active')->with('user');
-            $query->where(function ($q) use ($keywords) {
-                foreach ($keywords as $kw) {
-                    $q->orWhere('title', 'like', '%' . $kw . '%')
-                        ->orWhere('description', 'like', '%' . $kw . '%');
-                }
-            });
-            $relatedJobs = $query->orderByDesc('created_at')->limit(10)->get();
-        }
+        $related = $jobCatalog->relatedForJobGoal($jobRole, 15, 12);
+        $relatedJobs = $related['employer_jobs'];
+        $relatedGoalRoles = $related['related_goals'];
         $appliedEmployerJobIds = auth()->check()
             ? EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all()
             : [];
@@ -169,6 +143,7 @@ class HomeController extends Controller
             'appliedJobIds' => $appliedJobIds,
             'userSkillsForUpskill' => $userSkillsForUpskill,
             'relatedJobs' => $relatedJobs,
+            'relatedGoalRoles' => $relatedGoalRoles,
             'appliedEmployerJobIds' => $appliedEmployerJobIds,
             'consultGapPayload' => $consultGapPayload,
         ]);
@@ -179,12 +154,17 @@ class HomeController extends Controller
         return view('hirevo.pricing');
     }
 
-    public function jobOpenings(Request $request, ResumeAnalysisService $resumeAnalysis, GptService $gptService): View|JsonResponse|RedirectResponse
+    public function jobOpenings(Request $request, ResumeAnalysisService $resumeAnalysis, GptService $gptService, JobCatalogService $jobCatalog): View|JsonResponse|RedirectResponse
     {
         if ($request->boolean('clear_personalization')) {
             $request->session()->forget(['job_openings_personalize_resume_id', 'job_openings_personalized']);
+            $jobCatalog->clearOpeningsCatalogCache();
 
             return redirect()->route('job-openings', $request->except('clear_personalization'));
+        }
+
+        if (! $request->ajax() && (int) $request->get('page', 1) <= 1) {
+            $jobCatalog->clearOpeningsCatalogCache();
         }
 
         $query = EmployerJob::where('status', 'active')->with(['user.referrerProfile']);
@@ -244,6 +224,9 @@ class HomeController extends Controller
 
         $appliedIds = auth()->check()
             ? EmployerJobApplication::where('user_id', auth()->id())->pluck('employer_job_id')->all()
+            : [];
+        $appliedGoalIds = auth()->check()
+            ? JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all()
             : [];
 
         if (auth()->check() && auth()->user()->isCandidate() && $appliedIds !== []) {
@@ -342,23 +325,27 @@ class HomeController extends Controller
         }
 
         if ($jobs === null) {
-            $jobs = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
+            $jobs = $jobCatalog->paginateOpeningsCatalog($request, $query, 10);
         }
 
-        $locationOptions = EmployerJob::where('status', 'active')
-            ->whereNotNull('location')
-            ->where('location', '!=', '')
-            ->distinct()
-            ->pluck('location')
-            ->sort()
-            ->values()
-            ->all();
+        $locationOptions = [];
+        if (! $request->ajax()) {
+            $locationOptions = EmployerJob::where('status', 'active')
+                ->whereNotNull('location')
+                ->where('location', '!=', '')
+                ->distinct()
+                ->pluck('location')
+                ->sort()
+                ->values()
+                ->all();
+        }
 
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('hirevo.partials.employer-job-cards', [
+                'html' => view('hirevo.partials.openings-catalog-cards', [
                     'jobs' => $jobs,
                     'appliedIds' => $appliedIds,
+                    'appliedGoalIds' => $appliedGoalIds ?? [],
                     'jobMatchScores' => $jobMatchScores,
                 ])->render(),
                 'next_page_url' => $jobs->nextPageUrl(),
@@ -374,7 +361,7 @@ class HomeController extends Controller
         $countryLabels = config('hirevo.job_openings_country_labels', []);
 
         return view('hirevo.job-openings', compact(
-            'jobs', 'appliedIds', 'searchQuery', 'searchLocation',
+            'jobs', 'appliedIds', 'appliedGoalIds', 'searchQuery', 'searchLocation',
             'filterJobType', 'filterWorkType', 'locationOptions',
             'jobMatchScores', 'jobMatchAiRanked', 'jobsPersonalized', 'personalizeResumeId',
             'countryFilter', 'countryLabels'

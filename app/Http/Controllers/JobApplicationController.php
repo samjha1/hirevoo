@@ -15,13 +15,21 @@ use Illuminate\View\View;
 
 class JobApplicationController extends Controller
 {
-    public function showApplyForm(JobRole $jobRole, ResumeAnalysisService $resumeAnalysis): View|RedirectResponse
+    public function showApplyForm(Request $request, JobRole $jobRole, ResumeAnalysisService $resumeAnalysis): View|RedirectResponse
     {
+        $returnTo = $this->resolveReturnTo($request);
+
         if (! auth()->check()) {
-            return redirect()->route('login', ['redirect' => route('job-goal.apply', $jobRole)]);
+            return redirect()->route('login', [
+                'redirect' => route('job-goal.apply', array_filter([
+                    'jobRole' => $jobRole,
+                    'return_to' => $returnTo === 'job-openings' ? 'job-openings' : null,
+                ])),
+            ]);
         }
         if (! auth()->user()->isCandidate()) {
-            return redirect()->route('job-goal.show', $jobRole)->with('info', 'Only candidates can apply.');
+            return redirect()->to($this->returnUrl($jobRole, $returnTo))
+                ->with('info', 'Only candidates can apply.');
         }
 
         $onboarding = CandidateOnboarding::redirectIfIncomplete(auth()->user());
@@ -31,7 +39,8 @@ class JobApplicationController extends Controller
 
         $existing = JobApplication::where('user_id', auth()->id())->where('job_role_id', $jobRole->id)->first();
         if ($existing) {
-            return redirect()->route('job-goal.show', $jobRole)->with('info', 'You have already applied for this role.');
+            return redirect()->to($this->returnUrl($jobRole, $returnTo))
+                ->with('info', 'You have already applied for this role.');
         }
 
         $resumes = auth()->user()->resumes()->orderByDesc('created_at')->get();
@@ -47,6 +56,7 @@ class JobApplicationController extends Controller
             'resumes' => $resumes,
             'matchResult' => $matchResult,
             'primaryResumeId' => $primaryResume?->id,
+            'returnTo' => $returnTo,
         ]);
     }
 
@@ -74,8 +84,10 @@ class JobApplicationController extends Controller
             'cover_message' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $returnTo = $this->resolveReturnTo($request);
+
         if (! auth()->user()->isCandidate()) {
-            return redirect()->route('job-goal.show', $jobRole);
+            return redirect()->to($this->returnUrl($jobRole, $returnTo));
         }
 
         $onboarding = CandidateOnboarding::redirectIfIncomplete(auth()->user());
@@ -85,7 +97,8 @@ class JobApplicationController extends Controller
 
         $existing = JobApplication::where('user_id', auth()->id())->where('job_role_id', $jobRole->id)->first();
         if ($existing) {
-            return redirect()->route('job-goal.show', $jobRole)->with('info', 'You have already applied for this role.');
+            return redirect()->to($this->returnUrl($jobRole, $returnTo))
+                ->with('info', 'You have already applied for this role.');
         }
 
         $resume = null;
@@ -132,7 +145,23 @@ class JobApplicationController extends Controller
             'match_score_explanation' => $matchScoreExplanation,
         ]);
 
-        return redirect()->route('job-goal.show', $jobRole)
+        return redirect()->to($this->returnUrl($jobRole, $returnTo))
             ->with('success', 'Your application has been submitted. ' . ($matchScore !== null ? 'Your match score has been saved and will be visible to employers.' : ''));
+    }
+
+    protected function resolveReturnTo(Request $request): ?string
+    {
+        $value = $request->input('return_to', $request->query('return_to'));
+
+        return $value === 'job-openings' ? 'job-openings' : null;
+    }
+
+    protected function returnUrl(JobRole $jobRole, ?string $returnTo): string
+    {
+        if ($returnTo === 'job-openings') {
+            return route('job-openings');
+        }
+
+        return route('job-goal.show', $jobRole);
     }
 }

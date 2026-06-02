@@ -122,6 +122,15 @@
             $r++;
             $smLeftRows[] = ['kind' => 'employer', 'rank' => $r, 'job' => $job];
         }
+        foreach (($relatedGoalRoles ?? collect()) as $relatedRole) {
+            $r++;
+            $smLeftRows[] = [
+                'kind' => 'related_goal',
+                'rank' => $r,
+                'role' => $relatedRole,
+                'teaser' => 'Related career path — explore skill match and apply.',
+            ];
+        }
         foreach ($matchingFiltered as $item) {
             $r++;
             $smLeftRows[] = [
@@ -226,6 +235,31 @@
                                                 <a href="{{ route('job-openings.apply', $job) }}" class="btn btn-primary btn-sm rounded-pill">{{ $job->apply_link ? 'Apply on site' : 'Apply' }}</a>
                                             @endif
                                             <a href="{{ route('referral.intent', ['source' => 'skill_match_feed_opening', 'employer_job_id' => $job->id]) }}" class="btn btn-outline-primary btn-sm rounded-pill"><i class="uil uil-user-plus me-1"></i> Referral</a>
+                                        </div>
+                                    @elseif($row['kind'] === 'related_goal')
+                                        @php
+                                            $role = $row['role'];
+                                            $teaserLine = $row['teaser'] ?? 'Related career path for this goal.';
+                                            $roleInitial = strtoupper(substr($role->title, 0, 1));
+                                        @endphp
+                                        <div class="d-flex align-items-start gap-2 mb-2">
+                                            <div class="rr-goal-avatar" title="{{ $role->title }}">{{ $roleInitial }}</div>
+                                            <div class="min-w-0 flex-grow-1">
+                                                <div class="d-flex flex-wrap align-items-center gap-1 mb-0.5">
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill" style="font-size:0.63rem;">Related goal</span>
+                                                </div>
+                                                <a href="{{ route('job-goal.show', $role) }}" class="h6 mb-0 text-dark text-decoration-none d-block lh-sm fw-bold">{{ $role->title }}</a>
+                                                <p class="text-muted mb-0" style="font-size:0.78rem;">{{ number_format($role->displayOpenRolesCount()) }} open roles</p>
+                                            </div>
+                                        </div>
+                                        <p class="rr-match-teaser mb-2">{{ $teaserLine }}</p>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a href="{{ route('job-goal.show', $role) }}" class="btn btn-soft-primary btn-sm rounded-pill">View role</a>
+                                            @if(in_array($role->id, $appliedJobIds ?? []))
+                                                <span class="badge bg-success px-3 py-2 rounded-pill align-self-center">Applied</span>
+                                            @else
+                                                <a href="{{ route('job-goal.apply', $role) }}" class="btn btn-primary btn-sm rounded-pill">Apply</a>
+                                            @endif
                                         </div>
                                     @else
                                         @php

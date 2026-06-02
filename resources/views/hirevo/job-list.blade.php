@@ -55,7 +55,11 @@
 
             @if(isset($searchQuery) && $searchQuery !== '')
                 <p class="text-muted mb-3">
-                    <strong>{{ $jobRoles->count() }}</strong> {{ Str::plural('result', $jobRoles->count()) }} for "<strong>{{ e($searchQuery) }}</strong>"
+                    <strong>{{ number_format($jobRoles->total()) }}</strong> {{ Str::plural('result', $jobRoles->total()) }} for "<strong>{{ e($searchQuery) }}</strong>"
+                </p>
+            @else
+                <p class="text-muted mb-3">
+                    <strong>{{ number_format($jobRoles->total()) }}</strong> job goals · real roles shown first
                 </p>
             @endif
 
@@ -99,6 +103,7 @@
                                 @endif
                             </div>
                             <h5 class="mb-2 fw-600"><a href="{{ route('job-goal.show', $role) }}" class="text-dark text-decoration-none stretched-link">{{ $role->title }}</a></h5>
+                            <p class="text-muted mb-1 fs-14"><span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">{{ number_format($role->displayOpenRolesCount()) }} open roles</span></p>
                             <p class="text-muted mb-0 fs-14 flex-grow-1">{{ Str::limit($role->description, 80) }}</p>
                             <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
                                 <a href="{{ route('job-goal.show', $role) }}" class="btn btn-soft-primary btn-sm rounded-pill">View skill match</a>
@@ -133,6 +138,12 @@
                 </div>
                 @endforelse
             </div>
+
+            @if($jobRoles->hasPages())
+                <div class="d-flex justify-content-center mt-4">
+                    {{ $jobRoles->links() }}
+                </div>
+            @endif
         </div>
     </section>
 @endsection

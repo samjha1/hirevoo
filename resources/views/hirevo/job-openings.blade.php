@@ -48,6 +48,7 @@
         z-index: 0;
     }
     .job-openings-page > .section { position: relative; z-index: 1; }
+    html:has(body.page-job-openings) { scroll-behavior: smooth; }
 
     /* ── Hero — compact, high-contrast strip ─────────────────────── */
     .jo-hero-band {
@@ -244,7 +245,14 @@
     }
 
     /* ── Floating stack (search + panels) ─────────────────────── */
-    .jo-float-search { position: relative; z-index: 3; }
+    .jo-float-search {
+        position: relative;
+        z-index: 3;
+        margin-top: -1.25rem;
+    }
+    @media (min-width: 992px) {
+        .jo-float-search { margin-top: -1.75rem; }
+    }
 
     .jo-flash {
         border-radius: 18px;
@@ -277,12 +285,9 @@
 
     /* Resume match — bento strip */
     .jo-match-bento {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        align-items: center;
+        display: block;
         margin-top: 1.15rem;
-        padding: 1.15rem 1.25rem;
+        padding: 0;
         border-radius: 24px;
         background: var(--jo-card);
         border: 1px solid rgba(15, 23, 42, 0.08);
@@ -292,9 +297,62 @@
         position: relative;
         overflow: hidden;
     }
+    .jo-match-bento > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 1rem 1.15rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        user-select: none;
+    }
+    .jo-match-bento > summary::-webkit-details-marker { display: none; }
+    .jo-match-bento > summary::after {
+        content: '';
+        flex-shrink: 0;
+        width: 0.55rem;
+        height: 0.55rem;
+        border-right: 2px solid var(--jo-muted);
+        border-bottom: 2px solid var(--jo-muted);
+        transform: rotate(45deg);
+        margin-top: -0.2rem;
+        transition: transform 0.25s ease;
+    }
+    .jo-match-bento[open] > summary::after {
+        transform: rotate(-135deg);
+        margin-top: 0.15rem;
+    }
+    .jo-match-bento__summary-title {
+        font-size: 0.875rem;
+        font-weight: 800;
+        color: var(--jo-ink);
+        letter-spacing: -0.02em;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .jo-match-bento__summary-title i { color: #4f46e5; font-size: 1.1rem; }
+    .jo-match-bento__body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        align-items: center;
+        padding: 0 1.15rem 1.15rem;
+        border-top: 1px solid rgba(15, 23, 42, 0.06);
+    }
     @media (min-width: 768px) {
-        .jo-match-bento {
+        .jo-match-bento__body {
             grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            padding: 0.25rem 1.5rem 1.25rem;
+        }
+    }
+    @media (min-width: 992px) {
+        .jo-match-bento > summary { display: none; }
+        .jo-match-bento__body {
+            display: grid;
+            border-top: none;
             padding: 1.25rem 1.5rem;
         }
     }
@@ -474,7 +532,7 @@
         font-size: 0.6875rem;
         font-weight: 800;
         letter-spacing: 0.14em;
-        text-transform: upperimage.pngcase;
+        text-transform: uppercase;
         color: var(--jo-muted);
         margin: 0;
     }
@@ -591,7 +649,127 @@
         box-shadow: 0 16px 36px rgba(15, 118, 110, 0.36);
     }
 
-    .jo-layout-row { padding-top: 0.35rem; }
+    .jo-layout-row {
+        padding-top: 0.35rem;
+        align-items: flex-start;
+    }
+    .jo-results-col > *:last-child { margin-bottom: 0; }
+
+    .jo-mobile-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+    }
+    .jo-filter-mobile-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 800;
+        color: var(--jo-ink);
+        background: var(--jo-card);
+        border: 1px solid var(--jo-line);
+        box-shadow: 0 4px 16px rgba(11, 31, 59, 0.06);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+    .jo-filter-mobile-btn:hover {
+        border-color: rgba(99, 102, 241, 0.35);
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12);
+        transform: translateY(-1px);
+    }
+    .jo-filter-mobile-btn .jo-filter-badge {
+        min-width: 1.25rem;
+        height: 1.25rem;
+        padding: 0 0.35rem;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 900;
+        line-height: 1.25rem;
+        text-align: center;
+        background: linear-gradient(135deg, #4f46e5, #0d9488);
+        color: #fff;
+    }
+    .jo-filters-offcanvas .offcanvas-header {
+        border-bottom: 1px solid var(--jo-line);
+        padding: 1rem 1.25rem;
+    }
+    .jo-filters-offcanvas .offcanvas-title {
+        font-weight: 850;
+        letter-spacing: -0.02em;
+        color: var(--jo-ink);
+    }
+    .jo-filters-offcanvas .offcanvas-body { padding: 1.25rem; }
+    .jo-filter-label {
+        font-size: 0.68rem !important;
+        letter-spacing: 0.06em;
+    }
+
+    .jo-active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.65rem 0.75rem;
+        margin-bottom: 0.85rem;
+        padding: 0.7rem 1rem;
+        border-radius: 16px;
+        background: rgba(99, 102, 241, 0.05);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+        animation: joFadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+    .jo-active-filters__chips {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .jo-active-filters__clear {
+        flex-shrink: 0;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #0d9488 !important;
+        text-decoration: none !important;
+        white-space: nowrap;
+    }
+    .jo-active-filters__clear:hover { color: #0f766e !important; }
+    .jo-active-filters__label {
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--jo-muted);
+        margin-right: 0.15rem;
+    }
+    .jo-active-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.32rem 0.5rem 0.32rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 650;
+        color: var(--jo-ink);
+        background: #fff;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        text-decoration: none !important;
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .jo-active-chip:hover {
+        background: #fef2f2;
+        border-color: rgba(239, 68, 68, 0.25);
+        color: #b91c1c;
+    }
+    .jo-active-chip i.jo-active-chip__remove {
+        font-size: 0.9rem;
+        opacity: 0.55;
+    }
+    .jo-active-chip:hover i.jo-active-chip__remove { opacity: 1; }
 
     .jo-filters-card {
         border-radius: 24px;
@@ -678,8 +856,8 @@
     }
 
     .jo-results-bar {
-        border-radius: 18px;
-        padding: 0.9rem 1.2rem;
+        border-radius: 16px;
+        padding: 0.85rem 1.15rem;
         background: var(--jo-card);
         border: 1px solid var(--jo-line);
         box-shadow: 0 4px 24px rgba(11, 31, 59, 0.05);
@@ -687,7 +865,22 @@
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 0.75rem;
+        gap: 0.65rem 1rem;
+    }
+    .jo-results-bar__left {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 0.75rem;
+        min-width: 0;
+        font-size: 0.8125rem;
+        color: var(--jo-muted);
+    }
+    .jo-results-bar__left strong { color: var(--jo-ink); font-weight: 800; }
+    .jo-results-bar__right {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
     }
     .jo-results-count {
         display: inline-flex;
@@ -718,7 +911,75 @@
     }
     .jo-sort-chip i { color: var(--jo-violet); }
 
-    .jo-job-list { min-height: 140px; }
+    .jo-job-list {
+        min-height: 140px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .jo-job-list .jo-job-card-wrap .jo-job-card { margin-bottom: 0 !important; }
+    .jo-job-list > .jo-animate-in,
+    .jo-job-list > .jo-card-enter { margin: 0; }
+
+    .jo-job-card-layout {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            "brand content"
+            "actions actions";
+        gap: 0.85rem 1rem;
+        align-items: start;
+    }
+    .jo-job-card__brand { grid-area: brand; }
+    .jo-job-card__content { grid-area: content; min-width: 0; }
+    .jo-job-card__actions {
+        grid-area: actions;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.65rem;
+        padding-top: 0.85rem;
+        margin-top: 0.15rem;
+        border-top: 1px solid var(--jo-line);
+    }
+    @media (min-width: 992px) {
+        .jo-job-card-layout {
+            grid-template-columns: auto 1fr minmax(11rem, 13.5rem);
+            grid-template-areas: "brand content actions";
+            gap: 1rem 1.25rem;
+            align-items: center;
+        }
+        .jo-job-card__actions {
+            padding-top: 0;
+            margin-top: 0;
+            border-top: none;
+            align-self: center;
+            justify-self: end;
+            width: 100%;
+            max-width: 13.5rem;
+        }
+        .jo-job-card__actions .jo-apply-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .jo-job-card__actions .jo-referral-nudge {
+            width: 100%;
+        }
+    }
+    .jo-job-card__head { margin-bottom: 0.35rem; }
+    .jo-job-card__company {
+        font-size: 0.8125rem;
+        color: var(--jo-muted);
+        font-weight: 500;
+        margin: 0;
+    }
+    .jo-job-card__tags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0.65rem 0 0.5rem;
+    }
 
     .jo-job-card {
         border-radius: 22px !important;
@@ -756,20 +1017,47 @@
     }
 
     .jo-co-avatar {
+        width: 3.25rem;
+        height: 3.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
         border-radius: 18px !important;
         background: linear-gradient(145deg, #e0e7ff 0%, #d1fae5 100%) !important;
         border: 1px solid rgba(79, 70, 229, 0.12) !important;
         font-weight: 900 !important;
         color: #3730a3 !important;
+        flex-shrink: 0;
+    }
+    .jo-job-desc-clamp {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .jo-job-posted { font-size: 0.72rem; opacity: 0.85; }
+    .jo-co-avatar--goal {
+        background: linear-gradient(145deg, #ede9fe 0%, #e0e7ff 100%) !important;
+        border-color: rgba(99, 102, 241, 0.2) !important;
+        color: #4338ca !important;
     }
     .jo-job-title {
         font-size: 1.08rem !important;
         font-weight: 850 !important;
         letter-spacing: -0.025em !important;
+        transition: color 0.2s ease;
     }
+    a.jo-job-title:hover { color: #0d9488 !important; }
     .jo-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.28rem 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 600;
         border-radius: 999px;
         border: 1px solid rgba(15, 23, 42, 0.06);
+        background: #f8fafc;
     }
     .jo-meta-pill--accent {
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(56, 189, 248, 0.1)) !important;
@@ -794,13 +1082,18 @@
         letter-spacing: 0.02em;
         background: linear-gradient(135deg, #4f46e5, #0d9488) !important;
         border: none !important;
+        padding: 0.5rem 1.25rem !important;
+        transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.2s ease !important;
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.22);
+    }
+    .jo-apply-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.05);
+        box-shadow: 0 10px 28px rgba(79, 70, 229, 0.32);
     }
 
-    .jo-job-card-actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.65rem 1rem;
+    .jo-job-card__actions .jo-referral-nudge {
+        width: 100%;
     }
     .jo-referral-nudge {
         display: inline-flex;
@@ -863,34 +1156,121 @@
         font-variant-numeric: tabular-nums;
     }
 
-    .jo-load-more-btn {
-        font-weight: 800;
-        padding: 0.85rem 2.25rem;
-        border-radius: 999px;
-        border: 2px solid rgba(15, 23, 42, 0.08);
+    /* ── Numbered pagination ───────────────────────────────────── */
+    .jo-pagination-wrap {
+        margin-top: 1.25rem;
+        width: 100%;
+    }
+    .jo-pagination-inner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem 1rem;
+        width: 100%;
+        padding: 0.85rem 1.15rem;
         background: var(--jo-card);
+        border: 1px solid var(--jo-line);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(11, 31, 59, 0.05);
+    }
+    .jo-pagination-meta {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--jo-muted);
+        margin: 0;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+    .jo-pagination-meta strong {
         color: var(--jo-ink);
-        transition: border-color 0.2s ease, box-shadow 0.25s ease, transform 0.18s ease;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
     }
-    .jo-load-more-btn:hover:not(:disabled) {
-        border-color: rgba(99, 102, 241, 0.35);
-        box-shadow: 0 12px 36px rgba(99, 102, 241, 0.15);
-        transform: translateY(-2px);
+    .jo-pagination-nav {
+        flex: 1 1 auto;
+        display: flex;
+        justify-content: center;
+        min-width: 0;
     }
-
-    .jo-load-spinner {
-        width: 1.15rem;
-        height: 1.15rem;
-        border: 2px solid rgba(11, 31, 59, 0.1);
-        border-top-color: var(--jo-violet);
-        border-radius: 50%;
-        animation: joSpin 0.65s linear infinite;
-        display: none;
-        vertical-align: middle;
-        margin-right: 0.35rem;
+    @media (min-width: 768px) {
+        .jo-pagination-nav { justify-content: flex-end; }
     }
-    .jo-load-more-btn.is-loading .jo-load-spinner { display: inline-block; }
-    @keyframes joSpin { to { transform: rotate(360deg); } }
+    .jo-pagination-wrap .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+    }
+    .jo-pagination-wrap .page-item {
+        display: flex;
+        align-items: center;
+        margin: 0;
+    }
+    .jo-pagination-wrap .page-item .page-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.25rem;
+        height: 2.25rem;
+        padding: 0 0.5rem;
+        line-height: 1;
+        border-radius: 10px !important;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        border: 1px solid rgba(15, 23, 42, 0.08) !important;
+        color: var(--jo-ink) !important;
+        background: #f8fafc !important;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .jo-pagination-wrap .page-item:not(.active):not(.disabled) .page-link:hover {
+        background: #fff !important;
+        border-color: rgba(99, 102, 241, 0.35) !important;
+        color: #3730a3 !important;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
+    }
+    .jo-pagination-wrap .page-item.active .page-link {
+        background: linear-gradient(135deg, #4f46e5, #0d9488) !important;
+        border-color: transparent !important;
+        color: #fff !important;
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .jo-pagination-wrap .page-item.disabled .page-link {
+        opacity: 0.45;
+        pointer-events: none;
+        background: #f1f5f9 !important;
+    }
+    .jo-pagination-wrap .page-item:first-child .page-link,
+    .jo-pagination-wrap .page-item:last-child .page-link {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0 0.75rem;
+        min-width: auto;
+    }
+    .jo-search-field { position: relative; }
+    .jo-search-field__icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: var(--jo-muted);
+        font-size: 1rem;
+        line-height: 1;
+    }
+    body.jo-page-transition .jo-job-list {
+        opacity: 0.55;
+        transform: translateY(6px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
 
     .jo-empty-state {
         border-radius: 28px;
@@ -914,8 +1294,8 @@
     .jo-card-enter .jo-job-card { animation: joFadeUp 0.48s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 
     @media (prefers-reduced-motion: reduce) {
-        .jo-load-spinner { animation: none; border-top-color: var(--jo-violet); }
-        .jo-job-card, .jo-job-card:hover, .jo-filter-chip, .jo-search-btn, .jo-apply-btn, .jo-load-more-btn,
+        .jo-job-card, .jo-job-card:hover, .jo-filter-chip, .jo-search-btn, .jo-apply-btn,
+        .jo-pagination-wrap .page-link,
         .jo-match-submit, .jo-match-login, .jo-animate-in, .jo-card-enter .jo-job-card {
             transition: none !important;
             transform: none !important;
@@ -937,6 +1317,46 @@
             || (isset($filterJobType) && $filterJobType !== '')
             || (isset($filterWorkType) && $filterWorkType !== '')
             || ($countryFilter !== '');
+        $joJobTypeLabels = [
+            'internship' => 'Internship',
+            'full_time' => 'Full-time',
+            'part_time' => 'Part-time',
+            'contract' => 'Contract',
+            'temporary' => 'Temporary',
+        ];
+        $joWorkTypeLabels = ['remote' => 'Remote', 'office' => 'On-site', 'hybrid' => 'Hybrid'];
+        $activeFilterChips = [];
+        if (!empty($searchQuery)) {
+            $activeFilterChips[] = [
+                'label' => $searchQuery,
+                'url' => route('job-openings', array_diff_key($queryAll, ['q' => 1, 'page' => 1])),
+            ];
+        }
+        if (!empty($searchLocation)) {
+            $activeFilterChips[] = [
+                'label' => $searchLocation,
+                'url' => route('job-openings', array_diff_key($queryAll, ['location' => 1, 'page' => 1])),
+            ];
+        }
+        if ($countryFilter !== '' && isset($countryLabels[$countryFilter])) {
+            $activeFilterChips[] = [
+                'label' => ($countryLabels[$countryFilter]['emoji'] ?? '') . ' ' . ($countryLabels[$countryFilter]['label'] ?? $countryFilter),
+                'url' => route('job-openings', array_diff_key($queryAll, ['country' => 1, 'page' => 1])),
+            ];
+        }
+        if (!empty($filterJobType)) {
+            $activeFilterChips[] = [
+                'label' => $joJobTypeLabels[$filterJobType] ?? $filterJobType,
+                'url' => route('job-openings', array_diff_key($queryAll, ['job_type' => 1, 'page' => 1])),
+            ];
+        }
+        if (!empty($filterWorkType)) {
+            $activeFilterChips[] = [
+                'label' => $joWorkTypeLabels[$filterWorkType] ?? $filterWorkType,
+                'url' => route('job-openings', array_diff_key($queryAll, ['work_location_type' => 1, 'page' => 1])),
+            ];
+        }
+        $activeFilterCount = count($activeFilterChips);
     @endphp
     <section class="section py-0 job-openings-page">
         <div class="jo-hero-band">
@@ -948,7 +1368,7 @@
                             Open roles
                         </div>
                         <h1 class="jo-hero-title">Job openings that <span>fit</span> you</h1>
-                        <p class="jo-hero-lead">Search and filter below  upload your resume to reorder this list for your profile.</p>
+                        <p class="jo-hero-lead">Search by role or location, refine with filters, or upload your resume to see matches ranked for you.</p>
                         @if($jobs->total() > 0)
                             <p class="jo-hero-stat mb-0">
                                 <strong id="jo-hero-count">{{ $jobs->total() }}</strong>
@@ -1000,12 +1420,19 @@
             @php
                 $joResumeMatchBoostPct = random_int(65, 78);
             @endphp
-            <div class="jo-match-bento" id="jo-resume-match-bar">
+            <details class="jo-match-bento" id="jo-resume-match-bar" open>
+                <summary>
+                    <p class="jo-match-bento__summary-title mb-0">
+                        <i class="mdi mdi-sparkles" aria-hidden="true"></i>
+                        Personalize with your resume
+                    </p>
+                </summary>
+                <div class="jo-match-bento__body">
                 <div class="d-flex align-items-start gap-3 min-w-0">
                     <span class="jo-match-bento__icon flex-shrink-0" aria-hidden="true"><i class="mdi mdi-file-document-outline"></i></span>
                     <div class="min-w-0">
                         <p class="jo-match-bento__title mb-0">Upload your resume to reorder this list for your profile.</p>
-                        <p class="jo-match-bento__boost mb-0 mt-2">Increase your chances of surfacing the right roles by up to <strong>+{{ $joResumeMatchBoostPct }}%</strong> based on clearer targeting vs. blind applications.</p>
+                        <p class="jo-match-bento__boost mb-0 mt-2">Surface better-fit roles — up to <strong>+{{ $joResumeMatchBoostPct }}%</strong> vs. browsing without a profile.</p>
                     </div>
                 </div>
                 <div class="jo-match-actions">
@@ -1033,9 +1460,10 @@
                     <a href="{{ route('login', ['redirect' => url()->full()]) }}" class="jo-match-login"><i class="uil uil-sign-in-alt me-1"></i>Sign in to upload</a>
                 @endauth
                 </div>
-            </div>
+                </div>
+            </details>
 
-            <form action="{{ route('job-openings') }}" method="GET" class="jo-search-shell jo-search-glass mt-3">
+            <form action="{{ route('job-openings') }}" method="GET" class="jo-search-shell jo-search-glass mt-3" id="jo-search-form">
                 <div class="jo-search-shell__head">
                     <div>
                         <h2>Search</h2>
@@ -1045,15 +1473,15 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-5">
                         <label for="job-openings-q" class="form-label mb-1">Keywords</label>
-                        <div class="position-relative">
-                            <i class="uil uil-search position-absolute text-muted" style="left: 1.1rem; top: 50%; transform: translateY(-50%); pointer-events: none;"></i>
+                        <div class="jo-search-field">
+                            <i class="uil uil-search jo-search-field__icon" aria-hidden="true"></i>
                             <input type="search" name="q" id="job-openings-q" class="form-control" placeholder="Title, stack, company…" value="{{ old('q', $searchQuery ?? '') }}" autocomplete="off">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <label for="job-openings-location" class="form-label mb-1">Location</label>
-                        <div class="position-relative">
-                            <i class="uil uil-map-marker position-absolute text-muted" style="left: 1.1rem; top: 50%; transform: translateY(-50%); pointer-events: none;"></i>
+                        <div class="jo-search-field">
+                            <i class="uil uil-map-marker jo-search-field__icon" aria-hidden="true"></i>
                             <input type="text" name="location" id="job-openings-location" class="form-control" placeholder="City, remote, region…" value="{{ old('location', $searchLocation ?? '') }}">
                         </div>
                     </div>
@@ -1085,8 +1513,21 @@
                 </div>
             </form>
 
+            <div class="offcanvas offcanvas-start jo-filters-offcanvas" tabindex="-1" id="jo-filters-offcanvas" aria-labelledby="jo-filters-offcanvas-label">
+                <div class="offcanvas-header">
+                    <h2 class="offcanvas-title h5 mb-0" id="jo-filters-offcanvas-label">Refine results</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    @if($hasActiveFilters)
+                        <p class="mb-3"><a href="{{ route('job-openings') }}" class="jo-filter-reset">Clear all filters</a></p>
+                    @endif
+                    @include('hirevo.partials.job-openings-filters', ['filtersFormId' => 'filters-form-mobile'])
+                </div>
+            </div>
+
             <div class="row jo-layout-row">
-                <div class="col-lg-3 mb-4 mb-lg-0 order-2 order-lg-1">
+                <div class="col-lg-3 mb-4 mb-lg-0 d-none d-lg-block">
                     @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'sidebar'])
 
                     <div class="card jo-filters-card border-0 sticky-top" style="top: 92px;">
@@ -1097,70 +1538,76 @@
                                     <a href="{{ route('job-openings') }}" class="jo-filter-reset">Reset</a>
                                 @endif
                             </div>
-
-                            <form action="{{ route('job-openings') }}" method="GET" id="filters-form">
-                                @if($searchQuery ?? '')
-                                    <input type="hidden" name="q" value="{{ $searchQuery }}">
-                                @endif
-                                @if($searchLocation ?? '')
-                                    <input type="hidden" name="location" value="{{ $searchLocation }}">
-                                @endif
-
-                                <div class="mb-4">
-                                    <label class="form-label small fw-bold text-muted mb-2 d-block text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.06em;">Job type</label>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <a href="{{ route('job-openings', array_diff_key($queryAll, ['job_type' => 1])) }}" class="jo-filter-chip {{ ($filterJobType ?? '') === '' ? 'jo-filter-chip--active' : '' }}">All</a>
-                                        <a href="{{ route('job-openings', array_merge($queryAll, ['job_type' => 'internship'])) }}" class="jo-filter-chip {{ ($filterJobType ?? '') === 'internship' ? 'jo-filter-chip--active' : '' }}">Internship</a>
-                                        <a href="{{ route('job-openings', array_merge($queryAll, ['job_type' => 'full_time'])) }}" class="jo-filter-chip {{ ($filterJobType ?? '') === 'full_time' ? 'jo-filter-chip--active' : '' }}">Full-time</a>
-                                        <a href="{{ route('job-openings', array_merge($queryAll, ['job_type' => 'part_time'])) }}" class="jo-filter-chip {{ ($filterJobType ?? '') === 'part_time' ? 'jo-filter-chip--active' : '' }}">Part-time</a>
-                                        <a href="{{ route('job-openings', array_merge($queryAll, ['job_type' => 'contract'])) }}" class="jo-filter-chip {{ ($filterJobType ?? '') === 'contract' ? 'jo-filter-chip--active' : '' }}">Contract</a>
-                                        <a href="{{ route('job-openings', array_merge($queryAll, ['job_type' => 'temporary'])) }}" class="jo-filter-chip {{ ($filterJobType ?? '') === 'temporary' ? 'jo-filter-chip--active' : '' }}">Temporary</a>
-                                    </div>
-                                </div>
-
-                                <div class="mb-0">
-                                    <label class="form-label small fw-bold text-muted mb-2 d-block text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.06em;">Workplace</label>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <a href="{{ route('job-openings', array_diff_key($queryAll, ['work_location_type' => 1])) }}" class="jo-filter-chip {{ ($filterWorkType ?? '') === '' ? 'jo-filter-chip--active' : '' }}">All</a>
-                                        <a href="{{ route('job-openings', array_merge($queryAll, ['work_location_type' => 'remote'])) }}" class="jo-filter-chip {{ ($filterWorkType ?? '') === 'remote' ? 'jo-filter-chip--active' : '' }}">Remote</a>
-                                        <a href="{{ route('job-openings', array_merge($queryAll, ['work_location_type' => 'office'])) }}" class="jo-filter-chip {{ ($filterWorkType ?? '') === 'office' ? 'jo-filter-chip--active' : '' }}">On-site</a>
-                                        <a href="{{ route('job-openings', array_merge($queryAll, ['work_location_type' => 'hybrid'])) }}" class="jo-filter-chip {{ ($filterWorkType ?? '') === 'hybrid' ? 'jo-filter-chip--active' : '' }}">Hybrid</a>
-                                    </div>
-                                </div>
-                            </form>
+                            @include('hirevo.partials.job-openings-filters', ['filtersFormId' => 'filters-form'])
                         </div>
                     </div>
                 </div>
 
-                <div class="col-lg-9 order-1 order-lg-2">
-                    <div class="jo-results-bar mb-3">
-                        <p class="mb-0 small d-flex flex-wrap align-items-center gap-2" style="color: var(--jo-muted);">
+                <div class="col-lg-9 jo-results-col">
+                    <div class="jo-mobile-toolbar d-lg-none">
+                        <button type="button" class="jo-filter-mobile-btn" data-bs-toggle="offcanvas" data-bs-target="#jo-filters-offcanvas" aria-controls="jo-filters-offcanvas">
+                            <i class="mdi mdi-tune-variant" aria-hidden="true"></i>
+                            Filters
+                            @if($activeFilterCount > 0)
+                                <span class="jo-filter-badge">{{ $activeFilterCount }}</span>
+                            @endif
+                        </button>
+                        @if($jobs->total() > 0)
+                            <span class="small text-muted fw-600">{{ $jobs->total() }} {{ Str::plural('role', $jobs->total()) }}</span>
+                        @endif
+                    </div>
+
+                    @if($activeFilterCount > 0)
+                        <div class="jo-active-filters" role="region" aria-label="Active filters">
+                            <div class="jo-active-filters__chips">
+                                <span class="jo-active-filters__label">Active</span>
+                                @foreach($activeFilterChips as $chip)
+                                    <a href="{{ $chip['url'] }}" class="jo-active-chip" title="Remove filter">
+                                        {{ $chip['label'] }}
+                                        <i class="uil uil-times jo-active-chip__remove" aria-hidden="true"></i>
+                                    </a>
+                                @endforeach
+                            </div>
+                            <a href="{{ route('job-openings') }}" class="jo-active-filters__clear">Clear all</a>
+                        </div>
+                    @endif
+
+                    <div class="jo-results-bar mb-3" id="jo-results-bar">
+                        <div class="jo-results-bar__left">
                             @if($jobs->total() > 0)
-                                <span class="jo-results-count"><i class="mdi mdi-view-list-outline" aria-hidden="true"></i> List</span>
+                                <span class="jo-results-count"><i class="mdi mdi-view-list-outline" aria-hidden="true"></i> Results</span>
                                 <span id="jo-showing-line">
-                                    <strong class="text-dark" id="jo-range-from">{{ $jobs->firstItem() }}</strong>–<strong class="text-dark" id="jo-range-to">{{ $jobs->lastItem() }}</strong>
-                                    of <strong class="text-dark" id="jo-range-total">{{ $jobs->total() }}</strong>
+                                    Showing <strong id="jo-range-from">{{ $jobs->firstItem() }}</strong>–<strong id="jo-range-to">{{ $jobs->lastItem() }}</strong>
+                                    of <strong id="jo-range-total">{{ $jobs->total() }}</strong>
                                 </span>
                                 @if($hasActiveFilters)
-                                    <span class="d-none d-sm-inline text-muted">· filtered</span>
+                                    <span class="text-muted">· filtered</span>
                                 @endif
                             @else
-                                <span class="fw-800 text-dark">No roles in this view</span>
+                                <span class="fw-800" style="color: var(--jo-ink);">No roles in this view</span>
                             @endif
-                        </p>
-                        <span class="small jo-sort-chip d-none d-sm-inline" id="jo-sort-label">
-                            @if(!empty($jobsPersonalized))
-                                <i class="mdi mdi-chart-line" aria-hidden="true"></i>Resume-ranked
-                            @else
-                                <i class="mdi mdi-sort-descending" aria-hidden="true"></i>Newest first
-                            @endif
-                        </span>
+                        </div>
+                        <div class="jo-results-bar__right">
+                            <span class="jo-sort-chip" id="jo-sort-label">
+                                @if(!empty($jobsPersonalized))
+                                    <i class="mdi mdi-chart-line" aria-hidden="true"></i> Resume-ranked
+                                @else
+                                    <i class="mdi mdi-sort-descending" aria-hidden="true"></i> Newest first
+                                @endif
+                            </span>
+                        </div>
                     </div>
 
                     <div class="jo-job-list" id="jo-job-list">
                         @forelse($jobs as $job)
                             <div class="jo-animate-in" style="animation-delay: {{ min(0.03 * $loop->iteration, 0.24) }}s;">
-                                @include('hirevo.partials.employer-job-card', ['job' => $job, 'appliedIds' => $appliedIds ?? [], 'jobMatchScores' => $jobMatchScores ?? []])
+                                @if(is_array($job) && ($job['type'] ?? '') === 'goal')
+                                    @include('hirevo.partials.job-goal-opening-card', ['role' => $job['model'], 'appliedGoalIds' => $appliedGoalIds ?? []])
+                                @elseif(is_array($job) && ($job['type'] ?? '') === 'employer')
+                                    @include('hirevo.partials.employer-job-card', ['job' => $job['model'], 'appliedIds' => $appliedIds ?? [], 'jobMatchScores' => $jobMatchScores ?? []])
+                                @else
+                                    @include('hirevo.partials.employer-job-card', ['job' => $job, 'appliedIds' => $appliedIds ?? [], 'jobMatchScores' => $jobMatchScores ?? []])
+                                @endif
                             </div>
                         @empty
                             <div class="card border-0 jo-filters-card jo-empty-state text-center py-5 px-3">
@@ -1185,13 +1632,16 @@
                     </div>
 
                     @if($jobs->hasPages())
-                        <div class="text-center mt-4 pt-1" id="jo-load-wrap">
-                            <button type="button" class="jo-load-more-btn" id="jo-load-more" data-next-url="{{ $jobs->nextPageUrl() }}">
-                                <span class="jo-load-spinner" aria-hidden="true"></span>
-                                <span class="jo-load-label">Load more roles</span>
-                            </button>
-                            <p class="small text-muted mt-2 mb-0 d-none" id="jo-end-msg">That’s everything for now.</p>
-                        </div>
+                        <nav class="jo-pagination-wrap" id="jo-pagination" aria-label="Job openings pages">
+                            <div class="jo-pagination-inner">
+                                <p class="jo-pagination-meta">
+                                    Page <strong>{{ $jobs->currentPage() }}</strong> of <strong>{{ $jobs->lastPage() }}</strong>
+                                </p>
+                                <div class="jo-pagination-nav">
+                                    {{ $jobs->onEachSide(1)->fragment('jo-results-bar')->links() }}
+                                </div>
+                            </div>
+                        </nav>
                     @endif
                 </div>
             </div>
@@ -1202,8 +1652,23 @@
 @push('scripts')
 <script>
 (function () {
+    var matchDetails = document.getElementById('jo-resume-match-bar');
+    if (matchDetails && window.matchMedia('(max-width: 991.98px)').matches) {
+        matchDetails.removeAttribute('open');
+    }
+
+    var offcanvasEl = document.getElementById('jo-filters-offcanvas');
+    if (offcanvasEl && typeof bootstrap !== 'undefined') {
+        offcanvasEl.querySelectorAll('.jo-filter-chip').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                var instance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                if (instance) instance.hide();
+            });
+        });
+    }
+
     var uploadForm = document.getElementById('jo-resume-upload-form');
-    var matchBar = document.getElementById('jo-resume-match-bar');
+    var matchBar = matchDetails;
     var fileInput = document.getElementById('jo-resume-file-input');
     var fileNameEl = document.getElementById('jo-file-name');
 
@@ -1237,74 +1702,32 @@
     @endif
 }());
 (function () {
-    var btn = document.getElementById('jo-load-more');
-    var list = document.getElementById('jo-job-list');
-    if (!btn || !list || !btn.getAttribute('data-next-url')) return;
+    var pagination = document.getElementById('jo-pagination');
+    var scrollTarget = document.getElementById('jo-results-bar');
+    var jobList = document.getElementById('jo-job-list');
 
-    var fromEl = document.getElementById('jo-range-from');
-    var toEl = document.getElementById('jo-range-to');
-    var totalEl = document.getElementById('jo-range-total');
-    var endMsg = document.getElementById('jo-end-msg');
-    var wrap = document.getElementById('jo-load-wrap');
+    function scrollToResults() {
+        var el = scrollTarget || jobList;
+        if (!el) return;
+        var top = el.getBoundingClientRect().top + window.pageYOffset - 88;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }
 
-    function setLoading(loading) {
-        btn.disabled = loading;
-        btn.classList.toggle('is-loading', loading);
-        var label = btn.querySelector('.jo-load-label');
-        if (label) label.textContent = loading ? 'Loading…' : 'Load more roles';
-image.png    }
-
-    btn.addEventListener('click', function () {
-        var url = btn.getAttribute('data-next-url');
-        if (!url) return;
-        setLoading(true);
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            },
-            credentials: 'same-origin'
-        })
-            .then(function (r) {
-                if (!r.ok) throw new Error('Network error');
-                return r.json();
-            })
-            .then(function (data) {
-                if (!data.html) return;
-                var temp = document.createElement('div');
-                temp.innerHTML = data.html;
-                temp.querySelectorAll('.jo-job-card-wrap').forEach(function (node) {
-                    var enter = document.createElement('div');
-                    enter.className = 'jo-card-enter';
-                    enter.appendChild(node);
-                    list.appendChild(enter);
-                });
-                var shown = list.querySelectorAll('.jo-job-card-wrap').length;
-                var tot = data.total != null ? data.total : shown;
-                if (fromEl) fromEl.textContent = shown > 0 ? '1' : '0';
-                if (toEl) toEl.textContent = String(Math.min(shown, tot));
-                if (totalEl && data.total != null) totalEl.textContent = String(data.total);
-                var heroCount = document.getElementById('jo-hero-count');
-                if (heroCount && data.total != null) heroCount.textContent = String(data.total);
-
-                if (data.has_more && data.next_page_url) {
-                    btn.setAttribute('data-next-url', data.next_page_url);
-                } else {
-                    btn.setAttribute('data-next-url', '');
-                    btn.classList.add('d-none');
-                    if (endMsg) endMsg.classList.remove('d-none');
-                    if (wrap && !data.has_more) {
-                        /* keep wrap for end message */
-                    }
-                }
-            })
-            .catch(function () {
-                window.location.href = url;
-            })
-            .finally(function () {
-                setLoading(false);
+    if (pagination) {
+        pagination.querySelectorAll('a.page-link').forEach(function (link) {
+            link.addEventListener('click', function () {
+                document.body.classList.add('jo-page-transition');
             });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var params = new URLSearchParams(window.location.search);
+        var page = parseInt(params.get('page') || '1', 10);
+        var hash = window.location.hash;
+        if ((page > 1 || hash === '#jo-results-bar') && scrollTarget) {
+            setTimeout(scrollToResults, 80);
+        }
     });
 })();
 </script>

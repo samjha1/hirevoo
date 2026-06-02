@@ -14,8 +14,12 @@
                             <nav aria-label="breadcrumb" class="mt-1">
                                 <ol class="breadcrumb mb-0 small text-muted">
                                     <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-decoration-none">Home</a></li>
-                                    <li class="breadcrumb-item"><a href="{{ route('job-list') }}" class="text-decoration-none">Job Goals</a></li>
-                                    <li class="breadcrumb-item"><a href="{{ route('job-goal.show', $jobRole) }}" class="text-decoration-none">{{ $jobRole->title }}</a></li>
+                                    @if(($returnTo ?? null) === 'job-openings')
+                                        <li class="breadcrumb-item"><a href="{{ route('job-openings') }}" class="text-decoration-none">Job Openings</a></li>
+                                    @else
+                                        <li class="breadcrumb-item"><a href="{{ route('job-list') }}" class="text-decoration-none">Job Goals</a></li>
+                                        <li class="breadcrumb-item"><a href="{{ route('job-goal.show', $jobRole) }}" class="text-decoration-none">{{ $jobRole->title }}</a></li>
+                                    @endif
                                     <li class="breadcrumb-item active" aria-current="page">Apply</li>
                                 </ol>
                             </nav>
@@ -35,6 +39,9 @@
                             <h5 class="mb-4">Your application</h5>
                             <form action="{{ route('job-goal.apply.store', $jobRole) }}" method="POST">
                                 @csrf
+                                @if(($returnTo ?? null) === 'job-openings')
+                                    <input type="hidden" name="return_to" value="job-openings">
+                                @endif
                                 @if($errors->any())
                                     <div class="alert alert-danger mb-4">
                                         <ul class="mb-0 list-unstyled">
@@ -65,7 +72,7 @@
                                 </div>
                                 <div class="d-flex flex-wrap gap-2">
                                     <button type="submit" class="btn btn-primary"><i class="uil uil-message me-1"></i> Submit application</button>
-                                    <a href="{{ route('job-goal.show', $jobRole) }}" class="btn btn-outline-secondary">Cancel</a>
+                                    <a href="{{ ($returnTo ?? null) === 'job-openings' ? route('job-openings') : route('job-goal.show', $jobRole) }}" class="btn btn-outline-secondary">Cancel</a>
                                 </div>
                             </form>
                         </div>

@@ -425,7 +425,7 @@
                             <h3 class="hv2-goal-card__name">{{ $role->title }}</h3>
                             <div class="hv2-goal-card__stats" role="status">
                                 <span class="hv2-goal-card__stat-pulse" aria-hidden="true"></span>
-                                <span class="hv2-goal-card__stat-num">{{ number_format(random_int($goalJobsRandMin, $goalJobsRandMax)) }}</span>
+                                <span class="hv2-goal-card__stat-num">{{ number_format($role->displayOpenRolesCount()) }}</span>
                                 <span class="hv2-goal-card__stat-label">open roles</span>
                             </div>
                         </a>
@@ -434,7 +434,7 @@
                                 <span class="hv2-goal-card__referral-icon" aria-hidden="true"><i class="uil uil-gift"></i></span>
                                 <span class="hv2-goal-card__referral-body">
                                     <span class="hv2-goal-card__referral-label">Get referral</span>
-                                    <span class="hv2-goal-card__referral-stat">Up to <strong>+{{ random_int($referralHirePctMin, $referralHirePctMax) }}%</strong> better odds to get hired</span>
+                                    <span class="hv2-goal-card__referral-stat">Up to <strong>+{{ $role->displayReferralBoostPct() }}%</strong> better odds to get hired</span>
                                 </span>
                             </a>
                             <a href="{{ route('job-goal.show', $role) }}" class="hv2-goal-card__cta">
@@ -458,7 +458,7 @@
                                 <h3 class="hv2-goal-card__name">{{ $goalRow['label'] }}</h3>
                                 <div class="hv2-goal-card__stats" role="status">
                                     <span class="hv2-goal-card__stat-pulse" aria-hidden="true"></span>
-                                    <span class="hv2-goal-card__stat-num">{{ number_format(random_int($goalJobsRandMin, $goalJobsRandMax)) }}</span>
+                                    <span class="hv2-goal-card__stat-num">{{ number_format($role->displayOpenRolesCount()) }}</span>
                                     <span class="hv2-goal-card__stat-label">open roles</span>
                                 </div>
                             </a>

@@ -169,8 +169,19 @@ class JobRoleSeeder extends Seeder
                     'title' => $r['title'],
                     'description' => $r['description'] ?? null,
                     'is_active' => true,
+                    'is_synthetic' => false,
+                    'open_roles_count' => random_int(8000, 24000),
+                    'referral_boost_pct' => random_int(72, 88),
                 ]
             );
+
+            if ($role->open_roles_count === null) {
+                $role->update([
+                    'is_synthetic' => false,
+                    'open_roles_count' => random_int(8000, 24000),
+                    'referral_boost_pct' => random_int(72, 88),
+                ]);
+            }
 
             foreach ($skillList as $priority => $skillName) {
                 JobRequiredSkill::firstOrCreate(
