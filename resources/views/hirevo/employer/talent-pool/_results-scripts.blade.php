@@ -11,7 +11,8 @@
     var plansUrl = @json(route('employer.plans.index'));
     var highlightTerms = @json($tpHighlightTerms ?? []);
     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    var debounceTimer;
+    var debounceResultsTimer;
+    var debounceFacetsTimer;
     var activeRow = null;
     var totalCountEl = document.getElementById('tp-total-count');
 
@@ -20,20 +21,37 @@
     var drawerLoading = document.getElementById('tp-drawer-loading');
     var drawerBody = document.getElementById('tp-drawer-body');
 
-    function collectParams(page) {
+    function collectParams(page, opts) {
+        opts = opts || {};
         var fd = new FormData(form);
         if (page) fd.set('page', page);
         var params = new URLSearchParams();
         fd.forEach(function (v, k) { if (v !== '' && v !== null) params.append(k, v); });
         if (!fd.get('saved_only')) params.delete('saved_only');
         if (!fd.get('shortlisted_only')) params.delete('shortlisted_only');
+        if (opts.skipTotal) params.set('skip_total', '1');
+        if (opts.withFacets) params.set('facets', '1');
         return params;
     }
 
-    function fetchResults(page) {
+    function fetchFacets() {
+        if (!filtersEl) return;
+        fetch(searchUrl + '?' + collectParams(1, { withFacets: true, skipTotal: true }).toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.filters_html) filtersEl.innerHTML = data.filters_html;
+                bindAll();
+            })
+            .catch(function () {});
+    }
+
+    function fetchResults(page, opts) {
         if (!resultsEl) return;
+        opts = opts || {};
         loadingEl?.classList.add('show');
-        fetch(searchUrl + '?' + collectParams(page || 1).toString(), {
+        fetch(searchUrl + '?' + collectParams(page || 1, opts).toString(), {
             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         })
             .then(function (r) { return r.json(); })
@@ -51,17 +69,29 @@
     }
 
     function debouncedFetch() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(function () { fetchResults(1); }, 450);
+        clearTimeout(debounceResultsTimer);
+        debounceResultsTimer = setTimeout(function () { fetchResults(1, { skipTotal: true }); }, 450);
     }
 
-    form?.addEventListener('submit', function (e) { e.preventDefault(); fetchResults(1); });
+    function debouncedFacets() {
+        clearTimeout(debounceFacetsTimer);
+        debounceFacetsTimer = setTimeout(fetchFacets, 700);
+    }
+
+    form?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        fetchResults(1, { withFacets: true });
+        fetchFacets();
+    });
 
     function bindLocationSelect() {
         var locSelect = document.getElementById('tp-location');
         if (!locSelect || locSelect.dataset.tpBound) return;
         locSelect.dataset.tpBound = '1';
-        locSelect.onchange = debouncedFetch;
+        locSelect.onchange = function () {
+            debouncedFetch();
+            debouncedFacets();
+        };
     }
 
     function bindExperienceRadios() {
@@ -73,6 +103,7 @@
                 if (minEl) minEl.value = this.dataset.min ?? '';
                 if (maxEl) maxEl.value = this.dataset.max ?? '';
                 debouncedFetch();
+                debouncedFacets();
             };
         });
     }
@@ -83,14 +114,23 @@
                 var edu = document.getElementById('tp-education');
                 if (edu) edu.value = this.value;
                 debouncedFetch();
+                debouncedFacets();
             };
         });
     }
 
     function bindFilters() {
         document.querySelectorAll('.tp-filter').forEach(function (el) {
-            el.onchange = debouncedFetch;
-            if (el.type === 'text' || el.type === 'number') el.oninput = debouncedFetch;
+            el.onchange = function () {
+                debouncedFetch();
+                if (el.id !== 'tp-q' && el.id !== 'tp-skills') debouncedFacets();
+            };
+            if (el.type === 'text' || el.type === 'number') {
+                el.oninput = function () {
+                    debouncedFetch();
+                    if (el.id !== 'tp-q' && el.id !== 'tp-skills') debouncedFacets();
+                };
+            }
         });
     }
 

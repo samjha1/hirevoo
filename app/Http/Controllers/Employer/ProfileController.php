@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employer;
 
 use App\Http\Controllers\Controller;
 use App\Models\ReferrerProfile;
+use App\Rules\StrictEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -41,7 +42,7 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'name'           => ['required', 'string', 'max:255'],
             'company_name'   => ['required', 'string', 'max:255'],
-            'company_email'  => ['required', 'email', 'max:255', Rule::unique('referrer_profiles', 'company_email')->ignore($user->referrerProfile?->id)],
+            'company_email'  => ['required', 'string', 'max:255', new StrictEmail, Rule::unique('referrer_profiles', 'company_email')->ignore($user->referrerProfile?->id)],
             'phone'          => ['nullable', 'string', 'max:20'],
             'designation'    => ['nullable', 'string', 'max:255'],
             'department'     => ['nullable', 'string', 'max:255'],
@@ -59,7 +60,7 @@ class ProfileController extends Controller
         $isNew = ! $user->referrerProfile;
         $profile = $user->referrerProfile ?? new ReferrerProfile(['user_id' => $user->id]);
         $profile->company_name = $validated['company_name'];
-        $profile->company_email = $validated['company_email'];
+        $profile->company_email = strtolower($validated['company_email']);
         $profile->designation = $validated['designation'] ?? $profile->designation;
         $profile->department = $validated['department'] ?? $profile->department;
         $profile->gstin = $validated['gstin'] ?? null;

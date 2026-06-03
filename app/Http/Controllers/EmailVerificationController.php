@@ -15,7 +15,7 @@ class EmailVerificationController extends Controller
     /**
      * Show the email verification view
      */
-    public function show(): View
+    public function show(Request $request): View|RedirectResponse
     {
         $user = auth()->user();
         if ($user->isReferrer() && $user->referrerProfile) {
@@ -26,6 +26,15 @@ class EmailVerificationController extends Controller
         }
 
         $pendingOtp = EmailOtp::getLatestPendingOtp($user->id);
+
+        if (
+            $user->isReferrer()
+            && $user->referrerProfile
+            && ! $user->referrerProfile->is_approved
+            && session()->pull('verify_email_auto_send')
+        ) {
+            return $this->sendOtp($request);
+        }
 
         return view('hirevo.verify-email', [
             'email' => $user->email,

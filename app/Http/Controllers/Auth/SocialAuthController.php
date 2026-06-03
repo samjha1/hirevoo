@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\CandidateProfile;
 use App\Models\User;
+use App\Support\EmployerVerification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -70,8 +71,8 @@ class SocialAuthController extends Controller
                 ->withErrors(['email' => 'Could not sign in with this provider. Please try again or use email.']);
         }
 
-        $email = $oauthUser->getEmail();
-        if (! $email) {
+        $email = strtolower(trim((string) $oauthUser->getEmail()));
+        if ($email === '') {
             return redirect()->route('login')
                 ->withErrors(['email' => 'No email received from provider. Please use email sign up.']);
         }
@@ -101,7 +102,7 @@ class SocialAuthController extends Controller
 
         $user = User::create([
             'name' => $this->oauthDisplayName($oauthUser, $email),
-            'email' => $email,
+            'email' => strtolower($email),
             'phone' => null,
             'password' => bcrypt(Str::random(32)),
             'role' => $intendedRole,
@@ -159,6 +160,10 @@ class SocialAuthController extends Controller
         $user = Auth::user();
         $redirect = session('oauth_intended_redirect');
         $this->clearOAuthSession();
+
+        if ($user && ($pending = EmployerVerification::redirectIfPending($user))) {
+            return $pending;
+        }
 
         if ($user && $user->isCandidate()) {
             if (! $user->candidate_profile_completed_at) {

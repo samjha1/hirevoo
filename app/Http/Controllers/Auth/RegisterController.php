@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\ReferrerProfile;
-use App\Rules\WorkEmail;
+use App\Rules\StrictEmail;
 use App\Rules\ValidEmployerReferralCode;
 use App\Services\CrmEmployerProspectBridge;
 use Illuminate\Http\Request;
@@ -28,27 +28,34 @@ class RegisterController extends Controller
 
     public function register(Request $request)
     {
-        $role = $request->input('role', 'candidate');
+        $role = $request->input('role', $request->query('role', 'candidate'));
+        $employerSignup = $role === 'referrer'
+            || $request->query('role') === 'referrer'
+            || $request->filled('company_name');
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'contact' => ['required', 'string', 'max:20'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'max:255', new StrictEmail, 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => ['required', 'in:candidate,referrer,edtech'],
         ];
 
-        if ($role === 'referrer') {
-            $rules['email'][] = new WorkEmail;
+        if ($employerSignup) {
+            $rules['role'] = ['required', 'in:referrer'];
             $rules['company_name'] = ['required', 'string', 'max:255'];
             $rules['referral_code'] = ['nullable', 'string', 'max:50', new ValidEmployerReferralCode];
         }
 
         $validated = $request->validate($rules);
 
+        if ($employerSignup) {
+            $validated['role'] = 'referrer';
+        }
+
         $user = User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => strtolower($validated['email']),
             'phone' => $validated['contact'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],

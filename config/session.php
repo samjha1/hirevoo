@@ -2,6 +2,11 @@
 
 use Illuminate\Support\Str;
 
+$appUrlPath = parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_PATH) ?: '';
+$defaultSessionPath = ($appUrlPath !== '' && $appUrlPath !== '/')
+    ? rtrim($appUrlPath, '/')
+    : '/';
+
 return [
     'driver' => env('SESSION_DRIVER', 'file'),
     'lifetime' => env('SESSION_LIFETIME', 120),
@@ -13,7 +18,7 @@ return [
     'store' => env('SESSION_STORE'),
     'lottery' => [2, 100],
     'cookie' => env('SESSION_COOKIE', Str::slug(env('APP_NAME', 'laravel'), '_').'_session'),
-    'path' => '/',
+    'path' => env('SESSION_PATH', $defaultSessionPath),
     'domain' => env('SESSION_DOMAIN'),
     'secure' => env('SESSION_SECURE_COOKIE'),
     'http_only' => true,

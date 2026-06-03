@@ -18,7 +18,7 @@
                             <div class="alert alert-danger py-2 mb-3">{{ $errors->first() }}</div>
                         @endif
 
-                        <form method="POST" action="{{ route('password.update') }}">
+                        <form method="POST" action="{{ route('password.update') }}" class="auth-form" novalidate>
                             @csrf
                             <input type="hidden" name="token" value="{{ $token }}">
                             @if($role === 'referrer')
@@ -27,7 +27,7 @@
 
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $email) }}" required>
+                                <input type="text" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', $email) }}" required autocomplete="email" inputmode="email" spellcheck="false" autocapitalize="none" title="Enter a valid email like name@company.com">
                                 @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
@@ -54,4 +54,5 @@
         </div>
     </div>
 </section>
+@include('hirevo.partials.auth-email-validation')
 @endsection

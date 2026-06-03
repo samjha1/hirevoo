@@ -18,6 +18,17 @@ class TalentPoolSearchService
 
     public const SOURCE_TALENT_POOL = EmployerTalentPoolAction::SOURCE_TALENT_POOL;
 
+    public function __construct(
+        protected TalentPoolElasticsearchService $elasticsearch,
+    ) {}
+
+    private ?string $searchMemoKey = null;
+
+    /** @var list<array{source: string, source_id: int, score: float}>|null */
+    private ?array $memoRankedHits = null;
+
+    private ?int $memoFilteredCount = null;
+
     /**
      * @param  array<string, mixed>  $filters
      * @return array{
@@ -26,7 +37,14 @@ class TalentPoolSearchService
      *     active_filter_count: int
      * }
      */
-    public function search(int $employerUserId, array $filters = [], int $perPage = 20, int $page = 1, bool $withFacets = false): array
+    public function search(
+        int $employerUserId,
+        array $filters = [],
+        int $perPage = 20,
+        int $page = 1,
+        bool $withFacets = false,
+        bool $includeTotal = true,
+    ): array
     {
         $perPage = max(10, min(30, $perPage));
         $page = max(1, $page);
@@ -80,7 +98,7 @@ class TalentPoolSearchService
             'items' => $items,
             'paginator' => $paginator,
             'active_filter_count' => $this->countActiveFilters($filters),
-            'total_count' => $this->countMatchingCandidates($filters),
+            'total_count' => $includeTotal ? $this->countMatchingCandidates($filters) : null,
             'requires_search' => false,
         ];
 
@@ -98,6 +116,10 @@ class TalentPoolSearchService
     {
         if (! $this->hasSearchCriteria($filters)) {
             return 0;
+        }
+
+        if ($this->elasticsearch->hasTextCriteria($filters)) {
+            return $this->countFilteredRanked($filters, $this->getRankedHits($filters));
         }
 
         $verified = $this->verifiedCandidatesQuery($filters)->select('users.id');
@@ -219,6 +241,10 @@ class TalentPoolSearchService
      */
     protected function fetchUnionPage(array $filters, int $offset, int $limit): Collection
     {
+        if ($this->elasticsearch->hasTextCriteria($filters)) {
+            return $this->fetchUnionPageRanked($filters, $this->getRankedHits($filters), $offset, $limit);
+        }
+
         $verified = $this->verifiedCandidatesQuery($filters)
             ->select([
                 'users.id',
@@ -247,6 +273,221 @@ class TalentPoolSearchService
     }
 
     /**
+     * @param  array<string, mixed>  $filters
+     * @param  list<array{source: string, source_id: int, score: float}>  $ranked
+     * @return Collection<int, object{id: int, candidate_source: string, source_priority: int, sort_at: mixed}>
+     */
+    protected function fetchUnionPageRanked(array $filters, array $ranked, int $offset, int $limit): Collection
+    {
+        if ($ranked === []) {
+            return collect();
+        }
+
+        if (! $this->needsPostRankSqlFilter($filters)) {
+            $slice = array_slice($ranked, $offset, $limit);
+
+            return $this->rankedHitsToRows($slice);
+        }
+
+        $needed = $offset + $limit;
+        $matched = [];
+        foreach (array_chunk($ranked, 80) as $chunk) {
+            foreach ($this->filterRankedChunk($filters, $chunk) as $hit) {
+                $matched[] = $hit;
+                if (count($matched) >= $needed) {
+                    break 2;
+                }
+            }
+        }
+
+        return $this->rankedHitsToRows(array_slice($matched, $offset, $limit));
+    }
+
+    /**
+     * @param  list<array{source: string, source_id: int, score: float}>  $hits
+     * @return Collection<int, object{id: int, candidate_source: string, source_priority: int, sort_at: null}>
+     */
+    protected function rankedHitsToRows(array $hits): Collection
+    {
+        return collect($hits)->map(function (array $hit) {
+            return (object) [
+                'id' => $hit['source_id'],
+                'candidate_source' => $hit['source'],
+                'source_priority' => $hit['source'] === self::SOURCE_VERIFIED ? 0 : 1,
+                'sort_at' => null,
+            ];
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array{source: string, source_id: int, score: float}>
+     */
+    protected function getRankedHits(array $filters): array
+    {
+        $this->syncSearchMemo($filters);
+        if ($this->memoRankedHits !== null) {
+            return $this->memoRankedHits;
+        }
+
+        $this->memoRankedHits = $this->elasticsearch->searchRanked($filters) ?? [];
+
+        return $this->memoRankedHits;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @param  list<array{source: string, source_id: int, score: float}>  $ranked
+     */
+    protected function countFilteredRanked(array $filters, array $ranked): int
+    {
+        $this->syncSearchMemo($filters);
+        if ($this->memoFilteredCount !== null) {
+            return $this->memoFilteredCount;
+        }
+
+        if ($ranked === []) {
+            $this->memoFilteredCount = 0;
+
+            return 0;
+        }
+
+        if (! $this->needsPostRankSqlFilter($filters)) {
+            $this->memoFilteredCount = count($ranked);
+
+            return $this->memoFilteredCount;
+        }
+
+        $count = 0;
+        foreach (array_chunk($ranked, 80) as $chunk) {
+            $count += count($this->filterRankedChunk($filters, $chunk));
+        }
+
+        $this->memoFilteredCount = $count;
+
+        return $count;
+    }
+
+    /**
+     * Saved/shortlisted need employer-scoped SQL; other structural filters can live in Elasticsearch.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    protected function needsPostRankSqlFilter(array $filters): bool
+    {
+        if (! $this->elasticsearch->isEnabled()) {
+            return $this->hasStructuralFilters($filters);
+        }
+
+        return filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            || filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    protected function hasStructuralFilters(array $filters): bool
+    {
+        return $this->selectedLocations($filters) !== []
+            || trim((string) ($filters['education'] ?? '')) !== ''
+            || ($filters['experience_min'] ?? '') !== ''
+            || ($filters['experience_max'] ?? '') !== ''
+            || filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            || filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    protected function syncSearchMemo(array $filters): void
+    {
+        $key = hash('xxh128', json_encode($this->filtersForMemo($filters)));
+        if ($this->searchMemoKey === $key) {
+            return;
+        }
+
+        $this->searchMemoKey = $key;
+        $this->memoRankedHits = null;
+        $this->memoFilteredCount = null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    protected function filtersForMemo(array $filters): array
+    {
+        ksort($filters);
+
+        return $filters;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @param  list<array{source: string, source_id: int, score: float}>  $ranked
+     * @return list<array{source: string, source_id: int, score: float}>
+     */
+    protected function filterRankedChunk(array $filters, array $ranked): array
+    {
+        if ($ranked === []) {
+            return [];
+        }
+
+        $structural = $this->filtersWithoutText($filters);
+
+        $verifiedIds = [];
+        $talentIds = [];
+        foreach ($ranked as $hit) {
+            if ($hit['source'] === self::SOURCE_VERIFIED) {
+                $verifiedIds[] = $hit['source_id'];
+            } else {
+                $talentIds[] = $hit['source_id'];
+            }
+        }
+
+        $matchingVerified = [];
+        if ($verifiedIds !== []) {
+            $matchingVerified = $this->verifiedCandidatesQuery($structural)
+                ->whereIn('users.id', array_values(array_unique($verifiedIds)))
+                ->pluck('users.id')
+                ->flip()
+                ->all();
+        }
+
+        $matchingTalent = [];
+        if ($talentIds !== []) {
+            $matchingTalent = $this->talentPoolCandidatesQuery($structural)
+                ->whereIn('talent_pool_candidates.id', array_values(array_unique($talentIds)))
+                ->pluck('talent_pool_candidates.id')
+                ->flip()
+                ->all();
+        }
+
+        $filtered = [];
+        foreach ($ranked as $hit) {
+            if ($hit['source'] === self::SOURCE_VERIFIED && isset($matchingVerified[$hit['source_id']])) {
+                $filtered[] = $hit;
+            } elseif ($hit['source'] === self::SOURCE_TALENT_POOL && isset($matchingTalent[$hit['source_id']])) {
+                $filtered[] = $hit;
+            }
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    protected function filtersWithoutText(array $filters): array
+    {
+        $copy = $filters;
+        unset($copy['q'], $copy['skills']);
+
+        return $copy;
+    }
+
+    /**
      * @param  Collection<int, object>  $rows
      * @return Collection<int, array<string, mixed>>
      */
@@ -263,7 +504,10 @@ class TalentPoolSearchService
         if ($verifiedIds !== []) {
             $verifiedMap = User::query()
                 ->whereIn('id', $verifiedIds)
-                ->with(['candidateProfile', 'resumes' => fn ($q) => $q->orderByDesc('is_primary')->orderByDesc('id')])
+                ->with([
+                    'candidateProfile',
+                    'resumes' => fn ($q) => $q->orderByDesc('is_primary')->orderByDesc('id')->limit(1),
+                ])
                 ->get()
                 ->keyBy('id');
         }
@@ -276,7 +520,9 @@ class TalentPoolSearchService
                 ->keyBy('id');
         }
 
-        return $rows->map(function ($row) use ($verifiedMap, $talentMap) {
+        $ordered = $rows->values();
+
+        return $ordered->map(function ($row) use ($verifiedMap, $talentMap) {
             if ($row->candidate_source === self::SOURCE_VERIFIED) {
                 $user = $verifiedMap->get($row->id);
 
@@ -647,17 +893,14 @@ class TalentPoolSearchService
                 'experience_min' => $bucket['min'],
                 'experience_max' => $bucket['max'],
             ]);
-            $slice = $this->fetchUnionPage($bucketFilters, 0, 1);
-            if ($slice->isEmpty()) {
-                continue;
-            }
-            $estimate = $this->fetchUnionPage($bucketFilters, 0, 5000)->count();
-            if ($estimate > 0) {
+            $count = $this->verifiedCandidatesQuery($bucketFilters)->count()
+                + $this->talentPoolCandidatesQuery($bucketFilters)->count();
+            if ($count > 0) {
                 $result[] = [
                     'label' => $bucket['label'],
                     'min' => $bucket['min'],
                     'max' => $bucket['max'],
-                    'count' => $estimate >= 5000 ? 5000 : $estimate,
+                    'count' => $count,
                 ];
             }
         }

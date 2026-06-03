@@ -29,18 +29,13 @@ class TalentPoolController extends Controller
         }
 
         $filters = $this->filtersFromRequest($request, $user->id);
-        $locationFacets = $this->searchService->hasSearchCriteria($filters)
-            ? ($this->searchService->filterFacets($filters)['locations'] ?? [])
-            : [];
 
         return view('hirevo.employer.talent-pool.search', [
             'educationOptions' => CandidateProfile::educationDegreeValues(),
             'canAccessTalentPool' => $this->planService->canAccessTalentPool($user->referrerProfile),
             'filters' => $filters,
-            'locationFacets' => $locationFacets,
-            'totalCount' => $this->searchService->hasSearchCriteria($filters)
-                ? $this->searchService->countMatchingCandidates($filters)
-                : null,
+            'locationFacets' => [],
+            'totalCount' => null,
         ]);
     }
 
@@ -62,7 +57,8 @@ class TalentPoolController extends Controller
             $filters,
             $perPage,
             (int) $request->input('page', 1),
-            withFacets: $hasCriteria
+            withFacets: $hasCriteria,
+            includeTotal: true,
         );
 
         $items = $result['items']->map(fn (array $row) => $this->planService->maskCandidateRow($row, $user, true));
@@ -118,12 +114,15 @@ class TalentPoolController extends Controller
         $filters = $this->filtersFromRequest($request, $user->id);
         $hasCriteria = $this->searchService->hasSearchCriteria($filters);
         $perPage = max(10, min(30, (int) $request->input('per_page', 20)));
+        $withFacets = $request->boolean('facets');
+        $includeTotal = ! $request->boolean('skip_total');
         $result = $this->searchService->search(
             $user->id,
             $filters,
             $perPage,
             (int) $request->input('page', 1),
-            withFacets: $hasCriteria
+            withFacets: $withFacets,
+            includeTotal: $includeTotal,
         );
 
         $items = $result['items']->map(fn (array $row) => $this->planService->maskCandidateRow($row, $user, true));
@@ -138,21 +137,24 @@ class TalentPoolController extends Controller
             'canAccessTalentPool' => $canAccess,
         ])->render();
 
-        $filtersHtml = view('hirevo.employer.talent-pool._filters', [
-            'filters' => $filters,
-            'selectedLocations' => $this->searchService->selectedLocations($filters),
-            'facets' => $result['facets'] ?? ['locations' => [], 'education' => [], 'experience' => []],
-            'activeFilterCount' => $result['active_filter_count'],
-            'educationOptions' => CandidateProfile::educationDegreeValues(),
-        ])->render();
-
-        return response()->json([
+        $payload = [
             'html' => $html,
-            'filters_html' => $filtersHtml,
             'active_filter_count' => $result['active_filter_count'],
-            'total_count' => (int) ($result['total_count'] ?? 0),
+            'total_count' => $includeTotal ? (int) ($result['total_count'] ?? 0) : null,
             'requires_search' => (bool) ($result['requires_search'] ?? false),
-        ]);
+        ];
+
+        if ($withFacets) {
+            $payload['filters_html'] = view('hirevo.employer.talent-pool._filters', [
+                'filters' => $filters,
+                'selectedLocations' => $this->searchService->selectedLocations($filters),
+                'facets' => $result['facets'] ?? ['locations' => [], 'education' => [], 'experience' => []],
+                'activeFilterCount' => $result['active_filter_count'],
+                'educationOptions' => CandidateProfile::educationDegreeValues(),
+            ])->render();
+        }
+
+        return response()->json($payload);
     }
 
     public function unlock(Request $request): JsonResponse

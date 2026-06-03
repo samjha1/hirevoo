@@ -33,7 +33,7 @@
                                     @if($isEmployer)
                                     <div class="text-center mb-3">
                                         <h5>Employer Sign up</h5>
-                                        <p class="text-white-70 mb-0">Use your company work email to register</p>
+                                        <p class="text-white-70 mb-0">Create your employer account</p>
                                     </div>
                                     @elseif($isCandidate)
                                     <div class="text-center mb-3">
@@ -65,7 +65,7 @@
                                         <span class="position-absolute top-50 start-50 translate-middle auth-or-badge px-2 text-white-50 small">or</span>
                                     </div>
                                     @endif
-                                    <form method="POST" action="{{ route('register') }}" class="auth-form">
+                                    <form method="POST" action="{{ route('register') }}" class="auth-form" novalidate>
                                         @csrf
                                         @if(request()->has('role'))<input type="hidden" name="role" value="{{ $roleVal }}">@endif
                                         <div class="mb-3">
@@ -86,12 +86,9 @@
                                             </div>
                                         @endif
                                         <div class="mb-3">
-                                            <label for="email" class="form-label">{{ $isEmployer ? 'Work Email' : 'Email' }}</label>
-                                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="{{ $isEmployer ? 'yourname@company.com' : 'Enter your email' }}" required>
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="text" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="name@example.com" required autocomplete="email" inputmode="email" spellcheck="false" autocapitalize="none" title="Enter a valid email like name@example.com">
                                             @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                            @if($isEmployer)
-                                            <small class="text-white-50">Use your company email. Gmail, Yahoo, etc. are not allowed.</small>
-                                            @endif
                                         </div>
                                         <div class="mb-3 auth-password-wrap">
                                             <label for="password" class="form-label">Create Password</label>
@@ -175,4 +172,6 @@ document.getElementById('toggle_referral_code')?.addEventListener('click', funct
 </script>
 @endpush
 @endif
+@include('hirevo.partials.auth-email-validation')
+@include('hirevo.partials.auth-csrf-refresh')
 @endsection

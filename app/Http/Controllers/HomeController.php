@@ -13,6 +13,7 @@ use App\Models\UpskillOpportunity;
 use App\Services\CandidateLeadService;
 use App\Services\GptService;
 use App\Services\JobCatalogService;
+use App\Services\JobOpeningsSearchService;
 use App\Services\ResumeAnalysisService;
 use App\Mail\EmployerJobApplicationSubmitted;
 use App\Support\CandidateOnboarding;
@@ -154,7 +155,7 @@ class HomeController extends Controller
         return view('hirevo.pricing');
     }
 
-    public function jobOpenings(Request $request, ResumeAnalysisService $resumeAnalysis, GptService $gptService, JobCatalogService $jobCatalog): View|JsonResponse|RedirectResponse
+    public function jobOpenings(Request $request, ResumeAnalysisService $resumeAnalysis, GptService $gptService, JobCatalogService $jobCatalog, JobOpeningsSearchService $jobSearch): View|JsonResponse|RedirectResponse
     {
         if ($request->boolean('clear_personalization')) {
             $request->session()->forget(['job_openings_personalize_resume_id', 'job_openings_personalized']);
@@ -170,14 +171,7 @@ class HomeController extends Controller
         $query = EmployerJob::where('status', 'active')->with(['user.referrerProfile']);
 
         if ($request->filled('q')) {
-            $q = $request->get('q');
-            $query->where(function ($qry) use ($q) {
-                $qry->where('title', 'like', '%' . $q . '%')
-                    ->orWhere('description', 'like', '%' . $q . '%')
-                    ->orWhereHas('user.referrerProfile', function ($uq) use ($q) {
-                        $uq->where('company_name', 'like', '%' . $q . '%');
-                    });
-            });
+            $jobSearch->applyEmployerJobSearch($query, (string) $request->get('q'));
         }
 
         $validCountryCodes = ['ca', 'us', 'gb', 'ae'];
@@ -229,7 +223,7 @@ class HomeController extends Controller
             ? JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all()
             : [];
 
-        if (auth()->check() && auth()->user()->isCandidate() && $appliedIds !== []) {
+        if (auth()->check() && $appliedIds !== []) {
             $query->whereNotIn('id', $appliedIds);
         }
 
@@ -238,7 +232,16 @@ class HomeController extends Controller
         $filterJobType = $request->get('job_type', '');
         $filterWorkType = $request->get('work_location_type', '');
 
-        $filterHash = md5($searchQuery.'|'.$searchLocation.'|'.$filterJobType.'|'.$filterWorkType.'|'.$countryFilter);
+        $filterHash = md5(implode('|', [
+            $searchQuery,
+            $searchLocation,
+            $filterJobType,
+            $filterWorkType,
+            $countryFilter,
+            (string) (auth()->id() ?? 0),
+            implode(',', $appliedIds),
+            implode(',', $appliedGoalIds),
+        ]));
 
         $jobMatchScores = [];
         $jobMatchAiRanked = false;
@@ -269,13 +272,13 @@ class HomeController extends Controller
                     && (int) ($cached['resume_id'] ?? 0) === (int) $resume->id
                     && ($cached['filter_hash'] ?? '') === $filterHash
                     && isset($cached['ordered_ids']) && is_array($cached['ordered_ids'])) {
-                    $orderedIds = $cached['ordered_ids'];
+                    $orderedIds = $this->filterAppliedEmployerJobIds($cached['ordered_ids'], $appliedIds);
                     $jobMatchScores = is_array($cached['scores'] ?? null) ? $cached['scores'] : [];
                     $jobMatchAiRanked = (bool) ($cached['ai_ranked'] ?? false);
                 } else {
                     $pool = (clone $query)->orderByDesc('created_at')->limit(120)->get();
                     $ordered = $resumeAnalysis->orderEmployerJobsForOpeningsList($resume, $pool, $gptService);
-                    $orderedIds = $ordered['ordered_ids'];
+                    $orderedIds = $this->filterAppliedEmployerJobIds($ordered['ordered_ids'], $appliedIds);
                     $jobMatchScores = $ordered['scores'];
                     $jobMatchAiRanked = $ordered['ai_ranked'];
                     $request->session()->put('job_openings_personalized', [
@@ -586,6 +589,9 @@ class HomeController extends Controller
             }
         }
 
+        app(JobCatalogService::class)->clearOpeningsCatalogCache();
+        $request->session()->forget('job_openings_personalized');
+
         $applyLink = is_string($job->apply_link ?? null) ? trim((string) $job->apply_link) : null;
         if ($applyLink !== '') {
             return redirect()
@@ -595,6 +601,25 @@ class HomeController extends Controller
         }
 
         return redirect()->route('job-openings')->with('success', 'Your application has been submitted.');
+    }
+
+    /**
+     * @param  list<int|string>  $orderedIds
+     * @param  list<int>  $appliedIds
+     * @return list<int>
+     */
+    protected function filterAppliedEmployerJobIds(array $orderedIds, array $appliedIds): array
+    {
+        if ($appliedIds === []) {
+            return array_values(array_map('intval', $orderedIds));
+        }
+
+        $appliedLookup = array_flip(array_map('intval', $appliedIds));
+
+        return array_values(array_filter(
+            array_map('intval', $orderedIds),
+            static fn (int $id): bool => ! isset($appliedLookup[$id])
+        ));
     }
 
     public function externalEmployerJobApplyRedirect(EmployerJob $job): View|RedirectResponse

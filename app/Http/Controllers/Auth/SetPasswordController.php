@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Rules\StrictEmail;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -54,7 +55,7 @@ class SetPasswordController extends Controller
     {
         $request->validate([
             'token'    => ['required', 'string'],
-            'email'    => ['required', 'email'],
+            'email'    => ['required', 'string', 'max:255', new StrictEmail],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 

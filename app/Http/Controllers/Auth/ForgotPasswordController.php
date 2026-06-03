@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Rules\StrictEmail;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class ForgotPasswordController extends Controller
     public function sendResetLinkEmail(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string', 'max:255', new StrictEmail],
             'role' => ['nullable', 'in:referrer'],
         ]);
 
@@ -83,7 +84,7 @@ class ForgotPasswordController extends Controller
     {
         $validated = $request->validate([
             'token' => ['required'],
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string', 'max:255', new StrictEmail],
             'password' => ['required', 'confirmed', PasswordRule::defaults()],
             'role' => ['nullable', 'in:referrer'],
         ]);

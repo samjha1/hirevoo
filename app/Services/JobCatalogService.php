@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EmployerJob;
+use App\Models\JobApplication;
 use App\Models\JobRole;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\Cache;
 class JobCatalogService
 {
     private const OPENINGS_SESSION_KEY = 'job_openings_catalog_v2';
+
+    public function __construct(
+        protected JobOpeningsSearchService $jobSearch,
+    ) {}
 
     /**
      * Paginated job goals: real roles first (shuffled), then synthetic.
@@ -336,12 +341,17 @@ class JobCatalogService
         $query = JobRole::active();
 
         if ($request->filled('q')) {
-            $q = $request->get('q');
-            $query->where(function ($qry) use ($q) {
-                $qry->where('title', 'like', '%'.$q.'%')
-                    ->orWhere('description', 'like', '%'.$q.'%')
-                    ->orWhere('sector', 'like', '%'.$q.'%');
-            });
+            $this->jobSearch->applyJobRoleSearch($query, (string) $request->get('q'));
+        }
+
+        if (auth()->check()) {
+            $appliedGoalIds = JobApplication::query()
+                ->where('user_id', auth()->id())
+                ->pluck('job_role_id')
+                ->all();
+            if ($appliedGoalIds !== []) {
+                $query->whereNotIn('id', $appliedGoalIds);
+            }
         }
 
         return $query;

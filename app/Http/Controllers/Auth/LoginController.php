@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Rules\StrictEmail;
+use App\Support\EmployerVerification;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -14,10 +17,10 @@ class LoginController extends Controller
         return view('hirevo.sign-in');
     }
 
-    public function login(Request $request)
+    public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string', 'max:255', new StrictEmail],
             'password' => ['required'],
         ]);
 
@@ -48,6 +51,11 @@ class LoginController extends Controller
             }
 
             $request->session()->regenerate();
+
+            if ($pendingVerification = EmployerVerification::redirectIfPending($user)) {
+                return $pendingVerification;
+            }
+
             $redirect = $request->query('redirect');
             if ($redirect && \Illuminate\Support\Str::startsWith($redirect, '/') && ! \Illuminate\Support\Str::startsWith($redirect, '//')) {
                 return redirect()->to($redirect);
@@ -55,6 +63,7 @@ class LoginController extends Controller
             if ($user->isReferrer()) {
                 return redirect()->intended(route('employer.dashboard'));
             }
+
             return redirect()->intended(route('home'));
         }
 

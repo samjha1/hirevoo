@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CompanyReferrerSignup;
+use App\Rules\StrictEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,7 @@ class ReferralSignupController extends Controller
         $request->validate([
             'company_name'   => ['required', 'string', 'max:255'],
             'name'           => ['required', 'string', 'max:255'],
-            'email'          => ['required', 'email'],
+            'email'          => ['required', 'string', 'max:255', new StrictEmail],
             'phone'          => ['nullable', 'string', 'max:20'],
             'max_candidates' => ['required', 'integer', 'min:1', 'max:100'],
             'message'        => ['nullable', 'string', 'max:1000'],
@@ -25,7 +26,7 @@ class ReferralSignupController extends Controller
         CompanyReferrerSignup::create([
             'company_name'   => $request->company_name,
             'name'           => $request->name,
-            'email'          => $request->email,
+            'email'          => strtolower($request->email),
             'phone'          => $request->phone ?: null,
             'max_candidates' => (int) $request->max_candidates,
             'message'        => $request->message ? trim($request->message) : null,

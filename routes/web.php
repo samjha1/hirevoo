@@ -31,6 +31,10 @@ Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->middleware('web')->name('csrf-token');
+
 Route::get('/sign-in', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/sign-in', [LoginController::class, 'login'])->middleware('throttle:10,1');
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');

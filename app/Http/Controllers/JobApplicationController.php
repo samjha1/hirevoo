@@ -7,6 +7,7 @@ use App\Models\JobApplication;
 use App\Models\JobRole;
 use App\Models\Resume;
 use App\Services\GptService;
+use App\Services\JobCatalogService;
 use App\Services\ResumeAnalysisService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -144,6 +145,11 @@ class JobApplicationController extends Controller
             'match_score' => $matchScore,
             'match_score_explanation' => $matchScoreExplanation,
         ]);
+
+        if ($returnTo === 'job-openings') {
+            app(JobCatalogService::class)->clearOpeningsCatalogCache();
+            $request->session()->forget('job_openings_personalized');
+        }
 
         return redirect()->to($this->returnUrl($jobRole, $returnTo))
             ->with('success', 'Your application has been submitted. ' . ($matchScore !== null ? 'Your match score has been saved and will be visible to employers.' : ''));

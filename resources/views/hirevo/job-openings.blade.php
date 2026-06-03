@@ -31,6 +31,7 @@
         --jo-glow: rgba(16, 185, 129, 0.42);
         --jo-surface: #f8fafc;
         --jo-card: #ffffff;
+        --jo-sticky-top: 92px;
         min-height: 100vh;
         background:
             radial-gradient(ellipse 100% 80% at 50% -30%, rgba(99, 102, 241, 0.09), transparent 55%),
@@ -653,6 +654,30 @@
         padding-top: 0.35rem;
         align-items: flex-start;
     }
+    @media (min-width: 992px) {
+        .jo-layout-row {
+            align-items: stretch;
+        }
+        .jo-sidebar-col {
+            display: flex;
+            flex-direction: column;
+        }
+        .jo-sidebar-sticky {
+            position: sticky;
+            top: var(--jo-sticky-top);
+            z-index: 5;
+            width: 100%;
+        }
+        .jo-sidebar-sticky .hv-sponsored-wrap--sidebar {
+            margin-bottom: 1rem;
+        }
+        .jo-sidebar-sticky .jo-filters-card {
+            margin-bottom: 0;
+        }
+    }
+    .jo-results-col {
+        min-width: 0;
+    }
     .jo-results-col > *:last-child { margin-bottom: 0; }
 
     .jo-mobile-toolbar {
@@ -1162,11 +1187,10 @@
         width: 100%;
     }
     .jo-pagination-inner {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: minmax(0, auto) minmax(0, 1fr);
         align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem 1rem;
+        gap: 0.75rem 1.25rem;
         width: 100%;
         padding: 0.85rem 1.15rem;
         background: var(--jo-card);
@@ -1174,13 +1198,19 @@
         border-radius: 16px;
         box-shadow: 0 4px 24px rgba(11, 31, 59, 0.05);
     }
+    @media (max-width: 767.98px) {
+        .jo-pagination-inner {
+            grid-template-columns: 1fr;
+            justify-items: center;
+            text-align: center;
+        }
+    }
     .jo-pagination-meta {
         font-size: 0.8125rem;
         font-weight: 600;
         color: var(--jo-muted);
         margin: 0;
         white-space: nowrap;
-        flex: 0 0 auto;
     }
     .jo-pagination-meta strong {
         color: var(--jo-ink);
@@ -1188,20 +1218,21 @@
         font-variant-numeric: tabular-nums;
     }
     .jo-pagination-nav {
-        flex: 1 1 auto;
         display: flex;
-        justify-content: center;
+        align-items: center;
+        justify-content: flex-end;
         min-width: 0;
+        width: 100%;
     }
-    @media (min-width: 768px) {
-        .jo-pagination-nav { justify-content: flex-end; }
+    @media (max-width: 767.98px) {
+        .jo-pagination-nav { justify-content: center; }
     }
     .jo-pagination-wrap .pagination {
-        display: flex;
+        display: inline-flex;
         flex-wrap: wrap;
         align-items: center;
-        justify-content: center;
-        gap: 0.3rem;
+        justify-content: flex-end;
+        gap: 0.35rem;
         margin: 0;
         padding: 0;
         list-style: none;
@@ -1210,10 +1241,16 @@
         box-shadow: none;
         border-radius: 0;
     }
+    @media (max-width: 767.98px) {
+        .jo-pagination-wrap .pagination { justify-content: center; }
+    }
     .jo-pagination-wrap .page-item {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         margin: 0;
+    }
+    .jo-pagination-wrap .pagination > .page-item + .page-item {
+        margin-left: 0;
     }
     .jo-pagination-wrap .page-item .page-link {
         display: inline-flex;
@@ -1527,18 +1564,20 @@
             </div>
 
             <div class="row jo-layout-row">
-                <div class="col-lg-3 mb-4 mb-lg-0 d-none d-lg-block">
-                    @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'sidebar'])
+                <div class="col-lg-3 mb-4 mb-lg-0 d-none d-lg-block jo-sidebar-col">
+                    <div class="jo-sidebar-sticky">
+                        @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'sidebar'])
 
-                    <div class="card jo-filters-card border-0 sticky-top" style="top: 92px;">
-                        <div class="card-body p-4">
-                            <div class="jo-filters-head">
-                                <h2><i class="mdi mdi-tune-variant" aria-hidden="true"></i> Refine</h2>
-                                @if($hasActiveFilters)
-                                    <a href="{{ route('job-openings') }}" class="jo-filter-reset">Reset</a>
-                                @endif
+                        <div class="card jo-filters-card border-0">
+                            <div class="card-body p-4">
+                                <div class="jo-filters-head">
+                                    <h2><i class="mdi mdi-tune-variant" aria-hidden="true"></i> Refine</h2>
+                                    @if($hasActiveFilters)
+                                        <a href="{{ route('job-openings') }}" class="jo-filter-reset">Reset</a>
+                                    @endif
+                                </div>
+                                @include('hirevo.partials.job-openings-filters', ['filtersFormId' => 'filters-form'])
                             </div>
-                            @include('hirevo.partials.job-openings-filters', ['filtersFormId' => 'filters-form'])
                         </div>
                     </div>
                 </div>
@@ -1638,7 +1677,7 @@
                                     Page <strong>{{ $jobs->currentPage() }}</strong> of <strong>{{ $jobs->lastPage() }}</strong>
                                 </p>
                                 <div class="jo-pagination-nav">
-                                    {{ $jobs->onEachSide(1)->fragment('jo-results-bar')->links() }}
+                                    {{ $jobs->onEachSide(1)->fragment('jo-results-bar')->links('hirevo.pagination.job-openings') }}
                                 </div>
                             </div>
                         </nav>

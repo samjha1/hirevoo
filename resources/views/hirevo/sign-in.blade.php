@@ -36,6 +36,9 @@
                                     @if($errors->any())
                                         <div class="alert alert-danger py-2 mb-3">{{ $errors->first() }}</div>
                                     @endif
+                                    @if(session('error'))
+                                        <div class="alert alert-warning py-2 mb-3">{{ session('error') }}</div>
+                                    @endif
                                     @if(session('status'))
                                         <div class="alert alert-success py-2 mb-3">{{ session('status') }}</div>
                                     @endif
@@ -55,14 +58,14 @@
                                         <span class="position-absolute top-50 start-50 translate-middle auth-or-badge px-2 text-white-50 small">or</span>
                                     </div>
                                     @endif
-                                    <form method="POST" action="{{ route('login') }}" class="auth-form">
+                                    <form method="POST" action="{{ route('login') }}" class="auth-form" novalidate>
                                         @csrf
                                         @if(request('role') === 'referrer')
                                             <input type="hidden" name="role" value="referrer">
                                         @endif
                                         <div class="mb-3">
                                             <label for="email" class="form-label">Email</label>
-                                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="Enter your email" required autofocus>
+                                            <input type="text" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="name@company.com" required autofocus autocomplete="email" inputmode="email" spellcheck="false" autocapitalize="none" title="Enter a valid email like name@company.com">
                                             @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                         </div>
                                         <div class="mb-3 auth-password-wrap">
@@ -97,4 +100,6 @@
         </div>
     </div>
 </section>
+@include('hirevo.partials.auth-email-validation')
+@include('hirevo.partials.auth-csrf-refresh')
 @endsection

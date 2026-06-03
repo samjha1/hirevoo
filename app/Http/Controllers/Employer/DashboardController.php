@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employer;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmployerJobApplication;
+use App\Support\EmployerVerification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -14,6 +15,10 @@ class DashboardController extends Controller
         $user = auth()->user();
         if (! $user->isReferrer()) {
             return redirect()->route('home')->with('info', 'Access for employers only.');
+        }
+
+        if ($pending = EmployerVerification::redirectIfPending($user)) {
+            return $pending;
         }
 
         $profile = $user->referrerProfile;

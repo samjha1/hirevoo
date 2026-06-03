@@ -2,6 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\CandidateProfile;
+use App\Models\EmployerJob;
+use App\Models\JobRole;
+use App\Models\TalentPoolCandidate;
+use App\Models\User;
+use App\Observers\CandidateProfileSearchObserver;
+use App\Observers\CandidateUserSearchObserver;
+use App\Observers\EmployerJobSearchObserver;
+use App\Observers\JobRoleSearchObserver;
+use App\Observers\TalentPoolCandidateSearchObserver;
 use App\Services\LeadsmanagerAdService;
 use App\Support\SeoMetaResolver;
 use Illuminate\Pagination\Paginator;
@@ -19,6 +29,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (config('elasticsearch.enabled')) {
+            EmployerJob::observe(EmployerJobSearchObserver::class);
+            JobRole::observe(JobRoleSearchObserver::class);
+            User::observe(CandidateUserSearchObserver::class);
+            CandidateProfile::observe(CandidateProfileSearchObserver::class);
+            TalentPoolCandidate::observe(TalentPoolCandidateSearchObserver::class);
+        }
+
         Paginator::useBootstrapFive();
         View::share('theme', config('hirevo.theme_path', 'theme'));
 
