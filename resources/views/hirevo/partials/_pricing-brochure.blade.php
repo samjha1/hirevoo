@@ -76,9 +76,15 @@
                     @endif
                     <div class="hp-plan-price-sub">{{ $plan['price_sub'] ?? '' }}</div>
                     <div class="hp-plan-divider"></div>
-                    <a class="hp-plan-cta" href="{{ $contactUrl }}?subject=Hirevo%20{{ urlencode($plan['name']) }}%20plan">
-                        {{ $plan['cta'] ?? 'Get Started' }}
-                    </a>
+                    @if($context === 'employer' && empty($plan['custom_price']) && config('hirevo_plans.checkout.mode', 'cheque') === 'cheque')
+                        <button type="button" class="hp-plan-cta js-plan-checkout" data-plan-key="{{ $key }}">
+                            {{ $plan['cta'] ?? 'Get Started' }}
+                        </button>
+                    @else
+                        <a class="hp-plan-cta" href="{{ $contactUrl }}?subject=Hirevo%20{{ urlencode($plan['name']) }}%20plan">
+                            {{ $plan['cta'] ?? 'Get Started' }}
+                        </a>
+                    @endif
                     <div class="hp-features-label">What's included</div>
                     <ul class="hp-feature-list">
                         @foreach($plan['features'] ?? [] as $feature)

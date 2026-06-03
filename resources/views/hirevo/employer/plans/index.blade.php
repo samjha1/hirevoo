@@ -22,4 +22,8 @@
         'hasSubscription' => $hasSubscription,
         'credits' => $credits,
     ])
+    @if(config('hirevo_plans.checkout.mode', 'cheque') === 'cheque')
+        @include('hirevo.employer.plans._checkout-modal')
+        @include('hirevo.employer.plans._checkout-scripts')
+    @endif
 @endsection

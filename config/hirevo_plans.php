@@ -172,4 +172,11 @@ return [
 
     'job_post_credit_cost' => 1,
     'min_search_length' => 2,
+
+    'checkout' => [
+        'mode' => env('PLAN_CHECKOUT_MODE', 'cheque'),
+        'gst_rate' => (float) env('PLAN_GST_RATE', 18),
+        'cheque_notice' => 'Currently we are accepting only cheques. Online payment methods are facing issues.',
+        'pending_message' => 'Your plan request is received. We will activate your subscription after cheque verification.',
+    ],
 ];

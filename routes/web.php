@@ -9,6 +9,7 @@ use App\Http\Controllers\Employer\DashboardController as EmployerDashboardContro
 use App\Http\Controllers\Employer\JobController as EmployerJobController;
 use App\Http\Controllers\Employer\ProfileController as EmployerProfileController;
 use App\Http\Controllers\Employer\PlansController as EmployerPlansController;
+use App\Http\Controllers\Employer\PlanCheckoutController as EmployerPlanCheckoutController;
 use App\Http\Controllers\Employer\TalentPoolController as EmployerTalentPoolController;
 use App\Http\Controllers\Auth\SetPasswordController;
 use App\Http\Controllers\GuestResumeController;
@@ -116,6 +117,8 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
         Route::resource('jobs', EmployerJobController::class)->names('jobs')->except(['show']);
         Route::redirect('credits', 'plans', 301)->name('credits.index');
         Route::get('/plans', [EmployerPlansController::class, 'index'])->name('plans.index');
+        Route::get('/plans/{planKey}/quote', [EmployerPlanCheckoutController::class, 'quote'])->name('plans.quote');
+        Route::post('/plans/checkout/cheque', [EmployerPlanCheckoutController::class, 'storeCheque'])->name('plans.checkout.cheque');
         Route::get('/talent-pool', [EmployerTalentPoolController::class, 'index'])->name('talent-pool.index');
         Route::get('/talent-pool/results', [EmployerTalentPoolController::class, 'results'])->name('talent-pool.results');
         Route::get('/talent-pool/results/ajax', [EmployerTalentPoolController::class, 'search'])->name('talent-pool.search');

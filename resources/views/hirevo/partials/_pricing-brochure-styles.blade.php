@@ -152,6 +152,9 @@
     border-radius: var(--hp-radius-sm); font-size: 14px; font-weight: 600;
     text-decoration: none; transition: all .2s; margin-bottom: 20px;
 }
+button.hp-plan-cta {
+    width: 100%; cursor: pointer; font-family: inherit;
+}
 .hp-plan-card:not(.hp-popular) .hp-plan-cta {
     background: var(--hp-bg); color: var(--hp-dark); border: 1px solid var(--hp-dark-200);
 }

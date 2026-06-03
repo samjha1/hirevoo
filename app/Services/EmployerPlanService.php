@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\ReferrerProfile;
 use App\Models\User;
+use Carbon\Carbon;
+use InvalidArgumentException;
 
 class EmployerPlanService
 {
@@ -59,6 +61,38 @@ class EmployerPlanService
     public function databaseCredits(?ReferrerProfile $profile): int
     {
         return $this->jobPostingCredits($profile);
+    }
+
+    public function planPriceRank(?string $planKey): int
+    {
+        $plan = $this->planConfig($planKey);
+        if ($plan === null) {
+            return 0;
+        }
+
+        if (! empty($plan['custom_price'])) {
+            return PHP_INT_MAX;
+        }
+
+        return (int) ($plan['price_inr'] ?? 0);
+    }
+
+    public function activateSubscription(ReferrerProfile $profile, string $planKey, ?Carbon $expiresAt = null): void
+    {
+        $planKey = strtolower(trim($planKey));
+
+        if ($this->planConfig($planKey) === null) {
+            throw new InvalidArgumentException("Unknown plan: {$planKey}");
+        }
+
+        $startsAt = now();
+        $expiresAt ??= $startsAt->copy()->addMonth();
+
+        $profile->update([
+            'subscription_plan' => $planKey,
+            'subscription_started_at' => $startsAt,
+            'subscription_expires_at' => $expiresAt,
+        ]);
     }
 
     public function canViewCandidate(User $employer, string $source, int $sourceId): bool
