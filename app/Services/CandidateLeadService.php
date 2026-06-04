@@ -11,6 +11,7 @@ use App\Models\UpskillOpportunity;
 
 /**
  * Single entry point for writing candidate rows into `leads` (CRM talent pipeline reads this table).
+ * One lead row per candidate — repeat activity updates context and increases intent_score.
  */
 class CandidateLeadService
 {
@@ -21,11 +22,19 @@ class CandidateLeadService
 
     /**
      * First touch: candidate uploaded resume / has activity but no lead row yet.
+     * Repeat uploads bump intent_score instead of creating another row.
      */
-    public function ensureCandidateCrmLead(int $candidateId, string $source = 'resume_upload'): ?Lead
+    public function ensureCandidateCrmLead(int $candidateId, string $source = 'resume_upload'): Lead
     {
-        if (Lead::query()->where('candidate_id', $candidateId)->exists()) {
-            return null;
+        $lead = $this->findCandidateLead($candidateId);
+
+        if ($lead) {
+            $lead->update([
+                'intent_score' => $this->applyActivityIntent($lead, 3),
+                'referral_source' => $source,
+            ]);
+
+            return $lead->fresh();
         }
 
         return Lead::query()->create([
@@ -36,7 +45,7 @@ class CandidateLeadService
             'upskill_opportunity_id' => null,
             'match_percentage' => null,
             'missing_skills' => null,
-            'intent_score' => null,
+            'intent_score' => 10,
             'status' => 'available',
             'referral_source' => $source,
             'lead_summary' => 'profile_active',
@@ -66,110 +75,108 @@ class CandidateLeadService
             ]
         );
 
-        return Lead::updateOrCreate(
-            [
-                'candidate_id' => $resume->user_id,
-                'skill_analysis_id' => $skillAnalysis->id,
-            ],
-            [
-                'job_role_id' => $jobRole->id,
-                'employer_job_id' => null,
-                'upskill_opportunity_id' => null,
-                'match_percentage' => $matchPercentage,
-                'missing_skills' => $missing,
-                'intent_score' => $this->intentFromMatch($matchPercentage),
-                'status' => 'available',
-                'lead_summary' => 'skill_gap',
-            ]
-        );
+        $lead = $this->findOrCreateCandidateLead($resume->user_id, [
+            'referral_source' => 'skill_gap',
+            'lead_summary' => 'profile_active',
+        ]);
+
+        $lead->update([
+            'skill_analysis_id' => $skillAnalysis->id,
+            'job_role_id' => $jobRole->id,
+            'employer_job_id' => null,
+            'upskill_opportunity_id' => null,
+            'match_percentage' => $matchPercentage,
+            'missing_skills' => $missing,
+            'intent_score' => $this->applyActivityIntent($lead, 5, $this->intentFromMatch($matchPercentage)),
+            'status' => 'available',
+            'lead_summary' => 'skill_gap',
+        ]);
+
+        return $lead->fresh();
     }
 
     public function recordEmployerJobLead(Resume $resume, EmployerJob $job, ?int $matchPercentage = null, ?string $source = null): Lead
     {
         $match = $matchPercentage ?? $this->computeEmployerJobMatchForResume($resume, $job);
+        $summary = $source === 'job_application' ? 'job_application' : 'employer_job_interest';
+        $boost = $source === 'job_application' ? 15 : 5;
 
-        return Lead::updateOrCreate(
-            [
-                'candidate_id' => $resume->user_id,
-                'employer_job_id' => $job->id,
-            ],
-            [
-                'skill_analysis_id' => null,
-                'job_role_id' => null,
-                'upskill_opportunity_id' => null,
-                'match_percentage' => $match,
-                'missing_skills' => null,
-                'intent_score' => $this->intentFromMatch($match),
-                'status' => 'available',
-                'referral_source' => $source,
-                'lead_summary' => $source === 'job_application' ? 'job_application' : 'employer_job_interest',
-            ]
-        );
+        $lead = $this->findOrCreateCandidateLead($resume->user_id, [
+            'referral_source' => $source,
+            'lead_summary' => 'profile_active',
+        ]);
+
+        $lead->update([
+            'skill_analysis_id' => null,
+            'job_role_id' => null,
+            'employer_job_id' => $job->id,
+            'upskill_opportunity_id' => null,
+            'match_percentage' => $match,
+            'missing_skills' => null,
+            'intent_score' => $this->applyActivityIntent($lead, $boost, $this->intentFromMatch($match)),
+            'status' => 'available',
+            'referral_source' => $source,
+            'lead_summary' => $summary,
+        ]);
+
+        return $lead->fresh();
     }
 
     public function recordUpskillLead(int $candidateId, UpskillOpportunity $opportunity): Lead
     {
-        return Lead::firstOrCreate(
-            [
-                'candidate_id' => $candidateId,
-                'upskill_opportunity_id' => $opportunity->id,
-            ],
-            [
-                'skill_analysis_id' => null,
-                'job_role_id' => null,
-                'employer_job_id' => null,
-                'match_percentage' => null,
-                'missing_skills' => null,
-                'intent_score' => 40,
-                'status' => 'available',
-                'referral_source' => 'upskill_contact',
-                'lead_summary' => 'upskill_contact',
-            ]
-        );
+        $lead = $this->findOrCreateCandidateLead($candidateId, [
+            'referral_source' => 'upskill_contact',
+            'lead_summary' => 'profile_active',
+        ]);
+
+        $lead->update([
+            'upskill_opportunity_id' => $opportunity->id,
+            'intent_score' => $this->applyActivityIntent($lead, 10, 40),
+            'status' => 'available',
+            'referral_source' => 'upskill_contact',
+            'lead_summary' => 'upskill_contact',
+        ]);
+
+        return $lead->fresh();
     }
 
     public function tagLatestLead(int $candidateId, array $where, string $source): void
     {
-        $q = Lead::query()->where('candidate_id', $candidateId);
-        foreach ($where as $column => $value) {
-            $q->where($column, $value);
-        }
-        $lead = $q->latest('id')->first();
-        $lead?->update(['referral_source' => $source]);
+        $this->findCandidateLead($candidateId)?->update(['referral_source' => $source]);
     }
 
     public function recordGenericReferralLead(int $candidateId, string $source): Lead
     {
-        return Lead::query()->create([
-            'candidate_id' => $candidateId,
-            'skill_analysis_id' => null,
-            'job_role_id' => null,
-            'employer_job_id' => null,
-            'upskill_opportunity_id' => null,
-            'match_percentage' => null,
-            'missing_skills' => null,
-            'intent_score' => null,
-            'status' => 'available',
+        $lead = $this->findOrCreateCandidateLead($candidateId, [
+            'referral_source' => $source,
+            'lead_summary' => 'profile_active',
+        ]);
+
+        $lead->update([
+            'intent_score' => $this->applyActivityIntent($lead, 5),
             'referral_source' => $source,
             'lead_summary' => 'referral_intent_generic',
         ]);
+
+        return $lead->fresh();
     }
 
     public function recordReferralLeadWithoutResume(int $candidateId, string $source, ?int $jobRoleId, ?int $employerJobId): Lead
     {
-        return Lead::query()->create([
-            'candidate_id' => $candidateId,
-            'skill_analysis_id' => null,
+        $lead = $this->findOrCreateCandidateLead($candidateId, [
+            'referral_source' => $source,
+            'lead_summary' => 'profile_active',
+        ]);
+
+        $lead->update([
             'job_role_id' => $jobRoleId,
             'employer_job_id' => $employerJobId,
-            'upskill_opportunity_id' => null,
-            'match_percentage' => null,
-            'missing_skills' => null,
-            'intent_score' => null,
-            'status' => 'available',
+            'intent_score' => $this->applyActivityIntent($lead, 5),
             'referral_source' => $source,
             'lead_summary' => 'referral_intent_no_resume',
         ]);
+
+        return $lead->fresh();
     }
 
     public function recordGuestReferral(string $source, ?int $jobRoleId, ?int $employerJobId): Lead
@@ -194,6 +201,41 @@ class CandidateLeadService
             'referral_source' => $source,
             'lead_summary' => json_encode($meta),
         ]);
+    }
+
+    protected function findCandidateLead(int $candidateId): ?Lead
+    {
+        return Lead::query()
+            ->where('candidate_id', $candidateId)
+            ->orderBy('id')
+            ->first();
+    }
+
+    protected function findOrCreateCandidateLead(int $candidateId, array $defaults = []): Lead
+    {
+        return $this->findCandidateLead($candidateId)
+            ?? Lead::query()->create(array_merge([
+                'candidate_id' => $candidateId,
+                'skill_analysis_id' => null,
+                'job_role_id' => null,
+                'employer_job_id' => null,
+                'upskill_opportunity_id' => null,
+                'match_percentage' => null,
+                'missing_skills' => null,
+                'intent_score' => 10,
+                'status' => 'available',
+            ], $defaults));
+    }
+
+    /**
+     * Increase intent on activity: never lower score; cap at 100.
+     */
+    protected function applyActivityIntent(Lead $lead, int $activityBoost, ?int $matchBasedIntent = null): int
+    {
+        $current = (int) ($lead->intent_score ?? 0);
+        $fromMatch = $matchBasedIntent ?? 0;
+
+        return min(100, max($current, $fromMatch) + $activityBoost);
     }
 
     protected function intentFromMatch(?int $matchPercentage): ?int

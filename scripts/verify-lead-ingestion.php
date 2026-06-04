@@ -21,5 +21,5 @@ $after = Lead::query()->where('candidate_id', $user->id)->count();
 
 echo "user_id={$user->id}\n";
 echo "leads_before={$before} leads_after={$after}\n";
-echo 'new_lead_id='.($lead?->id ?? 'none')."\n";
-echo $after > $before || $before > 0 ? "OK: candidate has lead row(s)\n" : "WARN: no lead created (may already exist from prior run)\n";
+echo 'lead_id='.($lead->id ?? 'none')."\n";
+echo $after === 1 ? "OK: single lead row per candidate\n" : "WARN: expected exactly 1 lead row, got {$after}\n";
