@@ -1,18 +1,18 @@
 <?php
 
 return [
-    'site_name' => env('SEO_SITE_NAME', 'Hirevo'),
+    'site_name' => env('SEO_SITE_NAME', 'Hirevoo'),
     'brand_tagline' => 'Own Your Next Career Move',
-    'title_suffix' => 'Hirevo — Own Your Next Career Move',
+    'title_suffix' => 'Hirevoo — Own Your Next Career Move',
 
-    'default_description' => 'Hirevo helps candidates get clarity on their profile, improve ATS readiness, match skills to job goals, and apply to verified openings. Employers post jobs and manage hiring in one place.',
+    'default_description' => 'Hirevoo helps candidates get clarity on their profile, improve ATS readiness, match skills to job goals, and apply to verified openings. Employers post jobs and manage hiring in one place.',
 
     'default_og_image' => 'images/20260419_104749_0000ss.png',
 
     'twitter_handle' => env('SEO_TWITTER_HANDLE', ''),
 
     'organization' => [
-        'name' => env('SEO_ORG_NAME', 'Hirevo'),
+        'name' => env('SEO_ORG_NAME', 'Hirevoo'),
         'url' => env('SEO_ORG_URL', null),
         'logo' => env('SEO_ORG_LOGO', 'images/20260419_104749_0000ss.png'),
         'email' => env('SEO_CONTACT_EMAIL', null),
@@ -57,55 +57,55 @@ return [
     'static_pages' => [
         'home' => [
             'title' => 'AI Career Intelligence & Job Matching',
-            'description' => 'Get resume ATS scoring, skill-gap insights, curated job goals, and live job openings. Hirevo helps students and professionals own their next career move.',
+            'description' => 'Get resume ATS scoring, skill-gap insights, curated job goals, and live job openings. Hirevoo helps students and professionals own their next career move.',
         ],
         'job-list' => [
             'title' => 'Job Goals — Skill-Based Career Paths',
-            'description' => 'Explore curated job goals with required skills, match scores, and upskilling paths tailored to your profile on Hirevo.',
+            'description' => 'Explore curated job goals with required skills, match scores, and upskilling paths tailored to your profile on Hirevoo.',
         ],
         'job-openings' => [
             'title' => 'Job Openings — Apply to Active Roles',
-            'description' => 'Browse active employer job openings, filter by location and work type, and apply with your Hirevo profile and resume.',
+            'description' => 'Browse active employer job openings, filter by location and work type, and apply with your Hirevoo profile and resume.',
         ],
         'pricing' => [
             'title' => 'Pricing — Plans for Candidates & Employers',
-            'description' => 'Transparent Hirevo pricing for resume intelligence, job matching, referrals, and employer hiring tools.',
+            'description' => 'Transparent Hirevoo pricing for resume intelligence, job matching, referrals, and employer hiring tools.',
         ],
         'about' => [
-            'title' => 'About Hirevo',
-            'description' => 'Learn how Hirevo combines AI career intelligence, referrals, and job marketplace features to help candidates and employers hire smarter.',
+            'title' => 'About Hirevoo',
+            'description' => 'Learn how Hirevoo combines AI career intelligence, referrals, and job marketplace features to help candidates and employers hire smarter.',
         ],
         'contact' => [
-            'title' => 'Contact Hirevo',
-            'description' => 'Contact the Hirevo team for support, partnerships, or product questions. We respond to candidate and employer inquiries.',
+            'title' => 'Contact Hirevoo',
+            'description' => 'Contact the Hirevoo team for support, partnerships, or product questions. We respond to candidate and employer inquiries.',
         ],
         'faq' => [
-            'title' => 'FAQ — Hirevo Help & Answers',
-            'description' => 'Answers about Hirevo resume analysis, job goals, referrals, privacy, and how candidates and companies use the platform.',
+            'title' => 'FAQ — Hirevoo Help & Answers',
+            'description' => 'Answers about Hirevoo resume analysis, job goals, referrals, privacy, and how candidates and companies use the platform.',
         ],
         'help' => [
             'title' => 'Help Center',
-            'description' => 'Guides and help articles for using Hirevo: profiles, applications, resume upload, and employer tools.',
+            'description' => 'Guides and help articles for using Hirevoo: profiles, applications, resume upload, and employer tools.',
         ],
         'terms' => [
             'title' => 'Terms & Conditions',
-            'description' => 'Hirevo terms and conditions governing use of the career intelligence and job marketplace platform.',
+            'description' => 'Hirevoo terms and conditions governing use of the career intelligence and job marketplace platform.',
         ],
         'privacy' => [
             'title' => 'Privacy Policy',
-            'description' => 'How Hirevo collects, uses, and protects your personal data when you use our career and hiring services.',
+            'description' => 'How Hirevoo collects, uses, and protects your personal data when you use our career and hiring services.',
         ],
         'cookies' => [
             'title' => 'Cookie Policy',
-            'description' => 'Information about cookies and similar technologies used on the Hirevo website.',
+            'description' => 'Information about cookies and similar technologies used on the Hirevoo website.',
         ],
         'disclaimer' => [
             'title' => 'Disclaimer',
-            'description' => 'Legal disclaimers for information, job listings, and AI-generated insights provided on Hirevo.',
+            'description' => 'Legal disclaimers for information, job listings, and AI-generated insights provided on Hirevoo.',
         ],
         'resume.upload' => [
             'title' => 'Free Resume ATS Score & Analysis',
-            'description' => 'Upload your resume for a free ATS-style score, skill insights, and matched job goals on Hirevo.',
+            'description' => 'Upload your resume for a free ATS-style score, skill insights, and matched job goals on Hirevoo.',
         ],
     ],
 
