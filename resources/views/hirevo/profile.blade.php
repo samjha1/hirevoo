@@ -398,12 +398,14 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-600">Years of experience @if(!($profileOnboardingComplete ?? false))<span class="text-danger">*</span>@endif</label>
-                                        <input type="number" name="experience_years" class="form-control @error('experience_years') is-invalid @enderror" min="0" max="50" value="{{ old('experience_years', $p?->experience_years) }}" @if(!($profileOnboardingComplete ?? false)) required @endif>
+                                        <input type="number" name="experience_years" class="form-control @error('experience_years') is-invalid @enderror" min="0" max="50" placeholder="0 for fresher" value="{{ old('experience_years', $p?->experience_years ?? 0) }}" @if(!($profileOnboardingComplete ?? false)) required @endif>
                                         @error('experience_years')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                        <span class="small text-muted">Use 0 if you are a fresher or student.</span>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-600">Extra months (0–11)</label>
-                                        <input type="number" name="experience_months" class="form-control" min="0" max="11" value="{{ old('experience_months', $p?->experience_months) }}">
+                                        <input type="number" name="experience_months" class="form-control @error('experience_months') is-invalid @enderror" min="0" max="11" value="{{ old('experience_months', $p?->experience_months ?? 0) }}">
+                                        @error('experience_months')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-600">Current company</label>

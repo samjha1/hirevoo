@@ -73,6 +73,9 @@ class ProfileController extends Controller
         }
 
         $mustComplete = ! $user->candidate_profile_completed_at;
+        $existing = $user->candidateProfile;
+
+        $this->normalizeExperienceInputs($request, $existing);
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
@@ -143,8 +146,6 @@ class ProfileController extends Controller
             'name' => $validated['name'],
             'phone' => $validated['phone'],
         ]);
-
-        $existing = $user->candidateProfile;
 
         $attrs = [
             'headline' => $validated['headline'] ?? null,
@@ -217,6 +218,31 @@ class ProfileController extends Controller
             : 'Profile saved. Complete all required fields and upload your resume to continue.';
 
         return redirect()->route('profile')->with('success', $msg);
+    }
+
+    /**
+     * Number inputs are omitted from POST when blank; default freshers to 0 and preserve existing values on later edits.
+     */
+    protected function normalizeExperienceInputs(Request $request, ?CandidateProfile $existing): void
+    {
+        $years = $request->input('experience_years');
+        $months = $request->input('experience_months');
+
+        if ($years === null || $years === '') {
+            if ($existing?->experience_years !== null) {
+                $request->merge(['experience_years' => $existing->experience_years]);
+            } else {
+                $request->merge(['experience_years' => 0]);
+            }
+        }
+
+        if ($months === null || $months === '') {
+            if ($existing?->experience_months !== null) {
+                $request->merge(['experience_months' => $existing->experience_months]);
+            } else {
+                $request->merge(['experience_months' => 0]);
+            }
+        }
     }
 
     /**
