@@ -8,7 +8,7 @@ use App\Models\JobRole;
 use App\Models\Resume;
 use App\Services\GptService;
 use App\Services\JobCatalogService;
-use App\Services\ResumeAnalysisService;
+use App\Support\StoredFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -115,8 +115,10 @@ class JobApplicationController extends Controller
         if ($resume) {
             $jobRole->loadMissing('requiredSkills');
             $requiredSkills = $jobRole->requiredSkills->pluck('skill_name')->all();
-            $path = storage_path('app/' . $resume->file_path);
-            $resumeText = $resumeAnalysis->extractTextFromFile($path, $resume->mime_type ?? 'application/pdf');
+            $readPath = StoredFile::localPathForReading($resume->file_path);
+            $resumeText = $readPath !== null
+                ? $resumeAnalysis->extractTextFromFile($readPath, $resume->mime_type ?? 'application/pdf')
+                : '';
             if ($gptService->isAvailable() && $resumeText !== '') {
                 $aiResult = $gptService->getResumeJobMatchScore(
                     $resumeText,

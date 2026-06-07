@@ -10,10 +10,7 @@
         $jobsCount = $jobsCount ?? 0;
         $activeJobsCount = $activeJobsCount ?? 0;
         $credits = $profile ? (int) $profile->credits : 0;
-        $photoUrl = null;
-        if ($profile && $profile->profile_photo) {
-            $photoUrl = str_starts_with($profile->profile_photo, 'uploads/') ? asset($profile->profile_photo) : asset('storage/' . $profile->profile_photo);
-        }
+        $photoUrl = $profile?->profilePhotoUrl();
     @endphp
 
     {{-- Profile header (Apna-style) --}}
@@ -141,7 +138,10 @@
                             <label for="profile_photo" class="btn btn-sm btn-outline-primary mt-2 rounded-pill cursor-pointer">
                                 <i class="mdi mdi-camera me-1"></i>Change photo
                             </label>
-                            <input type="file" class="d-none" id="profile_photo" name="profile_photo" accept="image/*">
+                            <input type="file" class="d-none @error('profile_photo') is-invalid @enderror" id="profile_photo" name="profile_photo" accept="image/jpeg,image/png,image/gif,image/webp">
+                            <p class="text-muted small mb-0 mt-1">JPEG, PNG, GIF or WebP — max 10 MB. Stored on AWS S3.</p>
+                            @error('profile_photo')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                            <div id="profile-photo-size-hint" class="text-danger small mt-1 d-none"></div>
                         </div>
                     </div>
                     <div class="col-md-8">
@@ -233,18 +233,46 @@
 
     @push('scripts')
     <script>
-        document.getElementById('profile_photo') && document.getElementById('profile_photo').addEventListener('change', function (e) {
-            var f = e.target.files[0];
-            if (!f || !f.type.match('image.*')) return;
-            var r = new FileReader();
-            r.onload = function () {
-                var preview = document.getElementById('profile-photo-preview');
-                var placeholder = document.getElementById('profile-photo-placeholder');
-                if (preview) { preview.src = r.result; preview.classList.remove('d-none'); }
-                if (placeholder) placeholder.classList.add('d-none');
-            };
-            r.readAsDataURL(f);
-        });
+        var photoInput = document.getElementById('profile_photo');
+        var maxPhotoBytes = {{ (int) config('hirevo.image_upload_max_kb', 10240) }} * 1024;
+        var sizeHint = document.getElementById('profile-photo-size-hint');
+        var profileForm = photoInput ? photoInput.closest('form') : null;
+        if (photoInput) {
+            photoInput.addEventListener('change', function (e) {
+                var f = e.target.files[0];
+                if (!f || !f.type.match('image.*')) return;
+                if (sizeHint) {
+                    if (f.size > maxPhotoBytes) {
+                        sizeHint.textContent = 'Image must not be greater than 10 MB. This file is ' + (f.size / (1024 * 1024)).toFixed(1) + ' MB.';
+                        sizeHint.classList.remove('d-none');
+                        e.target.value = '';
+                        return;
+                    }
+                    sizeHint.classList.add('d-none');
+                    sizeHint.textContent = '';
+                }
+                var r = new FileReader();
+                r.onload = function () {
+                    var preview = document.getElementById('profile-photo-preview');
+                    var placeholder = document.getElementById('profile-photo-placeholder');
+                    if (preview) { preview.src = r.result; preview.classList.remove('d-none'); }
+                    if (placeholder) placeholder.classList.add('d-none');
+                };
+                r.readAsDataURL(f);
+            });
+        }
+        if (profileForm && photoInput) {
+            profileForm.addEventListener('submit', function (e) {
+                var f = photoInput.files[0];
+                if (f && f.size > maxPhotoBytes) {
+                    e.preventDefault();
+                    if (sizeHint) {
+                        sizeHint.textContent = 'Image must not be greater than 10 MB. Please choose a smaller file.';
+                        sizeHint.classList.remove('d-none');
+                    }
+                }
+            });
+        }
     </script>
     @endpush
 @endsection

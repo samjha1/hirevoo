@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CandidateProfile;
 use App\Models\User;
 use Carbon\Carbon;
+use App\Support\StoredFile;
 use Illuminate\Support\Str;
 
 class CandidateProfileFillerFromResume
@@ -28,8 +29,8 @@ class CandidateProfileFillerFromResume
             return false;
         }
 
-        $path = storage_path('app/'.$resume->file_path);
-        if (! is_readable($path)) {
+        $path = StoredFile::localPathForReading($resume->file_path);
+        if ($path === null) {
             return false;
         }
 

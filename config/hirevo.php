@@ -7,7 +7,22 @@ return [
     'llm_http_timeout_seconds' => max(15, (int) env('LLM_HTTP_TIMEOUT', 60)),
 
     /** Max completion tokens for employer “generate job description” (smaller = faster, still enough for one page). */
-    'llm_job_description_max_tokens' => max(400, min(1200, (int) env('LLM_JOB_DESCRIPTION_MAX_TOKENS', 750))),
+    'llm_job_description_max_tokens' => max(400, min(1200, (int) env('LLM_JOB_DESCRIPTION_MAX_TOKENS', 600))),
+
+    /** Default max completion tokens for short LLM calls (match score, skills, etc.). */
+    'llm_default_max_tokens' => max(128, min(2000, (int) env('LLM_DEFAULT_MAX_TOKENS', 400))),
+
+    /** Resume analysis bundle (summary + score + skills in one call). */
+    'llm_resume_bundle_max_tokens' => max(400, min(3000, (int) env('LLM_RESUME_BUNDLE_MAX_TOKENS', 1200))),
+
+    /** Profile auto-fill from resume (large JSON schema). */
+    'llm_profile_extract_max_tokens' => max(800, min(4096, (int) env('LLM_PROFILE_EXTRACT_MAX_TOKENS', 2500))),
+
+    /** Max resume text characters sent to the LLM (lower = fewer input tokens). */
+    'llm_resume_input_max_chars' => max(2000, min(20000, (int) env('LLM_RESUME_INPUT_MAX_CHARS', 5000))),
+
+    /** Job ranking / skill-coverage calls. */
+    'llm_job_rank_max_tokens' => max(400, min(4096, (int) env('LLM_JOB_RANK_MAX_TOKENS', 1200))),
 
     /** Upper bound on HTTP timeout for job-description generation only (fails fast if upstream hangs). */
     'llm_job_description_timeout_seconds' => max(45, min(180, (int) env('LLM_JOB_DESCRIPTION_TIMEOUT', 90))),
@@ -17,6 +32,18 @@ return [
 
     /** PHP time limit for resume upload + analysis + profile fill (seconds). */
     'resume_analysis_time_limit' => max(60, (int) env('RESUME_ANALYSIS_TIME_LIMIT', 180)),
+
+    /** Profile image upload limit (kilobytes). Hard cap: 10 MB — larger files are rejected. */
+    'image_upload_max_kb' => min(10240, max(1, (int) env('IMAGE_UPLOAD_MAX_KB', 10240))),
+
+    /**
+     * Employer talent pool search cache (seconds). Speeds repeat searches without Elasticsearch.
+     * Set 0 to disable. Use 600–900 for large pools (100k+ rows).
+     */
+    'talent_pool_search_cache_ttl' => max(0, (int) env('TALENT_POOL_SEARCH_CACHE_TTL', 600)),
+
+    /** Cache paginated candidate ID lists (same query reopens instantly). */
+    'talent_pool_search_cache_pages' => filter_var(env('TALENT_POOL_SEARCH_CACHE_PAGES', true), FILTER_VALIDATE_BOOLEAN),
 
     /** Candidate in-app notifications: hide unread items older than this many days (and from counts). */
     'notification_retention_days' => (int) env('NOTIFICATION_RETENTION_DAYS', 14),

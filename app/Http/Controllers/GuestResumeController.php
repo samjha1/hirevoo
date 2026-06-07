@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFile;
 use Illuminate\Support\Str;
 
 class GuestResumeController extends Controller
@@ -45,13 +45,19 @@ class GuestResumeController extends Controller
         set_time_limit((int) config('hirevo.resume_analysis_time_limit', 180));
 
         $file = $request->file('resume');
-        $path = $file->store('resumes', 'local');
+        $path = StoredFile::storeUploadedFile($file, 'resumes');
 
         if ($path === false) {
             return back()->withErrors(['resume' => 'Failed to store file. Please try again.']);
         }
 
-        $fullPath = storage_path('app/' . $path);
+        $fullPath = StoredFile::localPathForReading($path);
+        if ($fullPath === null) {
+            StoredFile::delete($path);
+
+            return back()->withErrors(['resume' => 'Failed to read stored file. Please try again.']);
+        }
+
         $text = $this->resumeAnalysis->extractTextFromFile($fullPath, $file->getMimeType() ?? 'application/pdf');
         $identity = $this->resumeAnalysis->extractContactIdentityFromText($text);
 
@@ -63,7 +69,7 @@ class GuestResumeController extends Controller
         }
 
         if (! $this->resumeAnalysis->isRecognizedRegistrationEmail($identity['email'])) {
-            Storage::disk('local')->delete($path);
+            StoredFile::delete($path);
 
             return back()
                 ->withErrors([
@@ -75,7 +81,7 @@ class GuestResumeController extends Controller
         $existingUser = User::where('email', $identity['email'])->first();
         if ($existingUser !== null) {
             if (! $existingUser->isCandidate()) {
-                Storage::disk('local')->delete($path);
+                StoredFile::delete($path);
 
                 return back()
                     ->withErrors([

@@ -22,7 +22,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFile;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -508,11 +508,14 @@ class HomeController extends Controller
         $resume = $application->resume;
         $atsScore = $resume ? $resume->ai_score : null;
         $resumeText = null;
-        if ($resume && Storage::disk('local')->exists($resume->file_path)) {
-            $resumeText = app(ResumeAnalysisService::class)->extractTextFromFile(
-                Storage::disk('local')->path($resume->file_path),
-                $resume->mime_type ?? 'application/pdf'
-            );
+        if ($resume && StoredFile::exists($resume->file_path)) {
+            $readPath = StoredFile::localPathForReading($resume->file_path);
+            if ($readPath !== null) {
+                $resumeText = app(ResumeAnalysisService::class)->extractTextFromFile(
+                    $readPath,
+                    $resume->mime_type ?? 'application/pdf'
+                );
+            }
         }
         if ($resumeText === null || $resumeText === '') {
             // Build minimal candidate summary from profile for match scoring

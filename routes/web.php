@@ -72,6 +72,7 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::get('/profile/photo', [ProfileController::class, 'servePhoto'])->name('profile.photo');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/fill-from-resume', [ProfileController::class, 'fillFromResume'])->name('profile.fill-from-resume');
     Route::post('/career-consultation', [CareerConsultationController::class, 'store'])->name('career-consultation.store');
@@ -85,6 +86,7 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
     // Employer routes (role: referrer)
     Route::middleware('role:referrer')->prefix('employer')->name('employer.')->group(function () {
         Route::get('/profile', [EmployerProfileController::class, 'show'])->name('profile');
+        Route::get('/profile/photo', [EmployerProfileController::class, 'servePhoto'])->name('profile.photo');
         Route::post('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
         Route::get('/dashboard', [EmployerDashboardController::class, 'index'])
             ->middleware('employer.profile.complete')

@@ -4,12 +4,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Job openings search (Elasticsearch)
+    | Elasticsearch / OpenSearch
     |--------------------------------------------------------------------------
     |
-    | When enabled and reachable, the job-openings keyword bar uses Elasticsearch
-    | for any-word matching and fuzzy (typo-tolerant) search. Otherwise a SQL
-    | fallback matches each word with LIKE.
+    | Required for employer talent pool at scale (100k+ candidates). SQL LIKE
+    | fallback is kept for local dev only.
     |
     */
 
@@ -26,6 +25,15 @@ return [
 
     'talent_pool_index' => env('ELASTICSEARCH_TALENT_POOL_INDEX', 'hirevo_talent_pool'),
 
-    'talent_pool_search_limit' => (int) env('ELASTICSEARCH_TALENT_POOL_SEARCH_LIMIT', 250),
+    /** Max offset+size for paginated talent pool search (raise index.max_result_window to match). */
+    'talent_pool_max_result_window' => (int) env('ELASTICSEARCH_TALENT_POOL_MAX_RESULT_WINDOW', 50000),
+
+    'talent_pool_shards' => (int) env('ELASTICSEARCH_TALENT_POOL_SHARDS', 2),
+
+    'talent_pool_replicas' => (int) env('ELASTICSEARCH_TALENT_POOL_REPLICAS', 0),
+
+    'talent_pool_bulk_size' => (int) env('ELASTICSEARCH_TALENT_POOL_BULK_SIZE', 500),
+
+    'talent_pool_reindex_chunk' => (int) env('ELASTICSEARCH_TALENT_POOL_REINDEX_CHUNK', 500),
 
 ];

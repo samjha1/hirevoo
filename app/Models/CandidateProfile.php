@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StoredFile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -151,13 +152,31 @@ class CandidateProfile extends Model
         return rtrim((string) config('app.url'), '/').'/storage/'.$relativePath;
     }
 
+    public function setProfilePhotoPathAttribute(?string $value): void
+    {
+        if ($value !== null && ! StoredFile::isAbsoluteUrl($value) && ! str_starts_with($value, 'uploads/')) {
+            $value = StoredFile::databaseValueFromStoragePath($value);
+        }
+
+        $this->attributes['profile_photo_path'] = $value;
+    }
+
     public function profilePhotoUrl(): ?string
     {
         if (! filled($this->profile_photo_path)) {
             return null;
         }
 
-        return self::publicDiskFileUrl($this->profile_photo_path);
+        if (str_starts_with($this->profile_photo_path, 'uploads/')) {
+            return asset($this->profile_photo_path);
+        }
+
+        if (StoredFile::uploadsDisk() === 's3' && StoredFile::exists($this->profile_photo_path)) {
+            return StoredFile::signedUrl($this->profile_photo_path)
+                ?? route('profile.photo', ['v' => $this->updated_at?->getTimestamp() ?? 0]);
+        }
+
+        return StoredFile::url($this->profile_photo_path);
     }
 
     /**

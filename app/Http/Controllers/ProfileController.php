@@ -6,8 +6,10 @@ use App\Models\CandidateProfile;
 use App\Services\CandidateProfileFillerFromResume;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFile;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProfileController extends Controller
 {
@@ -47,6 +49,21 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function servePhoto(): StreamedResponse|BinaryFileResponse
+    {
+        $user = auth()->user();
+        if (! $user->isCandidate()) {
+            abort(403);
+        }
+
+        $profile = $user->candidateProfile;
+        if (! $profile || ! filled($profile->profile_photo_path)) {
+            abort(404);
+        }
+
+        return StoredFile::imageResponse($profile->profile_photo_path);
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $user = auth()->user();
@@ -84,7 +101,7 @@ class ProfileController extends Controller
             'expected_salary_currency' => ['nullable', 'string', 'max:8'],
             'expected_salary_period' => ['nullable', 'in:per_month,per_annum'],
             'current_salary' => ['nullable', 'string', 'max:120'],
-            'profile_photo' => ['nullable', 'image', 'max:2048'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:'.StoredFile::imageMaxKb()],
             'work_experience' => ['nullable', 'array', 'max:10'],
             'work_experience.*.company' => ['nullable', 'string', 'max:255'],
             'work_experience.*.role' => ['nullable', 'string', 'max:255'],
@@ -118,6 +135,8 @@ class ProfileController extends Controller
             'experience_years.required' => 'Add years of experience (use 0 if fresher).',
             'skills.required' => 'Add at least one skill to continue.',
             'location.required' => 'Add your location to continue.',
+            'profile_photo.max' => 'Image must not be greater than 10 MB. Please choose a smaller file.',
+            'profile_photo.image' => 'Please upload a valid image file (JPEG, PNG, GIF, or WebP).',
         ]);
 
         $user->update([
@@ -173,9 +192,12 @@ class ProfileController extends Controller
         ];
 
         if ($request->hasFile('profile_photo')) {
-            $newPath = $request->file('profile_photo')->store('profile-photos', 'public');
+            $newPath = StoredFile::storeUploadedFile($request->file('profile_photo'), 'profile-photos');
+            if ($newPath === false) {
+                return redirect()->route('profile')->withErrors(['profile_photo' => 'Failed to upload photo to AWS S3. Please try again.']);
+            }
             if ($existing?->profile_photo_path) {
-                Storage::disk('public')->delete($existing->profile_photo_path);
+                StoredFile::delete($existing->profile_photo_path);
             }
             $attrs['profile_photo_path'] = $newPath;
         } elseif ($existing) {

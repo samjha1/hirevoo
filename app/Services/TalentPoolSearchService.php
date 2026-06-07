@@ -10,7 +10,9 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TalentPoolSearchService
 {
@@ -118,16 +120,19 @@ class TalentPoolSearchService
             return 0;
         }
 
-        if ($this->elasticsearch->hasTextCriteria($filters)) {
-            return $this->countFilteredRanked($filters, $this->getRankedHits($filters));
-        }
+        return (int) $this->rememberSearchCache($filters, 'count', function () use ($filters) {
+            if ($this->elasticsearch->canUseElasticsearch()) {
+                $prepared = $this->prepareFiltersForElasticsearch($filters);
+                $count = $this->elasticsearch->countMatching($prepared);
+                if ($count !== null) {
+                    return $count;
+                }
 
-        $verified = $this->verifiedCandidatesQuery($filters)->select('users.id');
-        $talent = $this->talentPoolCandidatesQuery($filters)->select('talent_pool_candidates.id');
+                Log::warning('Talent pool falling back to SQL count.');
+            }
 
-        return (int) DB::query()
-            ->fromSub($verified->unionAll($talent), 'merged_candidates')
-            ->count();
+            return $this->countMatchingSql($filters);
+        });
     }
 
     /**
@@ -167,20 +172,30 @@ class TalentPoolSearchService
      */
     public function filterFacets(array $filters): array
     {
-        $forLocations = $filters;
-        unset($forLocations['location'], $forLocations['locations']);
+        return $this->rememberSearchCache($filters, 'facets', function () use ($filters) {
+            if ($this->elasticsearch->canUseElasticsearch()) {
+                $prepared = $this->prepareFiltersForElasticsearch($filters);
+                $facets = $this->elasticsearch->aggregateFacets($prepared);
+                if (is_array($facets)) {
+                    return $facets;
+                }
+            }
 
-        $forEducation = $filters;
-        unset($forEducation['education']);
+            $forLocations = $filters;
+            unset($forLocations['location'], $forLocations['locations']);
 
-        $forExperience = $filters;
-        unset($forExperience['experience_min'], $forExperience['experience_max']);
+            $forEducation = $filters;
+            unset($forEducation['education']);
 
-        return [
-            'locations' => $this->aggregateLocationFacets($forLocations),
-            'education' => $this->aggregateEducationFacets($forEducation),
-            'experience' => $this->aggregateExperienceFacets($forExperience),
-        ];
+            $forExperience = $filters;
+            unset($forExperience['experience_min'], $forExperience['experience_max']);
+
+            return [
+                'locations' => $this->aggregateLocationFacets($forLocations),
+                'education' => $this->aggregateEducationFacets($forEducation),
+                'experience' => $this->aggregateExperienceFacets($forExperience),
+            ];
+        });
     }
 
     /**
@@ -241,8 +256,43 @@ class TalentPoolSearchService
      */
     protected function fetchUnionPage(array $filters, int $offset, int $limit): Collection
     {
-        if ($this->elasticsearch->hasTextCriteria($filters)) {
-            return $this->fetchUnionPageRanked($filters, $this->getRankedHits($filters), $offset, $limit);
+        if (! config('hirevo.talent_pool_search_cache_pages', true)) {
+            return $this->fetchUnionPageUncached($filters, $offset, $limit);
+        }
+
+        /** @var list<array{id: int, candidate_source: string}> $cached */
+        $cached = $this->rememberSearchCache($filters, "page:{$offset}:{$limit}", function () use ($filters, $offset, $limit) {
+            return $this->fetchUnionPageUncached($filters, $offset, $limit)
+                ->map(fn ($row) => [
+                    'id' => (int) $row->id,
+                    'candidate_source' => (string) $row->candidate_source,
+                ])
+                ->values()
+                ->all();
+        });
+
+        return collect($cached)->map(fn (array $row) => (object) [
+            'id' => $row['id'],
+            'candidate_source' => $row['candidate_source'],
+            'source_priority' => $row['candidate_source'] === self::SOURCE_VERIFIED ? 0 : 1,
+            'sort_at' => null,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, object{id: int, candidate_source: string, source_priority: int, sort_at: mixed}>
+     */
+    protected function fetchUnionPageUncached(array $filters, int $offset, int $limit): Collection
+    {
+        if ($this->elasticsearch->canUseElasticsearch()) {
+            $prepared = $this->prepareFiltersForElasticsearch($filters);
+            $page = $this->elasticsearch->searchPage($prepared, $offset, $limit);
+            if ($page !== null) {
+                return $this->rankedHitsToRows($page['hits']);
+            }
+
+            Log::warning('Talent pool falling back to SQL page fetch.');
         }
 
         $verified = $this->verifiedCandidatesQuery($filters)
@@ -563,6 +613,165 @@ class TalentPoolSearchService
     /**
      * @param  array<string, mixed>  $filters
      */
+    protected function countMatchingSql(array $filters): int
+    {
+        $verified = $this->verifiedCandidatesQuery($filters)->select('users.id');
+        $talent = $this->talentPoolCandidatesQuery($filters)->select('talent_pool_candidates.id');
+
+        return (int) DB::query()
+            ->fromSub($verified->unionAll($talent), 'merged_candidates')
+            ->count();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    protected function prepareFiltersForElasticsearch(array $filters): array
+    {
+        $prepared = $filters;
+        $prepared['_employer_doc_ids'] = $this->resolveEmployerDocumentIds($filters);
+
+        return $prepared;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<string>|null Null when employer action filter not active.
+     */
+    protected function resolveEmployerDocumentIds(array $filters): ?array
+    {
+        $savedOnly = filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $shortlistedOnly = filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if (! $savedOnly && ! $shortlistedOnly) {
+            return null;
+        }
+
+        $employerId = (int) ($filters['employer_user_id'] ?? 0);
+        if ($employerId <= 0) {
+            return [];
+        }
+
+        $actions = EmployerTalentPoolAction::query()
+            ->where('employer_user_id', $employerId)
+            ->when($savedOnly, fn ($q) => $q->where('is_saved', true))
+            ->when($shortlistedOnly, fn ($q) => $q->where('is_shortlisted', true))
+            ->get(['candidate_source', 'candidate_ref_id']);
+
+        return $actions->map(function (EmployerTalentPoolAction $action) {
+            $source = $action->candidate_source === self::SOURCE_VERIFIED
+                ? TalentPoolElasticsearchService::ENTITY_VERIFIED
+                : TalentPoolElasticsearchService::ENTITY_TALENT_POOL;
+
+            return $source.'_'.$action->candidate_ref_id;
+        })->values()->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    protected function rememberSearchCache(array $filters, string $suffix, callable $callback): mixed
+    {
+        $ttl = (int) config('hirevo.talent_pool_search_cache_ttl', 600);
+        if ($ttl <= 0) {
+            return $callback();
+        }
+
+        $key = 'tp_search:'.hash('xxh128', json_encode($this->filtersForCacheKey($filters))).':'.$suffix;
+
+        return Cache::remember($key, $ttl, $callback);
+    }
+
+    /**
+     * Share count/facet cache across employers unless saved/shortlisted filters are active.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    protected function filtersForCacheKey(array $filters): array
+    {
+        $copy = $this->filtersForMemo($filters);
+        $savedOnly = filter_var($copy['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $shortlistedOnly = filter_var($copy['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if (! $savedOnly && ! $shortlistedOnly) {
+            unset($copy['employer_user_id']);
+        }
+
+        return $copy;
+    }
+
+    protected function applyVerifiedKeywordSearch(Builder $query, string $q): void
+    {
+        $this->applyKeywordSearch($query, $q, function (Builder $outer, string $like): void {
+            $outer->where('users.name', 'like', $like)
+                ->orWhere('users.email', 'like', $like)
+                ->orWhere('users.phone', 'like', $like)
+                ->orWhereHas('candidateProfile', function (Builder $profile) use ($like) {
+                    $profile->where('headline', 'like', $like)
+                        ->orWhere('location', 'like', $like)
+                        ->orWhere('preferred_job_location', 'like', $like)
+                        ->orWhere('education', 'like', $like)
+                        ->orWhere('skills', 'like', $like)
+                        ->orWhere('bio_summary', 'like', $like)
+                        ->orWhere('career_objective', 'like', $like)
+                        ->orWhere('current_company', 'like', $like);
+                });
+        });
+    }
+
+    protected function applyTalentKeywordSearch(Builder $query, string $q): void
+    {
+        $this->applyKeywordSearch($query, $q, function (Builder $outer, string $like): void {
+            $outer->where('full_name', 'like', $like)
+                ->orWhere('title', 'like', $like)
+                ->orWhere('location', 'like', $like)
+                ->orWhere('education', 'like', $like)
+                ->orWhere('skills', 'like', $like)
+                ->orWhere('profile_summary', 'like', $like)
+                ->orWhere('email', 'like', $like)
+                ->orWhere('phone', 'like', $like);
+        });
+    }
+
+    /**
+     * Match the full phrase or require every word to appear somewhere in searchable fields.
+     *
+     * @param  callable(Builder, string): void  $matchLike
+     */
+    protected function applyKeywordSearch(Builder $query, string $q, callable $matchLike): void
+    {
+        $q = trim($q);
+        if ($q === '') {
+            return;
+        }
+
+        $phraseLike = '%'.$q.'%';
+        $tokens = $this->elasticsearch->tokenize($q);
+
+        $query->where(function (Builder $outer) use ($phraseLike, $tokens, $matchLike) {
+            if (count($tokens) <= 1) {
+                $outer->where(function (Builder $inner) use ($phraseLike, $matchLike) {
+                    $matchLike($inner, $phraseLike);
+                });
+
+                return;
+            }
+
+            $outer->where(function (Builder $inner) use ($phraseLike, $matchLike) {
+                $matchLike($inner, $phraseLike);
+            })->orWhere(function (Builder $inner) use ($tokens, $matchLike) {
+                foreach ($tokens as $token) {
+                    $inner->where(function (Builder $tokenMatch) use ($token, $matchLike) {
+                        $matchLike($tokenMatch, '%'.$token.'%');
+                    });
+                }
+            });
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
     protected function verifiedCandidatesQuery(array $filters): Builder
     {
         $query = User::query()
@@ -572,22 +781,7 @@ class TalentPoolSearchService
 
         $q = trim((string) ($filters['q'] ?? ''));
         if ($q !== '') {
-            $like = '%'.$q.'%';
-            $query->where(function (Builder $outer) use ($like, $q) {
-                $outer->where('users.name', 'like', $like)
-                    ->orWhere('users.email', 'like', $like)
-                    ->orWhere('users.phone', 'like', $like)
-                    ->orWhereHas('candidateProfile', function (Builder $profile) use ($like) {
-                        $profile->where('headline', 'like', $like)
-                            ->orWhere('location', 'like', $like)
-                            ->orWhere('preferred_job_location', 'like', $like)
-                            ->orWhere('education', 'like', $like)
-                            ->orWhere('skills', 'like', $like)
-                            ->orWhere('bio_summary', 'like', $like)
-                            ->orWhere('career_objective', 'like', $like)
-                            ->orWhere('current_company', 'like', $like);
-                    });
-            });
+            $this->applyVerifiedKeywordSearch($query, $q);
         }
 
         $skills = $this->parseListFilter($filters['skills'] ?? '');
@@ -638,17 +832,7 @@ class TalentPoolSearchService
 
         $q = trim((string) ($filters['q'] ?? ''));
         if ($q !== '') {
-            $like = '%'.$q.'%';
-            $query->where(function (Builder $outer) use ($like) {
-                $outer->where('full_name', 'like', $like)
-                    ->orWhere('title', 'like', $like)
-                    ->orWhere('location', 'like', $like)
-                    ->orWhere('education', 'like', $like)
-                    ->orWhere('skills', 'like', $like)
-                    ->orWhere('profile_summary', 'like', $like)
-                    ->orWhere('email', 'like', $like)
-                    ->orWhere('phone', 'like', $like);
-            });
+            $this->applyTalentKeywordSearch($query, $q);
         }
 
         $skills = $this->parseListFilter($filters['skills'] ?? '');

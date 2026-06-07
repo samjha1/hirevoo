@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFile;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -60,7 +60,7 @@ class ResumeController extends Controller
         set_time_limit((int) config('hirevo.resume_analysis_time_limit', 180));
 
         $file = $request->file('resume');
-        $path = $file->store('resumes', 'local');
+        $path = StoredFile::storeUploadedFile($file, 'resumes');
         if ($path === false) {
             return back()->withErrors(['resume' => 'Failed to store file.'])->withInput();
         }
@@ -134,22 +134,25 @@ class ResumeController extends Controller
             abort(403);
         }
 
-        if (! Storage::disk('local')->exists($resume->file_path)) {
+        if (! StoredFile::exists($resume->file_path)) {
             return redirect()->route('profile')->with('info', 'That resume file is no longer on the server.');
         }
 
-        $path = Storage::disk('local')->path($resume->file_path);
         $filename = $resume->file_name ?: 'resume.pdf';
 
         if ($request->boolean('download')) {
-            return response()->download($path, $filename, [
-                'Content-Type' => 'application/pdf',
-            ]);
+            return StoredFile::downloadResponse(
+                $resume->file_path,
+                $filename,
+                'application/pdf'
+            );
         }
 
-        return response()->file($path, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return StoredFile::inlineResponse(
+            $resume->file_path,
+            'application/pdf',
+            $filename
+        );
     }
 
     public function results(Resume $resume, Request $request): View|RedirectResponse

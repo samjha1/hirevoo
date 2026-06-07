@@ -12,7 +12,8 @@
         "laravel/socialite": "^5.24",
         "socialiteproviders/microsoft-azure": "^5.2",
         "aws/aws-sdk-php": "^3.0",
-        "elasticsearch/elasticsearch": "8.15"
+        "elasticsearch/elasticsearch": "8.15",
+        "league/flysystem-aws-s3-v3": "^3.34"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -44,7 +45,8 @@
     "config": {
         "optimize-autoloader": true,
         "allow-plugins": {
-            "pestphp/pest-plugin": true
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
         }
     },
     "minimum-stability": "stable",

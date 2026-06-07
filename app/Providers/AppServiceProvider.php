@@ -104,9 +104,7 @@ class AppServiceProvider extends ServiceProvider
                 $profile = auth()->user()->referrerProfile;
                 $credits = (int) $profile->credits;
                 if ($profile->profile_photo) {
-                    $profilePhotoUrl = str_starts_with($profile->profile_photo, 'uploads/')
-                        ? asset($profile->profile_photo)
-                        : asset('storage/' . $profile->profile_photo);
+                    $profilePhotoUrl = $profile->profilePhotoUrl();
                 }
             }
             $view->with('employerCredits', $credits)->with('employerProfilePhotoUrl', $profilePhotoUrl);

@@ -46,7 +46,7 @@ class GptService
     public function __construct()
     {
         $this->openAiApiKey = config('services.openai.key') ?: null;
-        $this->openAiModel = (string) config('services.openai.model', 'gpt-5.4-mini');
+        $this->openAiModel = $this->normalizeOpenAiModel((string) config('services.openai.model', 'gpt-5-mini'));
         $this->primaryApiKey = config('services.primary_llm.key') ?: null;
         $this->primaryBaseUrl = rtrim((string) config('services.primary_llm.base_url', 'https://openrouter.ai/api/v1'), '/');
         $this->primaryModel = (string) config('services.primary_llm.model', 'openai/gpt-oss-20b:free');
@@ -58,6 +58,20 @@ class GptService
         $this->bedrockModelId = (string) config('services.bedrock.model_id', 'amazon.nova-2-lite-v1:0');
         $this->timeout = max(10, (int) config('hirevo.llm_http_timeout_seconds', 60));
         $this->connectTimeout = max(5, (int) config('hirevo.llm_http_connect_timeout_seconds', 15));
+        $this->maxTokens = max(128, (int) config('hirevo.llm_default_max_tokens', 400));
+    }
+
+    /**
+     * OpenAI API expects a slug like gpt-5-mini, not display names like "GPT-5 Mini".
+     */
+    protected function normalizeOpenAiModel(string $model): string
+    {
+        $model = trim($model);
+        if ($model === '') {
+            return 'gpt-5-mini';
+        }
+
+        return strtolower(str_replace([' ', '_'], '-', $model));
     }
 
     public function getLastError(): ?string
@@ -77,7 +91,7 @@ class GptService
      */
     public function getResumeSummary(string $text): ?string
     {
-        $truncated = mb_substr($text, 0, 6000);
+        $truncated = mb_substr($text, 0, (int) config('hirevo.llm_resume_input_max_chars', 5000));
         $messages = [
             [
                 'role' => 'system',
@@ -133,7 +147,7 @@ class GptService
      */
     public function getResumeScoreAndExplanation(string $text): ?array
     {
-        $truncated = mb_substr($text, 0, 6000);
+        $truncated = mb_substr($text, 0, (int) config('hirevo.llm_resume_input_max_chars', 5000));
         $system = 'You are an ATS (Applicant Tracking System) resume analyst. You MUST reply with ONLY a single valid JSON object. No markdown, no code fences, no extra text. Keys: "score" (integer 0-100) and "explanation" (string). Be strict: most resumes 45-72; strong 73-85; exceptional 86-100. The explanation must be 3-5 sentences: first 1-2 sentences on what works well (structure, keywords, clarity); then 2-3 sentences on specific, actionable improvements (e.g. "Add a Skills section with Python and SQL" or "Include metrics like percentage improvement").';
         $user = "Analyze this resume for ATS compatibility. Check: (1) Structure: Experience, Education, Skills sections and bullet points. (2) Keywords: role-relevant terms and technologies. (3) Achievements: quantifiable results (%, numbers). (4) Format: clear dates, contact info, no complex tables.\n\n"
             . "Give a realistic score. In explanation: briefly state strengths, then give 2-3 specific improvements the candidate can act on. Output ONLY this JSON:\n{\"score\": <0-100>, \"explanation\": \"<3-5 sentences: strengths then improvements>\"}\n\nResume text:\n---\n" . $truncated;
@@ -165,7 +179,7 @@ class GptService
      */
     public function extractSkills(string $text): ?array
     {
-        $truncated = mb_substr($text, 0, 6000);
+        $truncated = mb_substr($text, 0, (int) config('hirevo.llm_resume_input_max_chars', 5000));
         $messages = [
             [
                 'role' => 'system',
@@ -201,7 +215,7 @@ class GptService
      */
     public function getResumeAnalysisBundle(string $text): ?array
     {
-        $truncated = mb_substr($text, 0, 5500);
+        $truncated = mb_substr($text, 0, min(5500, (int) config('hirevo.llm_resume_input_max_chars', 5000)));
         $system = 'You are a resume analyst. Output ONLY one valid JSON object. No markdown, no code fences. '
             . 'Keys: "summary" (string, 4-6 professional sentences, third person: role, top skills, education, profile type), '
             . '"score" (integer 0-100, ATS-style resume quality; most resumes 45-72; strong 73-85), '
@@ -215,7 +229,7 @@ class GptService
         $response = $this->chat([
             ['role' => 'system', 'content' => $system],
             ['role' => 'user', 'content' => $user],
-        ], 1800);
+        ], (int) config('hirevo.llm_resume_bundle_max_tokens', 1200));
 
         if (! $response) {
             return null;
@@ -258,7 +272,8 @@ class GptService
      */
     public function extractProfileFromResume(string $text): ?array
     {
-        $truncated = mb_substr($text, 0, 12000);
+        $inputLimit = (int) config('hirevo.llm_resume_input_max_chars', 5000);
+        $truncated = mb_substr($text, 0, min(12000, $inputLimit * 2));
         $system = 'You are a resume parser. Output ONLY one valid JSON object. No markdown, no code fences. '
             . 'Extract from the resume. Use null for unknown scalars; use [] for empty lists. '
             . 'Scalar keys: '
@@ -292,7 +307,7 @@ class GptService
         $response = $this->chat([
             ['role' => 'system', 'content' => $system],
             ['role' => 'user', 'content' => $user],
-        ], 4096);
+        ], (int) config('hirevo.llm_profile_extract_max_tokens', 2500));
 
         if (! $response) {
             return null;
@@ -457,7 +472,8 @@ class GptService
      */
     public function getResumeJobMatchScore(string $resumeText, string $jobTitle, string $jobDescription, array $requiredSkills): ?array
     {
-        $resumeTruncated = mb_substr($resumeText, 0, 4000);
+        $inputLimit = (int) config('hirevo.llm_resume_input_max_chars', 5000);
+        $resumeTruncated = mb_substr($resumeText, 0, min(4000, $inputLimit));
         $jobDescTruncated = mb_substr($jobDescription, 0, 1500);
         $skillsList = implode(', ', array_slice($requiredSkills, 0, 25));
 
@@ -516,7 +532,7 @@ class GptService
         }, $extractedChips), fn ($s) => $s !== ''));
         $chips = array_slice($chips, 0, 40);
 
-        $resumeTruncated = mb_substr($resumeExcerpt, 0, 7500);
+        $resumeTruncated = mb_substr($resumeExcerpt, 0, min(7500, (int) config('hirevo.llm_resume_input_max_chars', 5000) + 1500));
         $reqJson = json_encode($required, JSON_UNESCAPED_UNICODE);
         $chipsJson = json_encode($chips, JSON_UNESCAPED_UNICODE);
         if ($reqJson === false || $chipsJson === false) {
@@ -538,7 +554,7 @@ class GptService
         $response = $this->chat([
             ['role' => 'system', 'content' => $system],
             ['role' => 'user', 'content' => $user],
-        ], 900);
+        ], min(900, (int) config('hirevo.llm_default_max_tokens', 400) + 500));
 
         if (! $response) {
             return null;
@@ -587,7 +603,7 @@ class GptService
             return $ids;
         }
 
-        $resumeTruncated = mb_substr($resumeText, 0, 3500);
+        $resumeTruncated = mb_substr($resumeText, 0, min(3500, (int) config('hirevo.llm_resume_input_max_chars', 5000)));
         $normalized = [];
         foreach (array_values($jobsPayload) as $row) {
             $normalized[] = [
@@ -617,7 +633,7 @@ class GptService
         $response = $this->chat([
             ['role' => 'system', 'content' => $system],
             ['role' => 'user', 'content' => $user],
-        ], 2048);
+        ], (int) config('hirevo.llm_job_rank_max_tokens', 1200));
 
         if (! $response) {
             return null;
@@ -1370,12 +1386,15 @@ class GptService
                         ]);
                     }
 
-                    $response = $client->post($url, [
-                        'model' => $model,
-                        'messages' => $messages,
-                        'max_tokens' => $maxTokens,
-                        'temperature' => 0.3,
-                    ]);
+                    $tokenParam = $this->preferredChatCompletionTokenParam($model);
+                    $payload = $this->buildChatCompletionPayload($model, $messages, $maxTokens, $tokenParam);
+                    $response = $client->post($url, $payload);
+
+                    if (! $response->successful()
+                        && $this->isUnsupportedTokenParamError($response->status(), $response->json())) {
+                        $altParam = $this->alternateChatCompletionTokenParam($tokenParam);
+                        $response = $client->post($url, $this->buildChatCompletionPayload($model, $messages, $maxTokens, $altParam));
+                    }
 
                     if ($response->successful()) {
                         if ($isOpenRouter) {
@@ -1443,6 +1462,56 @@ class GptService
         return str_contains($m, 'cURL error 28')
             || str_contains($m, 'Operation timed out')
             || str_contains($m, 'timed out after');
+    }
+
+    /**
+     * @return array{model: string, messages: array<int, array<string, mixed>>, temperature: float, max_tokens?: int, max_completion_tokens?: int}
+     */
+    protected function buildChatCompletionPayload(string $model, array $messages, int $maxTokens, string $tokenParam): array
+    {
+        return [
+            'model' => $model,
+            'messages' => $messages,
+            $tokenParam => $maxTokens,
+            'temperature' => 0.3,
+        ];
+    }
+
+    protected function preferredChatCompletionTokenParam(string $model): string
+    {
+        return $this->modelUsesMaxCompletionTokens($model)
+            ? 'max_completion_tokens'
+            : 'max_tokens';
+    }
+
+    protected function modelUsesMaxCompletionTokens(string $model): bool
+    {
+        $slug = strtolower($model);
+        if (str_contains($slug, '/')) {
+            $slug = substr($slug, strrpos($slug, '/') + 1);
+        }
+        $slug = preg_replace('/:free$/', '', $slug) ?? $slug;
+
+        return (bool) preg_match('/^(gpt-5|gpt-[56]|o[134]|chatgpt-)/', $slug);
+    }
+
+    protected function alternateChatCompletionTokenParam(string $param): string
+    {
+        return $param === 'max_completion_tokens' ? 'max_tokens' : 'max_completion_tokens';
+    }
+
+    protected function isUnsupportedTokenParamError(int $status, ?array $body): bool
+    {
+        if ($status !== 400 || ! is_array($body)) {
+            return false;
+        }
+        $err = $body['error'] ?? null;
+        if (! is_array($err)) {
+            return false;
+        }
+
+        return ($err['code'] ?? '') === 'unsupported_parameter'
+            && in_array($err['param'] ?? '', ['max_tokens', 'max_completion_tokens'], true);
     }
 
     /**

@@ -598,7 +598,16 @@
                     </div>
                 </div>
                 <div class="col-lg-6 hv2-reveal hv2-reveal-d2">
-                    <div class="hv2-card h-100 d-flex flex-column">
+                    @php
+                        $employerPostJobUrl = route('employer.jobs.create');
+                        $employerCardHref = auth()->check() && auth()->user()->isReferrer()
+                            ? $employerPostJobUrl
+                            : route('login', [
+                                'role' => 'referrer',
+                                'redirect' => parse_url($employerPostJobUrl, PHP_URL_PATH),
+                            ]);
+                    @endphp
+                    <a href="{{ $employerCardHref }}" class="hv2-card h-100 d-flex flex-column text-decoration-none" style="color:inherit;">
                         <img src="{{ $siteImg('image7.jpeg') }}" alt="" class="hv2-card-img" loading="lazy" width="560" height="176">
                         <div class="small fw-bold text-uppercase mb-2" style="color:#c4bfff;letter-spacing:0.08em;">For employers</div>
                         <h3 class="h4 mb-2">Hiring made simpler</h3>
@@ -611,9 +620,9 @@
                             <li>Optional external apply link for your ATS or site</li>
                         </ul>
                         <div class="mt-auto">
-                            <a href="{{ route('employer.jobs.create') }}" class="hv2-btn hv2-btn--ghost">Post a job</a>
+                            <span class="hv2-btn hv2-btn--ghost">Post a job</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>

@@ -9,7 +9,7 @@ use App\Models\JobRequiredSkill;
 use App\Models\Resume;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFile;
 use Illuminate\Support\Str;
 use Smalot\PdfParser\Parser as PdfParser;
 
@@ -462,8 +462,12 @@ class ResumeAnalysisService
      */
     public function analyzeResume(Resume $resume): Resume
     {
-        $path = storage_path('app/' . $resume->file_path);
-        $text = $this->extractTextFromFile($path, $resume->mime_type ?? 'application/pdf');
+        $path = StoredFile::localPathForReading($resume->file_path);
+        if ($path === null) {
+            $text = 'No extractable text from document.';
+        } else {
+            $text = $this->extractTextFromFile($path, $resume->mime_type ?? 'application/pdf');
+        }
         if ($text === '') {
             $text = 'No extractable text from document.';
         }
@@ -529,9 +533,9 @@ class ResumeAnalysisService
         $profile = $user->candidateProfile ?? new CandidateProfile(['user_id' => $user->id]);
         $changed = false;
 
-        $path = storage_path('app/'.$resume->file_path);
+        $path = StoredFile::localPathForReading($resume->file_path);
         $text = '';
-        if (is_readable($path)) {
+        if ($path !== null) {
             $text = $this->extractTextFromFile($path, $resume->mime_type ?? 'application/pdf');
         }
 
@@ -740,8 +744,8 @@ class ResumeAnalysisService
     public function getResumePlainTextForMatching(Resume $resume): string
     {
         $parts = [];
-        $path = Storage::disk('local')->path($resume->file_path);
-        if (is_readable($path)) {
+        $path = StoredFile::localPathForReading($resume->file_path);
+        if ($path !== null) {
             $fromFile = $this->extractTextFromFile($path, (string) ($resume->mime_type ?? 'application/pdf'));
             if ($fromFile !== '') {
                 $parts[] = $fromFile;

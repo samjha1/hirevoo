@@ -13,7 +13,7 @@ use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -485,15 +485,13 @@ class ApplicationController extends Controller
             return redirect()->back()->with('error', 'No resume attached.');
         }
         $path = $application->resume->file_path;
-        if (! Storage::disk('local')->exists($path)) {
+        if (! StoredFile::exists($path)) {
             return redirect()->back()->with('error', 'Resume file not found.');
         }
         $mime = $application->resume->mime_type ?? 'application/pdf';
         $filename = $application->resume->file_name ?? 'resume.pdf';
-        return response()->file(Storage::disk('local')->path($path), [
-            'Content-Type'        => $mime,
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
-        ]);
+
+        return StoredFile::inlineResponse($path, $mime, $filename);
     }
 
     public function downloadResume(EmployerJobApplication $application): BinaryFileResponse|RedirectResponse
@@ -510,12 +508,15 @@ class ApplicationController extends Controller
             return redirect()->back()->with('error', 'No resume attached.');
         }
         $path = $application->resume->file_path;
-        if (! Storage::disk('local')->exists($path)) {
+        if (! StoredFile::exists($path)) {
             return redirect()->back()->with('error', 'Resume file not found.');
         }
-        return response()->download(Storage::disk('local')->path($path), $application->resume->file_name ?? 'resume.pdf', [
-            'Content-Type' => $application->resume->mime_type ?? 'application/pdf',
-        ]);
+
+        return StoredFile::downloadResponse(
+            $path,
+            $application->resume->file_name ?? 'resume.pdf',
+            $application->resume->mime_type ?? 'application/pdf'
+        );
     }
 
     /**
@@ -537,11 +538,14 @@ class ApplicationController extends Controller
         $candidateProfile = $application->user->candidateProfile ?? null;
 
         $resumeText = null;
-        if ($resume && Storage::disk('local')->exists($resume->file_path)) {
-            $resumeText = app(ResumeAnalysisService::class)->extractTextFromFile(
-                Storage::disk('local')->path($resume->file_path),
-                $resume->mime_type ?? 'application/pdf'
-            );
+        if ($resume && StoredFile::exists($resume->file_path)) {
+            $readPath = StoredFile::localPathForReading($resume->file_path);
+            if ($readPath !== null) {
+                $resumeText = app(ResumeAnalysisService::class)->extractTextFromFile(
+                    $readPath,
+                    $resume->mime_type ?? 'application/pdf'
+                );
+            }
         }
         if (($resumeText === null || $resumeText === '') && $candidateProfile) {
             $parts = [];

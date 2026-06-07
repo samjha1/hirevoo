@@ -25,26 +25,131 @@ class TalentPoolElasticsearchService
             && config('elasticsearch.hosts') !== [];
     }
 
+    public function canUseElasticsearch(): bool
+    {
+        return $this->isEnabled() && $this->client() !== null;
+    }
+
     /**
-     * Ranked candidate refs after text search, or null to use SQL fallback.
+     * Paginated search — primary path for 100k+ talent pool rows.
      *
      * @param  array<string, mixed>  $filters
-     * @return list<array{source: string, source_id: int, score: float}>|null
+     * @return array{hits: list<array{source: string, source_id: int, score: float}>, total: int}|null
      */
-    public function searchRanked(array $filters): ?array
+    public function searchPage(array $filters, int $from, int $size): ?array
     {
-        if (! $this->hasTextCriteria($filters)) {
+        if ($this->isEmployerActionFilterEmpty($filters)) {
+            return ['hits' => [], 'total' => 0];
+        }
+
+        $client = $this->client();
+        if ($client === null) {
             return null;
         }
 
-        if ($this->canUseElasticsearch()) {
-            $hits = $this->searchElasticsearch($filters);
-            if ($hits !== null) {
-                return $hits;
-            }
+        $maxWindow = (int) config('elasticsearch.talent_pool_max_result_window', 50000);
+        $from = max(0, min($from, max(0, $maxWindow - 1)));
+        $size = max(1, min($size, 100));
+
+        try {
+            $response = $client->search([
+                'index' => $this->indexName(),
+                'body' => [
+                    'from' => $from,
+                    'size' => $size,
+                    'track_total_hits' => true,
+                    '_source' => ['entity_type', 'entity_id'],
+                    'query' => $this->buildFilterQuery($filters),
+                    'sort' => [
+                        ['_score' => ['order' => 'desc']],
+                        ['entity_type' => ['order' => 'asc']],
+                        ['entity_id' => ['order' => 'desc']],
+                    ],
+                ],
+            ]);
+
+            return [
+                'hits' => $this->parseHits($response['hits']['hits'] ?? []),
+                'total' => $this->parseTotal($response['hits']['total'] ?? 0),
+            ];
+        } catch (Throwable $e) {
+            Log::warning('Talent pool Elasticsearch search failed.', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    public function countMatching(array $filters): ?int
+    {
+        if ($this->isEmployerActionFilterEmpty($filters)) {
+            return 0;
         }
 
-        return $this->searchRankedSql($this->filtersWithoutEmployer($filters));
+        $client = $this->client();
+        if ($client === null) {
+            return null;
+        }
+
+        try {
+            $response = $client->count([
+                'index' => $this->indexName(),
+                'body' => [
+                    'query' => $this->buildFilterQuery($filters),
+                ],
+            ]);
+
+            return (int) ($response['count'] ?? 0);
+        } catch (Throwable $e) {
+            Log::warning('Talent pool Elasticsearch count failed.', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{locations: list<array{label: string, count: int}>, education: list<array{label: string, count: int}>, experience: list<array{label: string, min: int|null, max: int|null, count: int}>}|null
+     */
+    public function aggregateFacets(array $filters): ?array
+    {
+        if ($this->isEmployerActionFilterEmpty($filters)) {
+            return ['locations' => [], 'education' => [], 'experience' => []];
+        }
+
+        $client = $this->client();
+        if ($client === null) {
+            return null;
+        }
+
+        $forLocations = $filters;
+        unset($forLocations['location'], $forLocations['locations']);
+
+        $forEducation = $filters;
+        unset($forEducation['education']);
+
+        $forExperience = $filters;
+        unset($forExperience['experience_min'], $forExperience['experience_max']);
+
+        try {
+            return [
+                'locations' => $this->termsFacet($forLocations, 'location_city', 50),
+                'education' => $this->termsFacet($forEducation, 'education_raw', 20),
+                'experience' => $this->experienceFacets($forExperience),
+            ];
+        } catch (Throwable $e) {
+            Log::warning('Talent pool Elasticsearch facets failed.', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     /**
@@ -78,6 +183,7 @@ class TalentPoolElasticsearchService
 
         $resume = $user->resumes->sortByDesc(fn ($r) => ($r->is_primary ? 1 : 0).$r->id)->first();
         $skills = $this->skillsText($profile->skills, $resume?->extracted_skills);
+        $location = trim((string) ($profile->location ?? '').' '.(string) ($profile->preferred_job_location ?? ''));
 
         $this->upsertDocument(self::ENTITY_VERIFIED, (int) $user->id, [
             'entity_type' => self::ENTITY_VERIFIED,
@@ -86,8 +192,10 @@ class TalentPoolElasticsearchService
             'title' => (string) ($profile->headline ?? ''),
             'email' => (string) ($user->email ?? ''),
             'phone' => (string) ($user->phone ?? ''),
-            'location' => trim((string) ($profile->location ?? '').' '.(string) ($profile->preferred_job_location ?? '')),
+            'location' => $location,
+            'location_city' => $this->extractCity($location),
             'education' => (string) ($profile->education ?? ''),
+            'education_raw' => mb_substr(trim((string) ($profile->education ?? '')), 0, 256),
             'skills' => $skills,
             'profile_text' => $this->plainText(implode("\n", array_filter([
                 $profile->bio_summary,
@@ -111,6 +219,8 @@ class TalentPoolElasticsearchService
             return;
         }
 
+        $location = (string) ($candidate->location ?? '');
+
         $this->upsertDocument(self::ENTITY_TALENT_POOL, (int) $candidate->id, [
             'entity_type' => self::ENTITY_TALENT_POOL,
             'entity_id' => (int) $candidate->id,
@@ -118,8 +228,10 @@ class TalentPoolElasticsearchService
             'title' => (string) ($candidate->title ?? ''),
             'email' => (string) ($candidate->email ?? ''),
             'phone' => (string) ($candidate->phone ?? ''),
-            'location' => (string) ($candidate->location ?? ''),
+            'location' => $location,
+            'location_city' => $this->extractCity($location),
             'education' => (string) ($candidate->education ?? ''),
+            'education_raw' => mb_substr(trim((string) ($candidate->education ?? '')), 0, 256),
             'skills' => $this->skillsText($candidate->skills),
             'profile_text' => $this->plainText($candidate->profile_summary),
             'experience_years' => (int) ($candidate->experience_years ?? 0),
@@ -149,12 +261,16 @@ class TalentPoolElasticsearchService
             return;
         }
 
+        $maxWindow = (int) config('elasticsearch.talent_pool_max_result_window', 50000);
+
         $client->indices()->create([
             'index' => $index,
             'body' => [
                 'settings' => [
-                    'number_of_shards' => 1,
-                    'number_of_replicas' => 0,
+                    'number_of_shards' => max(1, (int) config('elasticsearch.talent_pool_shards', 2)),
+                    'number_of_replicas' => max(0, (int) config('elasticsearch.talent_pool_replicas', 0)),
+                    'max_result_window' => $maxWindow,
+                    'refresh_interval' => '5s',
                     'analysis' => [
                         'analyzer' => [
                             'talent_text' => [
@@ -171,6 +287,8 @@ class TalentPoolElasticsearchService
                         'entity_id' => ['type' => 'integer'],
                         'status' => ['type' => 'keyword'],
                         'experience_years' => ['type' => 'integer'],
+                        'location_city' => ['type' => 'keyword'],
+                        'education_raw' => ['type' => 'keyword'],
                         'name' => ['type' => 'text', 'analyzer' => 'talent_text'],
                         'title' => ['type' => 'text', 'analyzer' => 'talent_text'],
                         'email' => ['type' => 'text', 'analyzer' => 'talent_text'],
@@ -185,14 +303,37 @@ class TalentPoolElasticsearchService
         ]);
     }
 
+    public function deleteIndexIfExists(): void
+    {
+        $client = $this->client();
+        if ($client === null) {
+            return;
+        }
+
+        $index = $this->indexName();
+        try {
+            if ($client->indices()->exists(['index' => $index])->asBool()) {
+                $client->indices()->delete(['index' => $index]);
+            }
+        } catch (Throwable $e) {
+            Log::warning('Could not delete talent pool Elasticsearch index.', [
+                'index' => $index,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
     /**
+     * @param  callable(int): void|null  $onProgress
      * @return array{verified: int, talent_pool: int}
      */
-    public function reindexAll(): array
+    public function reindexAll(?callable $onProgress = null): array
     {
         $this->ensureIndex();
 
         $counts = ['verified' => 0, 'talent_pool' => 0];
+        $chunk = max(100, (int) config('elasticsearch.talent_pool_reindex_chunk', 500));
+        $bulkSize = max(100, (int) config('elasticsearch.talent_pool_bulk_size', 500));
 
         User::query()
             ->where('role', 'candidate')
@@ -200,20 +341,22 @@ class TalentPoolElasticsearchService
             ->whereHas('candidateProfile')
             ->with(['candidateProfile', 'resumes'])
             ->orderBy('id')
-            ->chunkById(100, function ($users) use (&$counts) {
-                foreach ($users as $user) {
-                    $this->indexVerifiedUser($user);
-                    $counts['verified']++;
+            ->chunkById($chunk, function ($users) use (&$counts, $bulkSize, $onProgress) {
+                $this->bulkIndexVerifiedUsers($users, $bulkSize);
+                $counts['verified'] += $users->count();
+                if ($onProgress !== null) {
+                    $onProgress($users->count());
                 }
             });
 
         TalentPoolCandidate::query()
             ->discoverable()
             ->orderBy('id')
-            ->chunkById(100, function ($candidates) use (&$counts) {
-                foreach ($candidates as $candidate) {
-                    $this->indexTalentPoolCandidate($candidate);
-                    $counts['talent_pool']++;
+            ->chunkById($chunk, function ($candidates) use (&$counts, $bulkSize, $onProgress) {
+                $this->bulkIndexTalentPoolCandidates($candidates, $bulkSize);
+                $counts['talent_pool'] += $candidates->count();
+                if ($onProgress !== null) {
+                    $onProgress($candidates->count());
                 }
             });
 
@@ -261,157 +404,190 @@ class TalentPoolElasticsearchService
     }
 
     /**
-     * @param  array<string, mixed>  $filters
-     * @return list<array{source: string, source_id: int, score: float}>|null
+     * @param  iterable<int, User>  $users
      */
-    protected function searchElasticsearch(array $filters): ?array
+    protected function bulkIndexVerifiedUsers(iterable $users, int $bulkSize): void
     {
         $client = $this->client();
         if ($client === null) {
-            return null;
+            return;
         }
 
-        $searchText = $this->buildSearchText($filters);
-        if ($searchText === '') {
-            return [];
-        }
+        $body = [];
+        $index = $this->indexName();
 
-        try {
-            $response = $client->search([
-                'index' => $this->indexName(),
-                'body' => [
-                    'size' => (int) config('elasticsearch.talent_pool_search_limit', 250),
-                    'track_total_hits' => false,
-                    '_source' => ['entity_type', 'entity_id'],
-                    'query' => $this->buildQuery($searchText, $filters),
-                    'sort' => [
-                        ['_score' => ['order' => 'desc']],
-                        ['entity_id' => ['order' => 'desc']],
-                    ],
-                ],
-            ]);
-
-            $hits = [];
-            foreach ($response['hits']['hits'] ?? [] as $hit) {
-                $source = (string) ($hit['_source']['entity_type'] ?? '');
-                $id = (int) ($hit['_source']['entity_id'] ?? 0);
-                if ($id <= 0 || ! in_array($source, [self::ENTITY_VERIFIED, self::ENTITY_TALENT_POOL], true)) {
-                    continue;
-                }
-                $hits[] = [
-                    'source' => $source,
-                    'source_id' => $id,
-                    'score' => (float) ($hit['_score'] ?? 0),
-                ];
+        foreach ($users as $user) {
+            if ($user->role !== 'candidate' || $user->status !== 'active' || ! $user->candidateProfile) {
+                continue;
             }
 
-            return $hits;
-        } catch (Throwable $e) {
-            Log::warning('Talent pool Elasticsearch search failed, using SQL fallback.', [
-                'message' => $e->getMessage(),
-            ]);
+            $doc = $this->verifiedDocumentBody($user);
+            if ($doc === null) {
+                continue;
+            }
 
-            return null;
+            $body[] = ['index' => ['_index' => $index, '_id' => $this->documentId(self::ENTITY_VERIFIED, (int) $user->id)]];
+            $body[] = $doc;
+
+            if (count($body) >= $bulkSize * 2) {
+                $this->flushBulk($body);
+            }
         }
+
+        $this->flushBulk($body);
     }
 
     /**
-     * @param  array<string, mixed>  $filters
-     * @return list<array{source: string, source_id: int, score: float}>
+     * @param  iterable<int, TalentPoolCandidate>  $candidates
      */
-    protected function searchRankedSql(array $filters): array
+    protected function bulkIndexTalentPoolCandidates(iterable $candidates, int $bulkSize): void
     {
-        $jobSearch = app(JobOpeningsSearchService::class);
-        $q = trim((string) ($filters['q'] ?? ''));
-        $skills = $this->parseSkills($filters['skills'] ?? '');
-        $tokens = array_values(array_unique(array_merge(
-            $jobSearch->tokenize($q),
-            array_map('strtolower', $skills)
-        )));
+        $client = $this->client();
+        if ($client === null) {
+            return;
+        }
 
-        $hits = [];
-        $score = 1000.0;
+        $body = [];
+        $index = $this->indexName();
 
-        if ($q !== '') {
-            $like = '%'.$q.'%';
-            User::query()
-                ->where('role', 'candidate')
-                ->where('status', 'active')
-                ->whereHas('candidateProfile')
-                ->where(function ($outer) use ($like, $tokens) {
-                    $outer->where('users.name', 'like', $like)
-                        ->orWhere('users.email', 'like', $like)
-                        ->orWhereHas('candidateProfile', function ($profile) use ($like, $tokens) {
-                            $profile->where('headline', 'like', $like)
-                                ->orWhere('location', 'like', $like)
-                                ->orWhere('skills', 'like', $like)
-                                ->orWhere('education', 'like', $like);
-                            foreach ($tokens as $token) {
-                                $tokenLike = '%'.$token.'%';
-                                $profile->orWhere('headline', 'like', $tokenLike)
-                                    ->orWhere('skills', 'like', $tokenLike);
-                            }
-                        });
-                })
-                ->orderByDesc('updated_at')
-                ->limit(400)
-                ->pluck('id')
-                ->each(function ($id) use (&$hits, &$score) {
-                    $hits[] = [
-                        'source' => self::ENTITY_VERIFIED,
-                        'source_id' => (int) $id,
-                        'score' => $score,
-                    ];
-                    $score -= 0.1;
-                });
+        foreach ($candidates as $candidate) {
+            $doc = $this->talentPoolDocumentBody($candidate);
+            if ($doc === null) {
+                continue;
+            }
 
-            TalentPoolCandidate::query()
-                ->discoverable()
-                ->where(function ($outer) use ($like, $tokens) {
-                    $outer->where('full_name', 'like', $like)
-                        ->orWhere('title', 'like', $like)
-                        ->orWhere('skills', 'like', $like);
-                    foreach ($tokens as $token) {
-                        $tokenLike = '%'.$token.'%';
-                        $outer->orWhere('full_name', 'like', $tokenLike)
-                            ->orWhere('skills', 'like', $tokenLike);
-                    }
-                })
-                ->orderByDesc('created_at')
-                ->limit(400)
-                ->pluck('id')
-                ->each(function ($id) use (&$hits, &$score) {
-                    $hits[] = [
-                        'source' => self::ENTITY_TALENT_POOL,
-                        'source_id' => (int) $id,
-                        'score' => $score,
-                    ];
-                    $score -= 0.1;
-                });
-        } elseif ($skills !== []) {
-            foreach ($skills as $skill) {
-                $skillLike = '%'.$skill.'%';
-                User::query()
-                    ->where('role', 'candidate')
-                    ->where('status', 'active')
-                    ->whereHas('candidateProfile', fn ($p) => $p->where('skills', 'like', $skillLike))
-                    ->limit(200)
-                    ->pluck('id')
-                    ->each(function ($id) use (&$hits, &$score) {
-                        $hits[] = ['source' => self::ENTITY_VERIFIED, 'source_id' => (int) $id, 'score' => $score];
-                        $score -= 0.1;
-                    });
+            $body[] = ['index' => ['_index' => $index, '_id' => $this->documentId(self::ENTITY_TALENT_POOL, (int) $candidate->id)]];
+            $body[] = $doc;
+
+            if (count($body) >= $bulkSize * 2) {
+                $this->flushBulk($body);
             }
         }
 
-        return $hits;
+        $this->flushBulk($body);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $body
+     */
+    protected function flushBulk(array &$body): void
+    {
+        if ($body === []) {
+            return;
+        }
+
+        $client = $this->client();
+        if ($client === null) {
+            $body = [];
+
+            return;
+        }
+
+        try {
+            $client->bulk(['body' => $body]);
+        } catch (Throwable $e) {
+            Log::warning('Talent pool bulk index batch failed.', [
+                'message' => $e->getMessage(),
+                'docs' => (int) (count($body) / 2),
+            ]);
+        }
+
+        $body = [];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function verifiedDocumentBody(User $user): ?array
+    {
+        $profile = $user->candidateProfile;
+        if (! $profile) {
+            return null;
+        }
+
+        $resume = $user->resumes->sortByDesc(fn ($r) => ($r->is_primary ? 1 : 0).$r->id)->first();
+        $skills = $this->skillsText($profile->skills, $resume?->extracted_skills);
+        $location = trim((string) ($profile->location ?? '').' '.(string) ($profile->preferred_job_location ?? ''));
+        $education = (string) ($profile->education ?? '');
+
+        return [
+            'entity_type' => self::ENTITY_VERIFIED,
+            'entity_id' => (int) $user->id,
+            'name' => (string) $user->name,
+            'title' => (string) ($profile->headline ?? ''),
+            'email' => (string) ($user->email ?? ''),
+            'phone' => (string) ($user->phone ?? ''),
+            'location' => $location,
+            'location_city' => $this->extractCity($location),
+            'education' => $education,
+            'education_raw' => mb_substr(trim($education), 0, 256),
+            'skills' => $skills,
+            'profile_text' => $this->plainText(implode("\n", array_filter([
+                $profile->bio_summary,
+                $profile->career_objective,
+                $profile->current_company,
+            ]))),
+            'experience_years' => (int) ($profile->experience_years ?? 0),
+            'status' => 'active',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function talentPoolDocumentBody(TalentPoolCandidate $candidate): ?array
+    {
+        if ($candidate->status !== TalentPoolCandidate::STATUS_ACTIVE) {
+            return null;
+        }
+
+        $location = (string) ($candidate->location ?? '');
+        $education = (string) ($candidate->education ?? '');
+
+        return [
+            'entity_type' => self::ENTITY_TALENT_POOL,
+            'entity_id' => (int) $candidate->id,
+            'name' => (string) $candidate->full_name,
+            'title' => (string) ($candidate->title ?? ''),
+            'email' => (string) ($candidate->email ?? ''),
+            'phone' => (string) ($candidate->phone ?? ''),
+            'location' => $location,
+            'location_city' => $this->extractCity($location),
+            'education' => $education,
+            'education_raw' => mb_substr(trim($education), 0, 256),
+            'skills' => $this->skillsText($candidate->skills),
+            'profile_text' => $this->plainText($candidate->profile_summary),
+            'experience_years' => (int) ($candidate->experience_years ?? 0),
+            'status' => 'active',
+        ];
     }
 
     /**
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
      */
-    protected function buildQuery(string $searchText, array $filters): array
+    protected function buildFilterQuery(array $filters): array
+    {
+        $boolFilter = [
+            ['term' => ['status' => 'active']],
+            ...$this->buildStructuralFilters($filters),
+            ...$this->buildEmployerDocFilters($filters),
+        ];
+
+        $searchText = $this->buildSearchText($filters);
+        if ($searchText === '') {
+            return ['bool' => ['filter' => $boolFilter]];
+        }
+
+        return [
+            'bool' => [
+                'filter' => $boolFilter,
+                'must' => [$this->buildTextQuery($searchText)],
+            ],
+        ];
+    }
+
+    protected function buildTextQuery(string $searchText): array
     {
         $fields = [
             'name^4',
@@ -421,26 +597,41 @@ class TalentPoolElasticsearchService
             'education^2',
             'location',
             'email',
-            'phone',
         ];
 
-        $boolFilter = [
-            ['term' => ['status' => 'active']],
-            ...$this->buildStructuralFilters($filters),
-        ];
+        $tokens = $this->tokenize($searchText);
+        if (count($tokens) <= 1) {
+            return [
+                'multi_match' => [
+                    'query' => $searchText,
+                    'fields' => $fields,
+                    'type' => 'best_fields',
+                    'fuzziness' => 'AUTO',
+                ],
+            ];
+        }
 
         return [
             'bool' => [
-                'filter' => $boolFilter,
-                'must' => [[
-                    'multi_match' => [
-                        'query' => $searchText,
-                        'fields' => $fields,
-                        'type' => 'best_fields',
-                        'operator' => 'or',
-                        'fuzziness' => 'AUTO',
+                'should' => [
+                    [
+                        'multi_match' => [
+                            'query' => $searchText,
+                            'fields' => $fields,
+                            'type' => 'phrase',
+                            'slop' => 2,
+                        ],
                     ],
-                ]],
+                    [
+                        'multi_match' => [
+                            'query' => $searchText,
+                            'fields' => $fields,
+                            'type' => 'cross_fields',
+                            'operator' => 'and',
+                        ],
+                    ],
+                ],
+                'minimum_should_match' => 1,
             ],
         ];
     }
@@ -457,6 +648,10 @@ class TalentPoolElasticsearchService
         if ($locations !== []) {
             $should = [];
             foreach ($locations as $location) {
+                $city = $this->extractCity($location);
+                if ($city !== '') {
+                    $should[] = ['term' => ['location_city' => mb_strtolower($city)]];
+                }
                 $should[] = [
                     'wildcard' => [
                         'location' => [
@@ -472,11 +667,19 @@ class TalentPoolElasticsearchService
         $education = trim((string) ($filters['education'] ?? ''));
         if ($education !== '') {
             $clauses[] = [
-                'wildcard' => [
-                    'education' => [
-                        'value' => '*'.mb_strtolower($education).'*',
-                        'case_insensitive' => true,
+                'bool' => [
+                    'should' => [
+                        ['term' => ['education_raw' => mb_substr($education, 0, 256)]],
+                        [
+                            'wildcard' => [
+                                'education' => [
+                                    'value' => '*'.mb_strtolower($education).'*',
+                                    'case_insensitive' => true,
+                                ],
+                            ],
+                        ],
                     ],
+                    'minimum_should_match' => 1,
                 ],
             ];
         }
@@ -495,6 +698,168 @@ class TalentPoolElasticsearchService
         }
 
         return $clauses;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array<string, mixed>>
+     */
+    protected function buildEmployerDocFilters(array $filters): array
+    {
+        $docIds = $filters['_employer_doc_ids'] ?? null;
+        if ($docIds === null) {
+            return [];
+        }
+
+        if ($docIds === []) {
+            return [['match_none' => (object) []]];
+        }
+
+        return [['ids' => ['values' => array_values($docIds)]]];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    protected function isEmployerActionFilterEmpty(array $filters): bool
+    {
+        $docIds = $filters['_employer_doc_ids'] ?? null;
+
+        return is_array($docIds) && $docIds === [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array{label: string, count: int}>
+     */
+    protected function termsFacet(array $filters, string $field, int $size): array
+    {
+        $client = $this->client();
+        if ($client === null) {
+            return [];
+        }
+
+        $response = $client->search([
+            'index' => $this->indexName(),
+            'body' => [
+                'size' => 0,
+                'query' => $this->buildFilterQuery($filters),
+                'aggs' => [
+                    'facet' => [
+                        'terms' => [
+                            'field' => $field,
+                            'size' => $size,
+                            'min_doc_count' => 1,
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $buckets = $response['aggregations']['facet']['buckets'] ?? [];
+        $result = [];
+        foreach ($buckets as $bucket) {
+            $label = trim((string) ($bucket['key'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $result[] = [
+                'label' => ucwords($label),
+                'count' => (int) ($bucket['doc_count'] ?? 0),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array{label: string, min: int|null, max: int|null, count: int}>
+     */
+    protected function experienceFacets(array $filters): array
+    {
+        $client = $this->client();
+        if ($client === null) {
+            return [];
+        }
+
+        $buckets = [
+            ['label' => 'Fresher (0 yr)', 'min' => 0, 'max' => 0],
+            ['label' => '1 – 2 years', 'min' => 1, 'max' => 2],
+            ['label' => '3 – 5 years', 'min' => 3, 'max' => 5],
+            ['label' => '5 – 10 years', 'min' => 5, 'max' => 10],
+            ['label' => '10+ years', 'min' => 10, 'max' => null],
+        ];
+
+        $aggs = [];
+        foreach ($buckets as $i => $bucket) {
+            $range = [];
+            if ($bucket['min'] !== null) {
+                $range['gte'] = $bucket['min'];
+            }
+            if ($bucket['max'] !== null) {
+                $range['lte'] = $bucket['max'];
+            }
+            $aggs['exp_'.$i] = [
+                'filter' => ['range' => ['experience_years' => $range]],
+            ];
+        }
+
+        $response = $client->search([
+            'index' => $this->indexName(),
+            'body' => [
+                'size' => 0,
+                'query' => $this->buildFilterQuery($filters),
+                'aggs' => $aggs,
+            ],
+        ]);
+
+        $result = [];
+        foreach ($buckets as $i => $bucket) {
+            $count = (int) ($response['aggregations']['exp_'.$i]['doc_count'] ?? 0);
+            if ($count > 0) {
+                $result[] = [
+                    'label' => $bucket['label'],
+                    'min' => $bucket['min'],
+                    'max' => $bucket['max'],
+                    'count' => $count,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<int, mixed>  $rawHits
+     * @return list<array{source: string, source_id: int, score: float}>
+     */
+    protected function parseHits(array $rawHits): array
+    {
+        $hits = [];
+        foreach ($rawHits as $hit) {
+            $source = (string) ($hit['_source']['entity_type'] ?? '');
+            $id = (int) ($hit['_source']['entity_id'] ?? 0);
+            if ($id <= 0 || ! in_array($source, [self::ENTITY_VERIFIED, self::ENTITY_TALENT_POOL], true)) {
+                continue;
+            }
+            $hits[] = [
+                'source' => $source,
+                'source_id' => $id,
+                'score' => (float) ($hit['_score'] ?? 0),
+            ];
+        }
+
+        return $hits;
+    }
+
+    protected function parseTotal(mixed $total): int
+    {
+        if (is_array($total)) {
+            return (int) ($total['value'] ?? 0);
+        }
+
+        return (int) $total;
     }
 
     /**
@@ -523,18 +888,6 @@ class TalentPoolElasticsearchService
 
     /**
      * @param  array<string, mixed>  $filters
-     * @return array<string, mixed>
-     */
-    protected function filtersWithoutEmployer(array $filters): array
-    {
-        $copy = $filters;
-        unset($copy['employer_user_id']);
-
-        return $copy;
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
      */
     protected function buildSearchText(array $filters): string
     {
@@ -546,9 +899,16 @@ class TalentPoolElasticsearchService
         return trim(implode(' ', $parts));
     }
 
-    protected function canUseElasticsearch(): bool
+    protected function extractCity(string $location): string
     {
-        return $this->isEnabled() && $this->client() !== null;
+        $location = trim($location);
+        if ($location === '') {
+            return '';
+        }
+
+        $city = trim(explode(',', $location)[0] ?? $location);
+
+        return mb_strtolower($city);
     }
 
     protected function client(): ?Client

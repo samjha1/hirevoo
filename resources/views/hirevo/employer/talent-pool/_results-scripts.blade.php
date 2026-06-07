@@ -5,6 +5,7 @@
     var filtersEl = document.getElementById('tp-filters-container');
     var loadingEl = document.getElementById('tp-loading');
     var searchUrl = @json(route('employer.talent-pool.search'));
+    var facetsUrl = @json(route('employer.talent-pool.facets'));
     var detailsUrlTemplate = @json(route('employer.talent-pool.details', ['source' => '__SOURCE__', 'id' => '__ID__']));
     var saveUrl = @json(route('employer.talent-pool.save'));
     var shortlistUrl = @json(route('employer.talent-pool.shortlist'));
@@ -13,8 +14,12 @@
     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     var debounceResultsTimer;
     var debounceFacetsTimer;
+    var debounceCountTimer;
+    var debounceKeywordResultsTimer;
     var activeRow = null;
     var totalCountEl = document.getElementById('tp-total-count');
+    var countCacheKey = 'tp_search_count_v1';
+    var pendingRequest = null;
 
     var backdrop = document.getElementById('tp-drawer-backdrop');
     var drawer = document.getElementById('tp-drawer');
@@ -34,6 +39,33 @@
         return params;
     }
 
+    function paramsKey(page) {
+        return collectParams(page || 1).toString();
+    }
+
+    function updateTotalCount(n) {
+        if (typeof n !== 'number' || !totalCountEl) return;
+        totalCountEl.textContent = n.toLocaleString() + ' ' + (n === 1 ? 'candidate' : 'candidates');
+    }
+
+    function showCachedCount() {
+        try {
+            var key = paramsKey(1);
+            var raw = sessionStorage.getItem(countCacheKey);
+            if (!raw) return;
+            var cached = JSON.parse(raw);
+            if (cached && cached.key === key && typeof cached.n === 'number') {
+                updateTotalCount(cached.n);
+            }
+        } catch (e) {}
+    }
+
+    function storeCachedCount(n) {
+        try {
+            sessionStorage.setItem(countCacheKey, JSON.stringify({ key: paramsKey(1), n: n }));
+        } catch (e) {}
+    }
+
     function fetchFacets() {
         if (!filtersEl) return;
         fetch(searchUrl + '?' + collectParams(1, { withFacets: true, skipTotal: true }).toString(), {
@@ -47,41 +79,84 @@
             .catch(function () {});
     }
 
+    function fetchTotalCount() {
+        showCachedCount();
+        fetch(facetsUrl + '?' + collectParams(1).toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (typeof data.total_count === 'number') {
+                    updateTotalCount(data.total_count);
+                    storeCachedCount(data.total_count);
+                }
+            })
+            .catch(function () {});
+    }
+
     function fetchResults(page, opts) {
         if (!resultsEl) return;
         opts = opts || {};
+        if (pendingRequest) pendingRequest.abort();
         loadingEl?.classList.add('show');
+        var controller = new AbortController();
+        pendingRequest = controller;
         fetch(searchUrl + '?' + collectParams(page || 1, opts).toString(), {
+            signal: controller.signal,
             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.html) resultsEl.innerHTML = data.html;
                 if (data.filters_html && filtersEl) filtersEl.innerHTML = data.filters_html;
-                if (typeof data.total_count === 'number' && totalCountEl) {
-                    var n = data.total_count;
-                    totalCountEl.textContent = n.toLocaleString() + ' ' + (n === 1 ? 'candidate' : 'candidates');
+                if (typeof data.total_count === 'number') {
+                    updateTotalCount(data.total_count);
+                    storeCachedCount(data.total_count);
                 }
                 bindAll();
                 history.replaceState(null, '', form.action + '?' + collectParams(page || 1).toString());
             })
-            .finally(function () { loadingEl?.classList.remove('show'); });
+            .catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+            })
+            .finally(function () {
+                if (pendingRequest === controller) pendingRequest = null;
+                loadingEl?.classList.remove('show');
+            });
     }
 
     function debouncedFetch() {
         clearTimeout(debounceResultsTimer);
-        debounceResultsTimer = setTimeout(function () { fetchResults(1, { skipTotal: true }); }, 450);
+        debounceResultsTimer = setTimeout(function () { fetchResults(1, { skipTotal: true }); }, 500);
+    }
+
+    function debouncedKeywordResults() {
+        clearTimeout(debounceKeywordResultsTimer);
+        debounceKeywordResultsTimer = setTimeout(function () {
+            fetchResults(1, { skipTotal: true });
+            debouncedFacets();
+        }, 1100);
     }
 
     function debouncedFacets() {
         clearTimeout(debounceFacetsTimer);
-        debounceFacetsTimer = setTimeout(fetchFacets, 700);
+        debounceFacetsTimer = setTimeout(fetchFacets, 900);
+    }
+
+    function debouncedCount() {
+        clearTimeout(debounceCountTimer);
+        debounceCountTimer = setTimeout(fetchTotalCount, 800);
+    }
+
+    function isKeywordField(el) {
+        return el && (el.id === 'tp-q' || el.id === 'tp-skills');
     }
 
     form?.addEventListener('submit', function (e) {
         e.preventDefault();
         fetchResults(1, { withFacets: true });
         fetchFacets();
+        fetchTotalCount();
     });
 
     function bindLocationSelect() {
@@ -91,6 +166,7 @@
         locSelect.onchange = function () {
             debouncedFetch();
             debouncedFacets();
+            debouncedCount();
         };
     }
 
@@ -104,6 +180,7 @@
                 if (maxEl) maxEl.value = this.dataset.max ?? '';
                 debouncedFetch();
                 debouncedFacets();
+                debouncedCount();
             };
         });
     }
@@ -115,6 +192,7 @@
                 if (edu) edu.value = this.value;
                 debouncedFetch();
                 debouncedFacets();
+                debouncedCount();
             };
         });
     }
@@ -122,13 +200,26 @@
     function bindFilters() {
         document.querySelectorAll('.tp-filter').forEach(function (el) {
             el.onchange = function () {
+                if (isKeywordField(el)) {
+                    debouncedCount();
+                    debouncedKeywordResults();
+                    return;
+                }
                 debouncedFetch();
-                if (el.id !== 'tp-q' && el.id !== 'tp-skills') debouncedFacets();
+                debouncedCount();
+                debouncedFacets();
             };
-            if (el.type === 'text' || el.type === 'number') {
+            if (el.type === 'text' || el.type === 'number' || el.type === 'search') {
                 el.oninput = function () {
+                    if (isKeywordField(el)) {
+                        showCachedCount();
+                        debouncedCount();
+                        debouncedKeywordResults();
+                        return;
+                    }
                     debouncedFetch();
-                    if (el.id !== 'tp-q' && el.id !== 'tp-skills') debouncedFacets();
+                    debouncedCount();
+                    debouncedFacets();
                 };
             }
         });
@@ -404,6 +495,7 @@
         bindActions();
     }
 
+    showCachedCount();
     bindAll();
 })();
 </script>
