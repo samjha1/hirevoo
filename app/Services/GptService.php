@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use Aws\BedrockRuntime\BedrockRuntimeClient;
-use Aws\Exception\AwsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -21,18 +19,6 @@ class GptService
 
     protected string $primaryModel;
 
-    protected ?string $bedrockBearer;
-
-    protected ?string $bedrockAccessKey;
-
-    protected ?string $bedrockSecretKey;
-
-    protected bool $bedrockUseIam = true;
-
-    protected string $bedrockRegion;
-
-    protected string $bedrockModelId;
-
     // Tuned for UX: faster failures and retries, not long hangs.
     protected int $timeout = 60;
 
@@ -49,13 +35,7 @@ class GptService
         $this->openAiModel = $this->normalizeOpenAiModel((string) config('services.openai.model', 'gpt-5-mini'));
         $this->primaryApiKey = config('services.primary_llm.key') ?: null;
         $this->primaryBaseUrl = rtrim((string) config('services.primary_llm.base_url', 'https://openrouter.ai/api/v1'), '/');
-        $this->primaryModel = (string) config('services.primary_llm.model', 'openai/gpt-oss-20b:free');
-        $this->bedrockBearer = config('services.bedrock.bearer_token') ?: null;
-        $this->bedrockAccessKey = config('services.bedrock.key') ?: null;
-        $this->bedrockSecretKey = config('services.bedrock.secret') ?: null;
-        $this->bedrockUseIam = (bool) config('services.bedrock.use_iam', true);
-        $this->bedrockRegion = (string) config('services.bedrock.region', 'us-east-1');
-        $this->bedrockModelId = (string) config('services.bedrock.model_id', 'amazon.nova-2-lite-v1:0');
+        $this->primaryModel = (string) config('services.primary_llm.model', 'openai/gpt-4o-mini');
         $this->timeout = max(10, (int) config('hirevo.llm_http_timeout_seconds', 60));
         $this->connectTimeout = max(5, (int) config('hirevo.llm_http_connect_timeout_seconds', 15));
         $this->maxTokens = max(128, (int) config('hirevo.llm_default_max_tokens', 400));
@@ -81,9 +61,7 @@ class GptService
 
     public function isAvailable(): bool
     {
-        return ! empty($this->primaryApiKey)
-            || ! empty($this->openAiApiKey)
-            || $this->isBedrockConfigured();
+        return ! empty($this->primaryApiKey) || ! empty($this->openAiApiKey);
     }
 
     /**
@@ -749,16 +727,7 @@ class GptService
         $this->lastError = null;
         $maxTokens = $maxTokensOverride ?? $this->maxTokens;
         $trail = [];
-        $bedrockTried = false;
-
-        if ($this->shouldUseBedrockFirst()) {
-            $bedrockTried = true;
-            $bedrock = $this->requestBedrock($messages, $maxTokens);
-            if ($bedrock !== null && $bedrock !== '') {
-                return $bedrock;
-            }
-            $trail[] = 'Bedrock: '.($this->lastError ?? 'failed');
-        }
+        $openAiFailed = false;
 
         if (! empty($this->openAiApiKey)) {
             $content = $this->requestChatCompletion(
@@ -772,75 +741,41 @@ class GptService
             if ($content !== null && $content !== '') {
                 return $content;
             }
-            $trail[] = 'OpenAI: '.($this->lastError ?? 'failed');
+
+            $openAiFailed = true;
+            $trail[] = 'OpenAI ('.$this->openAiModel.'): '.($this->lastError ?? 'failed');
         }
 
-        $openRouterWouldRun = ! empty($this->primaryApiKey)
-            && ! $this->shouldSkipOpenRouterPrimary()
-            && ! $this->shouldSkipOpenRouterFreeByPolicy();
+        if (! empty($this->primaryApiKey) && $this->shouldSkipOpenRouterPrimary()) {
+            $trail[] = 'OpenRouter: cooling down after recent rate limits; try again in a minute.';
+        } elseif (! empty($this->primaryApiKey) && str_contains($this->primaryBaseUrl, 'openrouter.ai')) {
+            foreach ($this->openRouterModelsToTry($openAiFailed) as $idx => $model) {
+                if ($idx > 0) {
+                    $this->logSafe('info', 'OpenRouter model failed; trying next fallback', [
+                        'fallback' => $model,
+                    ]);
+                }
 
-        $openRouterPrimaryAttempted = false;
-        if ($openRouterWouldRun) {
-            $openRouterPrimaryAttempted = true;
-            $content = $this->requestChatCompletion(
-                $this->primaryBaseUrl,
-                $this->primaryApiKey,
-                $this->primaryModel,
-                $messages,
-                $maxTokens,
-                isOpenRouter: str_contains($this->primaryBaseUrl, 'openrouter.ai')
-            );
-            if ($content !== null && $content !== '') {
-                return $content;
-            }
-            $trail[] = 'OpenRouter ('.$this->primaryModel.'): '.($this->lastError ?? 'failed');
-        } elseif (! empty($this->primaryApiKey)) {
-            if ($this->shouldSkipOpenRouterPrimary()) {
-                $trail[] = 'OpenRouter: cooling down after recent rate limits; try again in a minute.';
-            } elseif ($this->shouldSkipOpenRouterFreeByPolicy()) {
-                $trail[] = 'OpenRouter skipped: with OPENAI_API_KEY set, :free OpenRouter models are skipped. Use OpenAI, set OPENROUTER_SKIP_FREE_WHEN_OPENAI=false, or use a paid OpenRouter model.';
-            }
-        }
-
-        $fallbackModel = trim((string) config('services.primary_llm.model_fallback', ''));
-        if ($openRouterPrimaryAttempted
-            && $fallbackModel !== ''
-            && $fallbackModel !== $this->primaryModel
-            && ! empty($this->primaryApiKey)
-            && str_contains($this->primaryBaseUrl, 'openrouter.ai')) {
-            $errLower = mb_strtolower($this->lastError ?? '');
-            $looks429 = str_contains($errLower, '429')
-                || str_contains($errLower, 'busy')
-                || str_contains($errLower, 'rate limit');
-            if ($looks429) {
-                $this->logSafe('info', 'OpenRouter primary failed with overload; trying fallback model', [
-                    'fallback' => $fallbackModel,
-                ]);
-                $fb = $this->requestChatCompletion(
+                $content = $this->requestChatCompletion(
                     $this->primaryBaseUrl,
                     $this->primaryApiKey,
-                    $fallbackModel,
+                    $model,
                     $messages,
                     $maxTokens,
                     isOpenRouter: true
                 );
-                if ($fb !== null && $fb !== '') {
-                    return $fb;
+                if ($content !== null && $content !== '') {
+                    return $content;
                 }
-                $trail[] = 'OpenRouter fallback ('.$fallbackModel.'): '.($this->lastError ?? 'failed');
-            }
-        }
 
-        if ($this->isBedrockConfigured() && ! $bedrockTried) {
-            $bedrock = $this->requestBedrock($messages, $maxTokens);
-            if ($bedrock !== null && $bedrock !== '') {
-                return $bedrock;
+                $trail[] = 'OpenRouter ('.$model.'): '.($this->lastError ?? 'failed');
             }
-            $trail[] = 'Bedrock: '.($this->lastError ?? 'failed');
+        } elseif (! empty($this->primaryApiKey) && $this->shouldSkipOpenRouterFreeByPolicy($openAiFailed)) {
+            $trail[] = 'OpenRouter skipped: with OPENAI_API_KEY set, :free OpenRouter models are skipped. Set OPENROUTER_SKIP_FREE_WHEN_OPENAI=false.';
         }
 
         if ($trail === []) {
-            $this->lastError = 'No AI API keys configured. Set AWS IAM credentials (or BEDROCK_USE_IAM=false + AWS_BEARER_TOKEN_BEDROCK), openai_api_key_main/OPENAI_API_KEY, and/or OPENROUTER_API_KEY in .env.';
+            $this->lastError = 'No AI API keys configured. Set openai_api_key_main/OPENAI_API_KEY and/or OPENROUTER_API_KEY in .env.';
         } else {
             $this->lastError = implode(' ', $trail);
         }
@@ -848,487 +783,29 @@ class GptService
         return null;
     }
 
-    protected function shouldUseBedrockFirst(): bool
-    {
-        if (! (bool) config('services.bedrock.try_first', true)) {
-            return false;
-        }
-
-        return $this->isBedrockConfigured();
-    }
-
-    protected function usesBedrockIam(): bool
-    {
-        return $this->bedrockUseIam;
-    }
-
-    protected function isBedrockConfigured(): bool
-    {
-        if ($this->usesBedrockIam()) {
-            if (! empty($this->bedrockAccessKey) && ! empty($this->bedrockSecretKey)) {
-                return true;
-            }
-
-            return (bool) config('services.bedrock.allow_default_credential_chain', false);
-        }
-
-        return ! empty($this->bedrockBearer);
-    }
-
     /**
+     * OpenRouter order: OPENROUTER_MODEL → OPENROUTER_MODEL_FALLBACK (e.g. gpt-4o-mini → gpt-oss-20b:free).
+     *
      * @return list<string>
      */
-    protected function bedrockModelIdsToTry(): array
+    protected function openRouterModelsToTry(bool $openAiFailed): array
     {
-        $primary = $this->bedrockModelId;
-        $ids = [$primary];
-        $fallback = config('services.bedrock.model_id_fallback');
-        if (is_string($fallback) && $fallback !== '' && $fallback !== $primary) {
-            $ids[] = $fallback;
+        $models = [];
+        $primary = trim($this->primaryModel);
+        if ($primary !== '') {
+            $models[] = $primary;
         }
 
-        return array_values(array_unique($ids));
-    }
-
-    /**
-     * Bedrock: IAM (SDK) preferred; optional bearer HTTP when BEDROCK_USE_IAM=false.
-     *
-     * @param  array<int, array{role: string, content: string}>  $messages
-     */
-    protected function requestBedrock(array $messages, int $maxTokens): ?string
-    {
-        $built = $this->buildBedrockMessagesPayload($messages);
-        if ($built === null) {
-            return null;
-        }
-        ['systemBlocks' => $systemBlocks, 'convMessages' => $convMessages] = $built;
-
-        if ($this->usesBedrockIam()) {
-            return $this->requestBedrockWithSdk($convMessages, $systemBlocks, $maxTokens);
-        }
-
-        if (! empty($this->bedrockBearer)) {
-            return $this->requestBedrockWithBearer($convMessages, $systemBlocks, $maxTokens);
-        }
-
-        return null;
-    }
-
-    protected function makeBedrockRuntimeClient(): BedrockRuntimeClient
-    {
-        $region = preg_replace('/[^a-z0-9-]/i', '', $this->bedrockRegion) ?: 'us-east-1';
-        $params = [
-            'version' => 'latest',
-            'region' => $region,
-            'http' => [
-                'timeout' => $this->timeout,
-                'connect_timeout' => $this->connectTimeout,
-            ],
-        ];
-        if (! empty($this->bedrockAccessKey) && ! empty($this->bedrockSecretKey)) {
-            $params['credentials'] = [
-                'key' => $this->bedrockAccessKey,
-                'secret' => $this->bedrockSecretKey,
-            ];
-        }
-
-        return new BedrockRuntimeClient($params);
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $convMessages
-     * @param  list<array{text: string}>  $systemBlocks
-     */
-    protected function requestBedrockWithSdk(array $convMessages, array $systemBlocks, int $maxTokens): ?string
-    {
-        try {
-            $client = $this->makeBedrockRuntimeClient();
-        } catch (\Throwable $e) {
-            $this->lastError = 'Bedrock SDK client: '.$e->getMessage();
-
-            return null;
-        }
-
-        $lastErr = null;
-        foreach ($this->bedrockModelIdsToTry() as $modelId) {
-            $text = $this->requestBedrockConverseSdk($client, $modelId, $convMessages, $systemBlocks, $maxTokens);
-            if ($text !== null && $text !== '') {
-                return $text;
-            }
-            $lastErr = $this->lastError;
-            $text = $this->requestBedrockInvokeSdk($client, $modelId, $convMessages, $systemBlocks, $maxTokens);
-            if ($text !== null && $text !== '') {
-                return $text;
-            }
-            $lastErr = $this->lastError;
-        }
-        $this->lastError = $lastErr ?? 'Bedrock: all model IDs failed';
-
-        return null;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $convMessages
-     * @param  list<array{text: string}>  $systemBlocks
-     */
-    protected function requestBedrockWithBearer(array $convMessages, array $systemBlocks, int $maxTokens): ?string
-    {
-        $lastErr = null;
-        foreach ($this->bedrockModelIdsToTry() as $modelId) {
-            $text = $this->requestBedrockConverseRequest($modelId, $convMessages, $systemBlocks, $maxTokens);
-            if ($text !== null && $text !== '') {
-                return $text;
-            }
-            $lastErr = $this->lastError;
-            $text = $this->requestBedrockInvokeRequest($modelId, $convMessages, $systemBlocks, $maxTokens);
-            if ($text !== null && $text !== '') {
-                return $text;
-            }
-            $lastErr = $this->lastError;
-        }
-        $this->lastError = $lastErr ?? 'Bedrock: all model IDs failed';
-
-        return null;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $convMessages
-     * @param  list<array{text: string}>  $systemBlocks
-     */
-    protected function requestBedrockConverseSdk(
-        BedrockRuntimeClient $client,
-        string $modelId,
-        array $convMessages,
-        array $systemBlocks,
-        int $maxTokens
-    ): ?string {
-        $this->lastError = null;
-        $params = [
-            'modelId' => $modelId,
-            'messages' => $convMessages,
-            'inferenceConfig' => [
-                'maxTokens' => min(max(1, $maxTokens), 8192),
-                'temperature' => 0.3,
-            ],
-        ];
-        if ($systemBlocks !== []) {
-            $params['system'] = $systemBlocks;
-        }
-
-        try {
-            $result = $client->converse($params);
-            $data = $result->toArray();
-            $text = $this->extractTextFromBedrockResponse($data);
-            if ($text !== null && $text !== '') {
-                return $text;
-            }
-            $this->lastError = 'Bedrock Converse: empty or unexpected response shape';
-
-            return null;
-        } catch (AwsException $e) {
-            $this->lastError = 'Bedrock Converse: '.$e->getAwsErrorMessage();
-            $this->logSafe('info', 'Bedrock Converse failed (IAM); will try Invoke', [
-                'code' => $e->getAwsErrorCode(),
-                'model_id' => $modelId,
-            ]);
-
-            return null;
-        } catch (\Throwable $e) {
-            $this->lastError = 'Bedrock Converse: '.$e->getMessage();
-            $this->logSafe('info', 'Bedrock Converse exception (IAM); will try Invoke', [
-                'message' => $e->getMessage(),
-                'model_id' => $modelId,
-            ]);
-
-            return null;
-        }
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $convMessages
-     * @param  list<array{text: string}>  $systemBlocks
-     */
-    protected function requestBedrockInvokeSdk(
-        BedrockRuntimeClient $client,
-        string $modelId,
-        array $convMessages,
-        array $systemBlocks,
-        int $maxTokens
-    ): ?string {
-        $this->lastError = null;
-        $payload = [
-            'schemaVersion' => 'messages-v1',
-            'messages' => $convMessages,
-            'inferenceConfig' => [
-                'maxTokens' => min(max(1, $maxTokens), 8192),
-                'temperature' => 0.3,
-            ],
-        ];
-        if ($systemBlocks !== []) {
-            $payload['system'] = $systemBlocks;
-        }
-
-        $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE);
-        if ($encoded === false) {
-            $this->lastError = 'Bedrock Invoke: could not encode request body';
-
-            return null;
-        }
-
-        try {
-            $result = $client->invokeModel([
-                'modelId' => $modelId,
-                'contentType' => 'application/json',
-                'accept' => 'application/json',
-                'body' => $encoded,
-            ]);
-            $body = $result['body'] ?? null;
-            $raw = $body instanceof \Psr\Http\Message\StreamInterface ? $body->getContents() : (string) $body;
-            $data = json_decode($raw, true);
-            if (! is_array($data)) {
-                $this->lastError = 'Bedrock Invoke: invalid JSON body';
-
-                return null;
-            }
-            $text = $this->extractTextFromBedrockResponse($data);
-            if ($text !== null && $text !== '') {
-                return $text;
-            }
-            $this->lastError = 'Bedrock Invoke: empty or unexpected response';
-
-            return null;
-        } catch (AwsException $e) {
-            $this->lastError = 'Bedrock Invoke: '.$e->getAwsErrorMessage();
-            $this->logSafe('warning', 'Bedrock Invoke failed (IAM)', [
-                'code' => $e->getAwsErrorCode(),
-                'model_id' => $modelId,
-            ]);
-
-            return null;
-        } catch (\Throwable $e) {
-            $this->lastError = 'Bedrock Invoke: '.$e->getMessage();
-            $this->logSafe('warning', 'Bedrock Invoke exception (IAM)', [
-                'message' => $e->getMessage(),
-                'model_id' => $modelId,
-            ]);
-
-            return null;
-        }
-    }
-
-    /**
-     * @return array{systemBlocks: list<array{text: string}>, convMessages: list<array<string, mixed>>}|null
-     */
-    protected function buildBedrockMessagesPayload(array $messages): ?array
-    {
-        $systemBlocks = [];
-        $convMessages = [];
-        foreach ($messages as $m) {
-            $role = isset($m['role']) ? (string) $m['role'] : 'user';
-            $content = $m['content'] ?? '';
-            if (! is_string($content)) {
-                $content = is_array($content) ? json_encode($content) : (string) $content;
-            }
-            if ($role === 'system') {
-                if (trim($content) !== '') {
-                    $systemBlocks[] = ['text' => $content];
-                }
-
-                continue;
-            }
-            $brRole = $role === 'assistant' ? 'assistant' : 'user';
-            $convMessages[] = [
-                'role' => $brRole,
-                'content' => [['text' => $content]],
-            ];
-        }
-
-        if ($convMessages === []) {
-            $this->lastError = 'Bedrock: no user/assistant messages to send';
-
-            return null;
-        }
-
-        return ['systemBlocks' => $systemBlocks, 'convMessages' => $convMessages];
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $convMessages
-     * @param  list<array{text: string}>  $systemBlocks
-     */
-    protected function requestBedrockConverseRequest(string $modelId, array $convMessages, array $systemBlocks, int $maxTokens): ?string
-    {
-        $this->lastError = null;
-        $encodedModel = rawurlencode($modelId);
-        $region = preg_replace('/[^a-z0-9-]/i', '', $this->bedrockRegion) ?: 'us-east-1';
-        $url = "https://bedrock-runtime.{$region}.amazonaws.com/model/{$encodedModel}/converse";
-
-        $body = [
-            'messages' => $convMessages,
-            'inferenceConfig' => [
-                'maxTokens' => min(max(1, $maxTokens), 8192),
-                'temperature' => 0.3,
-            ],
-        ];
-        if ($systemBlocks !== []) {
-            $body['system'] = $systemBlocks;
-        }
-
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.$this->bedrockBearer,
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])
-                ->connectTimeout($this->connectTimeout)
-                ->timeout($this->timeout)
-                ->post($url, $body);
-
-            if (! $response->successful()) {
-                $this->lastError = 'Bedrock Converse HTTP '.$response->status().': '.mb_substr($response->body(), 0, 300);
-                $this->logSafe('info', 'Bedrock Converse failed; will try Invoke', [
-                    'status' => $response->status(),
-                    'model_id' => $modelId,
-                ]);
-
-                return null;
-            }
-
-            $data = $response->json();
-            $text = $this->extractTextFromBedrockResponse($data);
-            if ($text === null || $text === '') {
-                $this->lastError = 'Bedrock Converse: empty or unexpected response shape';
-
-                return null;
-            }
-
-            return $text;
-        } catch (\Throwable $e) {
-            $this->lastError = 'Bedrock Converse: '.$e->getMessage();
-            $this->logSafe('info', 'Bedrock Converse exception; will try Invoke', [
-                'message' => $e->getMessage(),
-                'model_id' => $modelId,
-            ]);
-
-            return null;
-        }
-    }
-
-    /**
-     * Amazon Nova / messages-v1 InvokeModel (works with Bedrock API keys that disallow Converse).
-     *
-     * @param  list<array<string, mixed>>  $convMessages
-     * @param  list<array{text: string}>  $systemBlocks
-     */
-    protected function requestBedrockInvokeRequest(string $modelId, array $convMessages, array $systemBlocks, int $maxTokens): ?string
-    {
-        $this->lastError = null;
-        $encodedModel = rawurlencode($modelId);
-        $region = preg_replace('/[^a-z0-9-]/i', '', $this->bedrockRegion) ?: 'us-east-1';
-        $url = "https://bedrock-runtime.{$region}.amazonaws.com/model/{$encodedModel}/invoke";
-
-        $body = [
-            'schemaVersion' => 'messages-v1',
-            'messages' => $convMessages,
-            'inferenceConfig' => [
-                'maxTokens' => min(max(1, $maxTokens), 8192),
-                'temperature' => 0.3,
-            ],
-        ];
-        if ($systemBlocks !== []) {
-            $body['system'] = $systemBlocks;
-        }
-
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.$this->bedrockBearer,
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])
-                ->connectTimeout($this->connectTimeout)
-                ->timeout($this->timeout)
-                ->post($url, $body);
-
-            if (! $response->successful()) {
-                $this->lastError = 'Bedrock Invoke HTTP '.$response->status().': '.mb_substr($response->body(), 0, 300);
-                $this->logSafe('warning', 'Bedrock Invoke failed', [
-                    'status' => $response->status(),
-                    'model_id' => $modelId,
-                    'body' => mb_substr($response->body(), 0, 500),
-                ]);
-
-                return null;
-            }
-
-            $data = $response->json();
-            $text = $this->extractTextFromBedrockResponse($data);
-            if ($text === null || $text === '') {
-                $this->lastError = 'Bedrock Invoke: empty or unexpected response';
-
-                return null;
-            }
-
-            return $text;
-        } catch (\Throwable $e) {
-            $this->lastError = 'Bedrock Invoke: '.$e->getMessage();
-            $this->logSafe('warning', 'Bedrock Invoke exception', [
-                'message' => $e->getMessage(),
-                'model_id' => $modelId,
-            ]);
-
-            return null;
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    protected function extractTextFromBedrockResponse(?array $data): ?string
-    {
-        if ($data === null) {
-            return null;
-        }
-
-        $blocks = $data['output']['message']['content'] ?? null;
-        if (is_array($blocks)) {
-            $textOut = $this->concatBedrockContentBlocks($blocks);
-            if ($textOut !== '') {
-                return $textOut;
+        $fallback = trim((string) config('services.primary_llm.model_fallback', ''));
+        if ($fallback !== '' && ! in_array($fallback, $models, true)) {
+            if (str_contains($fallback, ':free') && $this->shouldSkipOpenRouterFreeByPolicy($openAiFailed)) {
+                // Skip only the free slug when policy says so; paid OpenRouter model still runs first.
+            } else {
+                $models[] = $fallback;
             }
         }
 
-        $blocks = $data['output']['content'] ?? null;
-        if (is_array($blocks)) {
-            $textOut = $this->concatBedrockContentBlocks($blocks);
-            if ($textOut !== '') {
-                return $textOut;
-            }
-        }
-
-        if (isset($data['results'][0]['outputText']) && is_string($data['results'][0]['outputText'])) {
-            return trim($data['results'][0]['outputText']);
-        }
-
-        if (isset($data['completion']) && is_string($data['completion'])) {
-            return trim($data['completion']);
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  list<mixed>  $blocks
-     */
-    protected function concatBedrockContentBlocks(array $blocks): string
-    {
-        $textOut = '';
-        foreach ($blocks as $block) {
-            if (is_array($block) && isset($block['text']) && is_string($block['text'])) {
-                $textOut .= $block['text'];
-            }
-        }
-
-        return trim($textOut);
+        return $models;
     }
 
     /**
@@ -1429,7 +906,7 @@ class GptService
                             $this->markOpenRouterCircuitOpenForRequest();
                         }
                         $this->lastError = $isOpenRouter
-                            ? 'OpenRouter free/upstream model is temporarily busy (429). Try OpenAI/Bedrock or retry shortly.'
+                            ? 'OpenRouter free/upstream model is temporarily busy (429). Try OpenAI or retry shortly.'
                             : $label.' rate limit reached. Try again later or check your plan.';
                     } else {
                         $this->lastError = $label.' API error ('.$status.'): '.(is_string($message) && $message !== '' ? $message : substr($response->body(), 0, 200));
@@ -1590,9 +1067,14 @@ class GptService
     /**
      * OpenRouter ":free" models are often 429 upstream; if OpenAI is configured, use it directly.
      */
-    protected function shouldSkipOpenRouterFreeByPolicy(): bool
+    protected function shouldSkipOpenRouterFreeByPolicy(bool $openAiFailedInChain = false): bool
     {
-        if (! (bool) config('services.primary_llm.skip_free_when_openai', true)) {
+        // OpenAI quota/auth errors: fall back to OpenRouter free model.
+        if ($openAiFailedInChain) {
+            return false;
+        }
+
+        if (! (bool) config('services.primary_llm.skip_free_when_openai', false)) {
             return false;
         }
         if (empty($this->openAiApiKey)) {

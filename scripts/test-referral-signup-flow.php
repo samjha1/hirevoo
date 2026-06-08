@@ -32,7 +32,7 @@ ReferrerProfile::query()->create([
     'company_email' => $email,
     'referral_code' => $code,
     'is_approved' => false,
-    'credits' => 5,
+    'credits' => 0,
 ]);
 
 app(CrmEmployerProspectBridge::class)->syncReferrerSignup($user->fresh(['referrerProfile']));

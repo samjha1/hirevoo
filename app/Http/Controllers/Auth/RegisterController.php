@@ -72,7 +72,7 @@ class RegisterController extends Controller
                     'referral_code' => $validated['referral_code'] ?? null,
                     'company_email_verified' => false,
                     'is_approved' => false,
-                    'credits' => 5,
+                    'credits' => 0,
                 ]
             );
 

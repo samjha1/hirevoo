@@ -171,6 +171,8 @@ return [
     ],
 
     'job_post_credit_cost' => 1,
+    /** Job posting credits granted when an employer account is approved (admin or email verification). */
+    'employer_approval_credits' => max(0, (int) env('EMPLOYER_APPROVAL_CREDITS', 1)),
     'min_search_length' => 2,
 
     'checkout' => [

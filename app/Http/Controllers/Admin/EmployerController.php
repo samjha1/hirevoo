@@ -48,6 +48,7 @@ class EmployerController extends Controller
 
         $profile->is_approved = true;
         $profile->approved_at = now();
+        $profile->credits = (int) config('hirevo_plans.employer_approval_credits', 1);
         $profile->save();
 
         return redirect()->route('admin.employers.index')

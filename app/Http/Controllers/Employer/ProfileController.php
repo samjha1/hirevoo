@@ -95,7 +95,7 @@ class ProfileController extends Controller
 
         if ($isNew) {
             $profile->user_id = $user->id;
-            $profile->credits = 5;
+            $profile->credits = 0;
         }
 
         $profile->save();
