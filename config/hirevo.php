@@ -45,6 +45,40 @@ return [
     /** Cache paginated candidate ID lists (same query reopens instantly). */
     'talent_pool_search_cache_pages' => filter_var(env('TALENT_POOL_SEARCH_CACHE_PAGES', true), FILTER_VALIDATE_BOOLEAN),
 
+    /**
+     * Talent pool location dropdown: minimum matching candidates for a city to appear.
+     * Set TALENT_POOL_LOCATION_FACET_MIN_COUNT=0 to disable the count gate (main cities only).
+     */
+    'talent_pool_location_facet_min_count' => max(0, (int) env('TALENT_POOL_LOCATION_FACET_MIN_COUNT', 5)),
+
+    /**
+     * Main Indian metros shown in the talent pool city dropdown (aliases roll up to label).
+     *
+     * @var list<array{label: string, aliases: list<string>}>
+     */
+    'talent_pool_main_cities' => [
+        ['label' => 'Mumbai', 'aliases' => ['mumbai']],
+        ['label' => 'Delhi NCR', 'aliases' => ['delhi', 'new delhi', 'delhi ncr', 'ncr', 'gurgaon', 'gurugram', 'noida', 'faridabad', 'ghaziabad', 'greater noida']],
+        ['label' => 'Bangalore', 'aliases' => ['bangalore', 'bengaluru']],
+        ['label' => 'Hyderabad', 'aliases' => ['hyderabad', 'secunderabad']],
+        ['label' => 'Chennai', 'aliases' => ['chennai', 'madras']],
+        ['label' => 'Pune', 'aliases' => ['pune', 'pimpri', 'chinchwad']],
+        ['label' => 'Kolkata', 'aliases' => ['kolkata', 'calcutta']],
+        ['label' => 'Ahmedabad', 'aliases' => ['ahmedabad']],
+        ['label' => 'Jaipur', 'aliases' => ['jaipur']],
+        ['label' => 'Chandigarh', 'aliases' => ['chandigarh', 'mohali', 'panchkula']],
+        ['label' => 'Indore', 'aliases' => ['indore']],
+        ['label' => 'Kochi', 'aliases' => ['kochi', 'cochin', 'ernakulam']],
+        ['label' => 'Coimbatore', 'aliases' => ['coimbatore']],
+        ['label' => 'Lucknow', 'aliases' => ['lucknow']],
+        ['label' => 'Nagpur', 'aliases' => ['nagpur']],
+        ['label' => 'Surat', 'aliases' => ['surat']],
+        ['label' => 'Vadodara', 'aliases' => ['vadodara', 'baroda']],
+        ['label' => 'Bhubaneswar', 'aliases' => ['bhubaneswar', 'bhubaneshwar']],
+        ['label' => 'Visakhapatnam', 'aliases' => ['visakhapatnam', 'vizag']],
+        ['label' => 'Thiruvananthapuram', 'aliases' => ['thiruvananthapuram', 'trivandrum']],
+    ],
+
     /** Candidate in-app notifications: hide unread items older than this many days (and from counts). */
     'notification_retention_days' => (int) env('NOTIFICATION_RETENTION_DAYS', 14),
 

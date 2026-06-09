@@ -177,6 +177,8 @@ class TalentPoolSearchService
                 $prepared = $this->prepareFiltersForElasticsearch($filters);
                 $facets = $this->elasticsearch->aggregateFacets($prepared);
                 if (is_array($facets)) {
+                    $facets['locations'] = $this->filterLocationFacetsForDropdown($facets['locations'] ?? []);
+
                     return $facets;
                 }
             }
@@ -191,7 +193,7 @@ class TalentPoolSearchService
             unset($forExperience['experience_min'], $forExperience['experience_max']);
 
             return [
-                'locations' => $this->aggregateLocationFacets($forLocations),
+                'locations' => $this->filterLocationFacetsForDropdown($this->aggregateLocationFacets($forLocations)),
                 'education' => $this->aggregateEducationFacets($forEducation),
                 'experience' => $this->aggregateExperienceFacets($forExperience),
             ];
@@ -247,7 +249,7 @@ class TalentPoolSearchService
             $locations = [trim((string) $filters['location'])];
         }
 
-        return $locations;
+        return $this->expandMainCitySelections($locations);
     }
 
     /**
@@ -1000,6 +1002,133 @@ class TalentPoolSearchService
     protected function citySqlExpression(string $column): string
     {
         return "TRIM(SUBSTRING_INDEX(TRIM({$column}), ',', 1))";
+    }
+
+    /**
+     * @return array{alias_to_canonical: array<string, string>, canonical_to_aliases: array<string, list<string>>}
+     */
+    protected function mainCityLookup(): array
+    {
+        static $lookup = null;
+
+        if (is_array($lookup)) {
+            return $lookup;
+        }
+
+        $aliasToCanonical = [];
+        $canonicalToAliases = [];
+
+        foreach (config('hirevo.talent_pool_main_cities', []) as $city) {
+            if (! is_array($city)) {
+                continue;
+            }
+
+            $canonical = trim((string) ($city['label'] ?? ''));
+            if ($canonical === '') {
+                continue;
+            }
+
+            $aliases = array_values(array_filter(array_map(
+                fn ($alias) => mb_strtolower(trim((string) $alias)),
+                $city['aliases'] ?? [$canonical]
+            )));
+
+            if ($aliases === []) {
+                $aliases = [mb_strtolower($canonical)];
+            }
+
+            $canonicalToAliases[$canonical] = $aliases;
+
+            foreach ($aliases as $alias) {
+                $aliasToCanonical[$alias] = $canonical;
+            }
+        }
+
+        $lookup = [
+            'alias_to_canonical' => $aliasToCanonical,
+            'canonical_to_aliases' => $canonicalToAliases,
+        ];
+
+        return $lookup;
+    }
+
+    protected function canonicalMainCityLabel(string $label): ?string
+    {
+        $label = mb_strtolower(trim($label));
+        if ($label === '') {
+            return null;
+        }
+
+        return $this->mainCityLookup()['alias_to_canonical'][$label] ?? null;
+    }
+
+    /**
+     * @param  list<string>  $locations
+     * @return list<string>
+     */
+    protected function expandMainCitySelections(array $locations): array
+    {
+        if ($locations === []) {
+            return [];
+        }
+
+        $lookup = $this->mainCityLookup();
+        $expanded = [];
+
+        foreach ($locations as $location) {
+            $location = trim((string) $location);
+            if ($location === '') {
+                continue;
+            }
+
+            $aliases = $lookup['canonical_to_aliases'][$location] ?? null;
+            if (is_array($aliases) && $aliases !== []) {
+                array_push($expanded, ...$aliases);
+
+                continue;
+            }
+
+            $expanded[] = $location;
+        }
+
+        return array_values(array_unique($expanded));
+    }
+
+    /**
+     * @param  list<array{label: string, count: int}>  $facets
+     * @return list<array{label: string, count: int}>
+     */
+    protected function filterLocationFacetsForDropdown(array $facets): array
+    {
+        if ($facets === []) {
+            return [];
+        }
+
+        $minCount = (int) config('hirevo.talent_pool_location_facet_min_count', 5);
+        $lookup = $this->mainCityLookup();
+        $rolled = [];
+
+        foreach ($facets as $facet) {
+            $label = trim((string) ($facet['label'] ?? ''));
+            $count = (int) ($facet['count'] ?? 0);
+            if ($label === '' || ($minCount > 0 && $count < $minCount)) {
+                continue;
+            }
+
+            $canonical = $lookup['alias_to_canonical'][mb_strtolower($label)] ?? null;
+            if ($canonical === null) {
+                continue;
+            }
+
+            $rolled[$canonical] = ($rolled[$canonical] ?? 0) + $count;
+        }
+
+        arsort($rolled);
+
+        return collect($rolled)
+            ->map(fn (int $count, string $label) => ['label' => $label, 'count' => $count])
+            ->values()
+            ->all();
     }
 
     /**
