@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employer;
 
 use App\Http\Controllers\Controller;
+use App\Services\EmployerPlanCheckoutService;
 use App\Services\EmployerPlanService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -10,7 +11,8 @@ use Illuminate\View\View;
 class PlansController extends Controller
 {
     public function __construct(
-        protected EmployerPlanService $planService
+        protected EmployerPlanService $planService,
+        protected EmployerPlanCheckoutService $checkoutService,
     ) {}
 
     public function index(): View|RedirectResponse
@@ -22,9 +24,10 @@ class PlansController extends Controller
 
         $profile = $user->referrerProfile;
         $currentPlan = $this->planService->planKey($profile);
+        $pendingPayment = $this->checkoutService->pendingPaymentForUser($user);
 
         return view('hirevo.employer.plans.index', [
-            'plans' => config('hirevo_plans.plans', []),
+            'plans' => $this->planService->allPlansKeyed(),
             'hero' => config('hirevo_plans.hero', []),
             'comparison' => config('hirevo_plans.comparison', []),
             'payPerHire' => config('hirevo_plans.pay_per_hire', []),
@@ -33,6 +36,10 @@ class PlansController extends Controller
             'currentPlan' => $currentPlan,
             'credits' => $this->planService->jobPostingCredits($profile),
             'hasSubscription' => $this->planService->hasActiveSubscription($profile),
+            'subscriptionStartedAt' => $profile?->subscription_started_at,
+            'subscriptionExpiresAt' => $profile?->subscription_expires_at,
+            'pendingPayment' => $pendingPayment,
+            'isApproved' => (bool) ($profile?->is_approved),
         ]);
     }
 }

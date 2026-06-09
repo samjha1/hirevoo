@@ -94,16 +94,28 @@
             z-index: 40;
             display: flex;
             flex-direction: column;
-            background: var(--brand);
-            border-right: 1px solid rgba(255,255,255,.07);
+            background: linear-gradient(180deg, #0a1f3d 0%, #0f2a50 42%, #0c2347 100%);
+            border-right: 1px solid rgba(255,255,255,.06);
+            box-shadow: 4px 0 24px rgba(15, 42, 80, 0.12);
         }
 
-        /* subtle gradient shine */
         .es::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(160deg, rgba(255,255,255,.04) 0%, transparent 55%);
+            background:
+                linear-gradient(160deg, rgba(255,255,255,.06) 0%, transparent 45%),
+                radial-gradient(ellipse 120% 80% at 0% 0%, rgba(96,165,250,.12), transparent 55%);
+            pointer-events: none;
+        }
+        .es::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(37,99,235,.14), transparent 70%);
             pointer-events: none;
         }
 
@@ -171,45 +183,64 @@
         .es-link {
             display: flex;
             align-items: center;
-            gap: .75rem;
-            padding: .625rem .875rem;
+            gap: .7rem;
+            padding: .55rem .7rem;
             border-radius: var(--radius);
-            color: rgba(255,255,255,.75);
+            color: rgba(255,255,255,.78);
             text-decoration: none;
-            font-size: .9rem;
-            font-weight: 450;
-            transition: background var(--transition), color var(--transition), transform var(--transition);
+            font-size: .875rem;
+            font-weight: 500;
+            transition: background var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
             position: relative;
             border: 1px solid transparent;
         }
-        .es-link .es-icon {
-            width: 20px;
-            text-align: center;
-            font-size: 1.1rem;
+        .es-link .es-icon-wrap {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
-            opacity: .85;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.08);
+            transition: background var(--transition), border-color var(--transition);
+        }
+        .es-link .es-icon {
+            font-size: 1.05rem;
+            opacity: .9;
         }
         .es-link:hover {
             color: #fff;
-            background: rgba(255,255,255,.08);
+            background: rgba(255,255,255,.07);
             border-color: rgba(255,255,255,.1);
             transform: translateX(2px);
         }
-        .es-link.active {
-            color: #fff;
+        .es-link:hover .es-icon-wrap {
             background: rgba(255,255,255,.1);
             border-color: rgba(255,255,255,.14);
+        }
+        .es-link.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.08) 100%);
+            border-color: rgba(255,255,255,.16);
             font-weight: 600;
+            box-shadow: 0 4px 14px rgba(0,0,0,.12);
+        }
+        .es-link.active .es-icon-wrap {
+            background: rgba(255,255,255,.16);
+            border-color: rgba(255,255,255,.2);
         }
         .es-link.active::before {
             content: '';
             position: absolute;
-            left: -1px;
-            top: 20%;
-            height: 60%;
+            left: 0;
+            top: 18%;
+            height: 64%;
             width: 3px;
             border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
-            background: rgba(255,255,255,.7);
+            background: linear-gradient(180deg, #93c5fd, #60a5fa);
+            box-shadow: 0 0 10px rgba(96,165,250,.45);
         }
         .es-link.disabled-link {
             opacity: .38;
@@ -223,73 +254,134 @@
             margin: .625rem .625rem;
         }
 
-        /* ── Credits box ── */
-        .es-credits {
+        /* ── Sidebar account wallet ── */
+        .es-wallet {
             flex-shrink: 0;
-            margin: .625rem .75rem .875rem;
-            padding: .875rem 1rem;
-            border-radius: var(--radius);
-            font-size: .85rem;
+            position: relative;
+            z-index: 1;
+            margin: .5rem .75rem .875rem;
+            padding: .9rem;
+            border-radius: var(--radius-lg);
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.12);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 24px rgba(0,0,0,.15);
         }
-        .es-credits.ok {
-            background: rgba(22,163,74,.18);
-            border: 1px solid rgba(22,163,74,.28);
+        .es-wallet__head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .5rem;
+            margin-bottom: .75rem;
         }
-        .es-credits.out {
-            background: rgba(220,38,38,.18);
-            border: 1px solid rgba(220,38,38,.3);
+        .es-wallet__title {
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.45);
         }
-        .es-credits-label {
-            font-size: .75rem;
-            color: rgba(255,255,255,.55);
-            margin-bottom: .2rem;
+        .es-wallet__status {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: .2rem .45rem;
+            border-radius: var(--radius-pill);
         }
-        .es-credits-amount {
-            font-size: 1.375rem;
+        .es-wallet__status--active {
+            color: #86efac;
+            background: rgba(22,163,74,.2);
+            border: 1px solid rgba(22,163,74,.35);
+        }
+        .es-wallet__status--inactive {
+            color: #fcd34d;
+            background: rgba(245,158,11,.15);
+            border: 1px solid rgba(245,158,11,.3);
+        }
+        .es-wallet__status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .es-wallet__plan {
+            display: block;
+            font-size: .95rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.25;
+            margin-bottom: .25rem;
+            letter-spacing: -.02em;
+        }
+        .es-wallet__plan--muted { color: rgba(255,255,255,.55); font-weight: 600; font-size: .85rem; }
+        .es-wallet__meta {
+            font-size: .7rem;
+            color: rgba(255,255,255,.5);
+            margin-bottom: .75rem;
+            line-height: 1.4;
+        }
+        .es-wallet__stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .5rem;
+            margin-bottom: .75rem;
+        }
+        .es-wallet__stat {
+            padding: .5rem .55rem;
+            border-radius: var(--radius-sm);
+            background: rgba(0,0,0,.15);
+            border: 1px solid rgba(255,255,255,.08);
+        }
+        .es-wallet__stat-label {
+            display: block;
+            font-size: .6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: rgba(255,255,255,.4);
+            margin-bottom: .15rem;
+        }
+        .es-wallet__stat-value {
+            font-size: 1rem;
             font-weight: 700;
             color: #fff;
             font-variant-numeric: tabular-nums;
-            letter-spacing: -.01em;
-            line-height: 1;
-            margin-bottom: .625rem;
+            line-height: 1.1;
         }
-        .es-credits.out .es-credits-amount { color: #fca5a5; }
-        .es-credits-warn {
-            font-size: .8125rem;
-            color: #fca5a5;
-            margin-bottom: .625rem;
+        .es-wallet__stat-value--low { color: #fca5a5; }
+        .es-wallet__stat-value--launch { color: #fcd34d; font-size: .78rem; font-weight: 600; }
+        .es-wallet__btn {
             display: flex;
             align-items: center;
-            gap: .3rem;
-        }
-        .es-credits-btn {
-            display: block;
+            justify-content: center;
+            gap: .35rem;
             width: 100%;
-            padding: .45rem .75rem;
+            padding: .5rem .75rem;
             border-radius: var(--radius-sm);
-            font-size: .8125rem;
+            font-size: .78rem;
             font-weight: 600;
-            text-align: center;
             text-decoration: none;
             transition: all var(--transition);
-            border: 1.5px solid;
-        }
-        .es-credits.ok .es-credits-btn {
-            color: rgba(255,255,255,.9);
-            border-color: rgba(255,255,255,.3);
-            background: transparent;
-        }
-        .es-credits.ok .es-credits-btn:hover {
-            background: rgba(255,255,255,.12);
-            border-color: rgba(255,255,255,.5);
+            border: 1px solid rgba(255,255,255,.22);
+            background: rgba(255,255,255,.1);
             color: #fff;
         }
-        .es-credits.out .es-credits-btn {
-            background: #dc2626;
-            border-color: #dc2626;
+        .es-wallet__btn:hover {
+            background: rgba(255,255,255,.18);
+            border-color: rgba(255,255,255,.35);
             color: #fff;
         }
-        .es-credits.out .es-credits-btn:hover { background: #b91c1c; border-color: #b91c1c; }
+        .es-wallet__btn--urgent {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            border-color: transparent;
+        }
+        .es-wallet__btn--urgent:hover {
+            filter: brightness(1.06);
+        }
 
         /* ─── Topbar ─────────────────────────────────────────── */
         .et {
@@ -332,26 +424,76 @@
 
         .et-right { display: flex; align-items: center; gap: .625rem; }
 
+        .et-plan-pill,
         .et-credits-pill {
             display: flex;
             align-items: center;
             gap: .5rem;
-            padding: .375rem .875rem;
-            background: var(--ink-50);
+            padding: .35rem .8rem .35rem .45rem;
+            background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius-pill);
             text-decoration: none;
-            font-size: .875rem;
+            font-size: .8125rem;
             color: var(--ink-700);
             transition: all var(--transition);
+            box-shadow: var(--shadow-xs);
+            max-width: 220px;
         }
+        .et-plan-pill:hover,
         .et-credits-pill:hover {
-            background: var(--accent-soft);
-            border-color: #bfdbfe;
+            border-color: #c7d2fe;
+            box-shadow: var(--shadow-sm);
             color: var(--ink-900);
         }
-        .et-credits-pill .coin-icon { color: #d97706; font-size: 1rem; }
-        .et-credits-pill strong { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-900); }
+        .et-plan-pill__icon,
+        .et-credits-pill__icon {
+            width: 1.65rem;
+            height: 1.65rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: .9rem;
+        }
+        .et-plan-pill__icon { background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #16a34a; }
+        .et-plan-pill__icon--launch { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #d97706; }
+        .et-plan-pill__icon--none { background: var(--amber-soft); color: var(--amber); }
+        .et-credits-pill__icon { background: linear-gradient(135deg, #fff7ed, #ffedd5); color: #d97706; }
+        .et-plan-pill__text,
+        .et-credits-pill__text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            line-height: 1.15;
+        }
+        .et-plan-pill__label,
+        .et-credits-pill__label {
+            font-size: .6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--ink-300);
+        }
+        .et-plan-pill__value,
+        .et-credits-pill__value {
+            font-size: .8125rem;
+            font-weight: 700;
+            color: var(--ink-900);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+        }
+        .et-plan-pill__value--muted { color: var(--ink-500); font-weight: 600; }
+        .et-credits-pill__value { font-variant-numeric: tabular-nums; }
+        @media (max-width: 767.98px) {
+            .et-plan-pill__label,
+            .et-credits-pill__label { display: none; }
+            .et-plan-pill,
+            .et-credits-pill { padding: .35rem .65rem .35rem .4rem; max-width: none; }
+        }
 
         /* Avatar dropdown */
         .et-user { display: flex; align-items: center; gap: .5rem; cursor: pointer; }
@@ -647,7 +789,7 @@
                     <li>
                         <a class="es-link {{ request()->routeIs('employer.dashboard') ? 'active' : '' }}"
                            href="{{ route('employer.dashboard') }}">
-                            <i class="mdi mdi-view-dashboard-outline es-icon"></i>
+                            <span class="es-icon-wrap"><i class="mdi mdi-view-dashboard-outline es-icon"></i></span>
                             <span>Dashboard</span>
                         </a>
                     </li>
@@ -659,14 +801,14 @@
                         <li>
                             <a class="es-link {{ request()->routeIs('employer.talent-pool.*') ? 'active' : '' }}"
                                href="{{ route('employer.talent-pool.index') }}">
-                                <i class="mdi mdi-account-search-outline es-icon"></i>
+                                <span class="es-icon-wrap"><i class="mdi mdi-account-search-outline es-icon"></i></span>
                                 <span>Talent Pool</span>
                             </a>
                         </li>
                         <li>
                             <a class="es-link {{ request()->routeIs('employer.plans.*') ? 'active' : '' }}"
                                href="{{ route('employer.plans.index') }}">
-                                <i class="mdi mdi-tag-multiple-outline es-icon"></i>
+                                <span class="es-icon-wrap"><i class="mdi mdi-tag-multiple-outline es-icon"></i></span>
                                 <span>Plans & Pricing</span>
                             </a>
                         </li>
@@ -684,14 +826,14 @@
                         <li>
                             <a class="es-link {{ request()->routeIs('employer.jobs.*') && !request()->routeIs('employer.jobs.create') ? 'active' : '' }}"
                                href="{{ route('employer.jobs.index') }}">
-                                <i class="mdi mdi-briefcase-outline es-icon"></i>
+                                <span class="es-icon-wrap"><i class="mdi mdi-briefcase-outline es-icon"></i></span>
                                 <span>My Jobs</span>
                             </a>
                         </li>
                         <li>
                             <a class="es-link {{ request()->routeIs('employer.jobs.create') ? 'active' : '' }}"
                                href="{{ route('employer.jobs.create') }}">
-                                <i class="mdi mdi-plus-circle-outline es-icon"></i>
+                                <span class="es-icon-wrap"><i class="mdi mdi-plus-circle-outline es-icon"></i></span>
                                 <span>Post a Job</span>
                             </a>
                         </li>
@@ -699,12 +841,12 @@
                             @if($pipelineJob)
                                 <a class="es-link {{ request()->routeIs('employer.jobs.pipeline') ? 'active' : '' }}"
                                    href="{{ route('employer.jobs.pipeline', $pipelineJob) }}">
-                                    <i class="mdi mdi-source-pull es-icon"></i>
+                                    <span class="es-icon-wrap"><i class="mdi mdi-source-pull es-icon"></i></span>
                                     <span>ATS Pipeline</span>
                                 </a>
                             @else
                                 <span class="es-link disabled-link" title="Post a job first">
-                                    <i class="mdi mdi-source-pull es-icon"></i>
+                                    <span class="es-icon-wrap"><i class="mdi mdi-source-pull es-icon"></i></span>
                                     <span>ATS Pipeline</span>
                                 </span>
                             @endif
@@ -719,40 +861,78 @@
                     <li>
                         <a class="es-link {{ request()->routeIs('employer.profile') ? 'active' : '' }}"
                            href="{{ route('employer.profile') }}">
-                            <i class="mdi mdi-domain es-icon"></i>
+                            <span class="es-icon-wrap"><i class="mdi mdi-domain es-icon"></i></span>
                             <span>Company Profile</span>
                         </a>
                     </li>
                     <li>
                         <a class="es-link" href="{{ route('contact') }}">
-                            <i class="mdi mdi-help-circle-outline es-icon"></i>
+                            <span class="es-icon-wrap"><i class="mdi mdi-help-circle-outline es-icon"></i></span>
                             <span>Help & Support</span>
                         </a>
                     </li>
                     <li>
                         <a class="es-link" href="{{ route('contact') }}">
-                            <i class="mdi mdi-phone-outline es-icon"></i>
+                            <span class="es-icon-wrap"><i class="mdi mdi-phone-outline es-icon"></i></span>
                             <span>Contact Us</span>
                         </a>
                     </li>
                 </ul>
             </div>
 
-            <!-- Credits box -->
-            @php $credits = $employerCredits ?? 0; @endphp
-            <div class="es-credits {{ $credits < 1 ? 'out' : 'ok' }}">
-                @if($credits < 1)
-                    <div class="es-credits-warn">
-                        <i class="mdi mdi-alert-circle-outline"></i>
-                        No credits remaining
-                    </div>
+            @php
+                $credits = $employerCredits ?? 0;
+                $hasPlan = $employerHasActivePlan ?? false;
+                $planName = $employerActivePlanName ?? null;
+                $planExpires = $employerPlanExpiresAt ?? null;
+                $planIsLaunch = $employerPlanIsLaunch ?? false;
+            @endphp
+            <div class="es-wallet">
+                <div class="es-wallet__head">
+                    <span class="es-wallet__title">Your account</span>
+                    @if($hasPlan)
+                        <span class="es-wallet__status es-wallet__status--active">
+                            <span class="es-wallet__status-dot"></span> Active
+                        </span>
+                    @else
+                        <span class="es-wallet__status es-wallet__status--inactive">
+                            <span class="es-wallet__status-dot"></span> No plan
+                        </span>
+                    @endif
+                </div>
+
+                @if($hasPlan && $planName)
+                    <span class="es-wallet__plan">{{ $planName }}</span>
+                    @if($planExpires)
+                        <div class="es-wallet__meta">
+                            <i class="mdi mdi-calendar-clock"></i>
+                            {{ $planIsLaunch ? 'Access until' : 'Renews / expires' }}
+                            {{ $planExpires->format('d M Y') }}
+                        </div>
+                    @endif
                 @else
-                    <div class="es-credits-label">Available credits</div>
-                    <div class="es-credits-amount">{{ $credits }}</div>
+                    <span class="es-wallet__plan es-wallet__plan--muted">No active subscription</span>
+                    <div class="es-wallet__meta">Unlock Talent Pool and hiring tools with a plan.</div>
                 @endif
-                <a href="{{ route('employer.plans.index') }}" class="es-credits-btn">
-                    <i class="mdi mdi-tag-multiple-outline me-1"></i>
-                    {{ $credits < 1 ? 'View Plans' : 'Plans & Pricing' }}
+
+                <div class="es-wallet__stats">
+                    <div class="es-wallet__stat">
+                        <span class="es-wallet__stat-label">Job credits</span>
+                        <span class="es-wallet__stat-value {{ $credits < 1 ? 'es-wallet__stat-value--low' : '' }}">{{ $credits }}</span>
+                    </div>
+                    <div class="es-wallet__stat">
+                        <span class="es-wallet__stat-label">Talent Pool</span>
+                        @if($hasPlan)
+                            <span class="es-wallet__stat-value" style="font-size:.85rem;">Unlocked</span>
+                        @else
+                            <span class="es-wallet__stat-value es-wallet__stat-value--low" style="font-size:.85rem;">Locked</span>
+                        @endif
+                    </div>
+                </div>
+
+                <a href="{{ route('employer.plans.index') }}" class="es-wallet__btn {{ (!$hasPlan || $credits < 1) ? 'es-wallet__btn--urgent' : '' }}">
+                    <i class="mdi mdi-{{ $hasPlan ? 'arrow-up-circle-outline' : 'rocket-launch-outline' }}"></i>
+                    {{ $hasPlan ? ($credits < 1 ? 'Get more credits' : 'Manage plan') : 'Choose a plan' }}
                 </a>
             </div>
         </aside>
@@ -769,10 +949,33 @@
                 </div>
 
                 <div class="et-right">
-                    <a href="{{ route('employer.plans.index') }}" class="et-credits-pill" title="Plans & job posting credits">
-                        <i class="mdi mdi-coin coin-icon"></i>
-                        <span><span class="d-none d-sm-inline" style="color:var(--ink-500); font-weight:400;">Credits: </span><strong>{{ $credits }}</strong></span>
+                    <a href="{{ route('employer.plans.index') }}" class="et-plan-pill" title="Your subscription plan">
+                        @if($hasPlan && $planName)
+                            <span class="et-plan-pill__icon {{ $planIsLaunch ? 'et-plan-pill__icon--launch' : '' }}">
+                                <i class="mdi mdi-{{ $planIsLaunch ? 'rocket-launch' : 'shield-check' }}"></i>
+                            </span>
+                            <span class="et-plan-pill__text">
+                                <span class="et-plan-pill__label">Active plan</span>
+                                <span class="et-plan-pill__value">{{ $planName }}</span>
+                            </span>
+                        @else
+                            <span class="et-plan-pill__icon et-plan-pill__icon--none"><i class="mdi mdi-shield-off-outline"></i></span>
+                            <span class="et-plan-pill__text">
+                                <span class="et-plan-pill__label">Plan</span>
+                                <span class="et-plan-pill__value et-plan-pill__value--muted">No active plan</span>
+                            </span>
+                        @endif
                     </a>
+
+                    @unless(request()->routeIs('employer.plans.*'))
+                        <a href="{{ route('employer.plans.index') }}" class="et-credits-pill" title="Job posting credits">
+                            <span class="et-credits-pill__icon"><i class="mdi mdi-lightning-bolt"></i></span>
+                            <span class="et-credits-pill__text">
+                                <span class="et-credits-pill__label">Credits</span>
+                                <span class="et-credits-pill__value">{{ $credits }}</span>
+                            </span>
+                        </a>
+                    @endunless
 
                     @yield('header_actions')
 

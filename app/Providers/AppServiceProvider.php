@@ -12,6 +12,7 @@ use App\Observers\CandidateUserSearchObserver;
 use App\Observers\EmployerJobSearchObserver;
 use App\Observers\JobRoleSearchObserver;
 use App\Observers\TalentPoolCandidateSearchObserver;
+use App\Services\EmployerPlanService;
 use App\Services\LeadsmanagerAdService;
 use App\Support\SeoMetaResolver;
 use Illuminate\Pagination\Paginator;
@@ -97,18 +98,49 @@ class AppServiceProvider extends ServiceProvider
                 ->with('sponsoredAdVariant', $config['variant'] ?? 'default');
         });
 
-        View::composer('layouts.employer', function ($view) {
-            $credits = 0;
-            $profilePhotoUrl = null;
-            if (auth()->check() && auth()->user()->isReferrer() && auth()->user()->referrerProfile) {
-                $profile = auth()->user()->referrerProfile;
-                $credits = (int) $profile->credits;
-                if ($profile->profile_photo) {
-                    $profilePhotoUrl = $profile->profilePhotoUrl();
+        View::composer(
+            ['layouts.employer', 'hirevo.employer.*'],
+            function ($view) {
+                $credits = 0;
+                $profilePhotoUrl = null;
+                $activePlanKey = null;
+                $activePlanName = null;
+                $hasActivePlan = false;
+                $planExpiresAt = null;
+                $planIsLaunch = false;
+
+                if (auth()->check() && auth()->user()->isReferrer() && auth()->user()->referrerProfile) {
+                    $profile = auth()->user()->referrerProfile;
+                    $credits = (int) $profile->credits;
+                    if ($profile->profile_photo) {
+                        $profilePhotoUrl = $profile->profilePhotoUrl();
+                    }
+
+                    $planService = app(EmployerPlanService::class);
+                    $activePlanKey = $planService->planKey($profile);
+                    $hasActivePlan = $planService->hasActiveSubscription($profile);
+                    $planExpiresAt = $profile->subscription_expires_at;
+
+                    if ($activePlanKey !== null) {
+                        $planConfig = $planService->planConfig($activePlanKey);
+                        $activePlanName = $planConfig['name'] ?? ucfirst($activePlanKey);
+                        $billing = $planConfig['billing_period'] ?? '';
+                        $planIsLaunch = $activePlanKey === 'hiring-launch'
+                            || in_array($billing, ['one_time_7d', 'launch_7d'], true);
+                    }
                 }
+
+                $view->with([
+                    'employerCredits' => $credits,
+                    'employerProfilePhotoUrl' => $profilePhotoUrl,
+                    'employerActivePlanKey' => $activePlanKey,
+                    'employerActivePlanName' => $activePlanName,
+                    'employerHasActivePlan' => $hasActivePlan,
+                    'employerPlanExpiresAt' => $planExpiresAt,
+                    'employerPlanIsLaunch' => $planIsLaunch,
+                ]);
             }
-            $view->with('employerCredits', $credits)->with('employerProfilePhotoUrl', $profilePhotoUrl);
-        });
+        );
 
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
             $event->extendSocialite('azure', \SocialiteProviders\Azure\Provider::class);

@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Mail\EmployerPlanAgreementMail;
+use App\Models\EmployerPlan;
 use App\Models\Payment;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -28,13 +30,22 @@ class EmployerPlanCheckoutService
     public function resolvePurchasablePlan(string $planKey): array
     {
         $planKey = strtolower(trim($planKey));
-        $plan = config("hirevo_plans.plans.{$planKey}");
+        $plan = $this->planService->findPlan($planKey);
 
-        if ($plan === null || ! empty($plan['custom_price']) || $plan['price_inr'] === null) {
+        if ($plan !== null) {
+            if (! $plan->isPurchasable()) {
+                throw new InvalidArgumentException('This plan cannot be purchased online.');
+            }
+
+            return array_merge($plan->toDisplayArray(), ['key' => $plan->slug]);
+        }
+
+        $legacy = config("hirevo_plans.plans.{$planKey}");
+        if ($legacy === null || ! empty($legacy['custom_price']) || $legacy['price_inr'] === null) {
             throw new InvalidArgumentException('This plan cannot be purchased online.');
         }
 
-        return array_merge($plan, ['key' => $planKey]);
+        return array_merge($legacy, ['key' => $planKey]);
     }
 
     /**
@@ -49,6 +60,7 @@ class EmployerPlanCheckoutService
             'plan_key' => $plan['key'],
             'plan_name' => $plan['name'],
             'price_sub' => $plan['price_sub'] ?? '',
+            'job_credits_included' => $plan['job_credits_included'] ?? $plan['database_credits_included'] ?? 0,
         ], $amounts);
     }
 
@@ -79,6 +91,10 @@ class EmployerPlanCheckoutService
 
         if (trim((string) $profile->company_name) === '') {
             throw new InvalidArgumentException('Add your company name in profile before purchasing a plan.');
+        }
+
+        if (! $profile->is_approved) {
+            throw new InvalidArgumentException('Your employer account must be approved before purchasing a plan.');
         }
 
         $this->resolvePurchasablePlan($planKey);
@@ -134,25 +150,33 @@ class EmployerPlanCheckoutService
                 'base_amount' => $amounts['base_amount'],
                 'gst_rate' => $amounts['gst_rate'],
                 'gst_amount' => $amounts['gst_amount'],
+                'job_credits_included' => $plan['job_credits_included'] ?? $plan['database_credits_included'] ?? 0,
                 'cheque_date' => $chequeDate,
                 'company_name' => $profile->company_name,
                 'company_email' => $profile->company_email,
                 'agreement_accepted_at' => $acceptedAt,
-                'billing_period' => 'monthly',
+                'billing_period' => $plan['billing_period'] ?? 'monthly',
             ],
         ]);
 
         $email = strtolower(trim((string) $profile->company_email));
         if ($email !== '') {
-            Mail::to($email)->send(new EmployerPlanAgreementMail(
-                user: $user,
-                profile: $profile,
-                payment: $payment,
-                plan: $plan,
-                amounts: $amounts,
-                chequeNumber: trim($chequeNumber),
-                chequeDate: $chequeDate,
-            ));
+            try {
+                Mail::to($email)->send(new EmployerPlanAgreementMail(
+                    user: $user,
+                    profile: $profile,
+                    payment: $payment,
+                    plan: $plan,
+                    amounts: $amounts,
+                    chequeNumber: trim($chequeNumber),
+                    chequeDate: $chequeDate,
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('Employer plan agreement email failed', [
+                    'payment_id' => $payment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $payment;
@@ -183,15 +207,39 @@ class EmployerPlanCheckoutService
         $payment->update(['status' => Payment::STATUS_COMPLETED]);
 
         $this->planService->activateSubscription($profile, $planKey);
+        $creditsGranted = $this->planService->grantPlanJobCredits($profile->fresh(), $planKey);
 
-        $plan = $this->planService->planConfig($planKey);
-        if (isset($plan['database_credits_included']) && is_numeric($plan['database_credits_included'])) {
-            $credits = (int) $plan['database_credits_included'];
-            if ($credits > 0) {
-                $profile->increment('credits', $credits);
-            }
-        }
+        Log::info('Employer subscription activated', [
+            'payment_id' => $payment->id,
+            'user_id' => $payment->user_id,
+            'plan_key' => $planKey,
+            'job_credits_granted' => $creditsGranted,
+            'subscription_expires_at' => $profile->fresh()->subscription_expires_at?->toIso8601String(),
+        ]);
 
         return $payment->fresh();
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Payment>
+     */
+    public function pendingPayments()
+    {
+        return Payment::query()
+            ->with(['user.referrerProfile'])
+            ->where('type', self::PAYMENT_TYPE)
+            ->where('status', Payment::STATUS_PENDING)
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    public function pendingPaymentForUser(User $user): ?Payment
+    {
+        return Payment::query()
+            ->where('user_id', $user->id)
+            ->where('type', self::PAYMENT_TYPE)
+            ->where('status', Payment::STATUS_PENDING)
+            ->orderByDesc('created_at')
+            ->first();
     }
 }

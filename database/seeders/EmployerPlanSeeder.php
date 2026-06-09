@@ -1,0 +1,186 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\EmployerPlan;
+use Illuminate\Database\Seeder;
+
+class EmployerPlanSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $plans = [
+            [
+                'slug' => 'hiring-launch',
+                'tier' => 'Launch Offer',
+                'name' => 'Hiring Launch Program',
+                'tagline' => 'Launch your first hiring campaign with Hirevoo and experience a smarter way to hire.',
+                'price_inr' => 1999,
+                'price_sub' => 'one-time · 7 days access',
+                'cta' => 'Launch Now',
+                'is_popular' => false,
+                'is_custom_price' => false,
+                'is_active' => true,
+                'sort_order' => 0,
+                'billing_period' => 'one_time_7d',
+                'talent_pool_access' => 'limited',
+                'job_credits_included' => 1,
+                'unlimited_profile_unlocks' => false,
+                'max_active_jobs' => 1,
+                'features' => [
+                    '1 Active Job Posting',
+                    '7 Days Hiring Launch Access',
+                    'Hiring Health Score™ Assessment',
+                    'Dedicated Hiring Consultation',
+                    'Job Description Review & Optimization',
+                    'Candidate Sourcing Support',
+                    'Candidate Management Dashboard Access',
+                    'Application Tracking',
+                    'Basic Candidate Filtering',
+                    'Hiring Performance Review',
+                    'Hiring Recommendations Report',
+                    'Priority Email & WhatsApp Support',
+                    'One-Time Offer for New Companies Only',
+                    'No Long-Term Commitment Required',
+                    'Easy Upgrade to Hirevoo Subscription Plans',
+                ],
+                'extras' => [
+                    'is_launch_offer' => true,
+                    'duration' => '7 Days',
+                    'duration_days' => 7,
+                    'ideal_for' => [
+                        'Startups',
+                        'Small Businesses',
+                        'First-Time Recruiters',
+                        'Companies Hiring for 1–10 Positions',
+                    ],
+                    'bonus' => [
+                        'Complimentary 30-Minute Hiring Strategy Session',
+                        'Personalized Hiring Improvement Recommendations',
+                    ],
+                ],
+            ],
+            [
+                'slug' => 'starter',
+                'tier' => 'Tier 01',
+                'name' => 'Starter',
+                'tagline' => 'Ideal for small businesses & early-stage startups testing the market.',
+                'price_inr' => 4999,
+                'price_sub' => 'per month, billed monthly',
+                'cta' => 'Get Started',
+                'is_popular' => false,
+                'is_custom_price' => false,
+                'is_active' => true,
+                'sort_order' => 1,
+                'billing_period' => 'monthly',
+                'talent_pool_access' => 'limited',
+                'job_credits_included' => 0,
+                'unlimited_profile_unlocks' => false,
+                'max_active_jobs' => 3,
+                'features' => [
+                    '3 Active Job Postings',
+                    'Candidate Dashboard',
+                    'Basic Candidate Filtering',
+                    'Limited Resume Database Access',
+                    'Email Support',
+                ],
+            ],
+            [
+                'slug' => 'growth',
+                'tier' => 'Tier 02',
+                'name' => 'Growth',
+                'tagline' => 'Built for growing startups & SMEs ready to hire with speed and precision.',
+                'price_inr' => 14999,
+                'price_sub' => 'per month, billed monthly',
+                'cta' => 'Start Hiring Smarter',
+                'is_popular' => true,
+                'is_custom_price' => false,
+                'is_active' => true,
+                'sort_order' => 2,
+                'billing_period' => 'monthly',
+                'talent_pool_access' => 'full',
+                'job_credits_included' => 50,
+                'unlimited_profile_unlocks' => true,
+                'max_active_jobs' => 10,
+                'features' => [
+                    '10 Active Job Postings',
+                    'AI Match Scoring',
+                    'Referral-Backed Candidates',
+                    'Priority Candidate Visibility',
+                    'Assisted Candidate Shortlisting',
+                    'Full Resume Database Access',
+                    'Employer Branding',
+                    'Hiring Analytics Dashboard',
+                    'WhatsApp Support',
+                ],
+            ],
+            [
+                'slug' => 'scale',
+                'tier' => 'Tier 03',
+                'name' => 'Scale',
+                'tagline' => 'Designed for high-growth companies with fast, volume hiring demands.',
+                'price_inr' => 39999,
+                'price_sub' => 'per month, billed monthly',
+                'cta' => 'Scale Your Team',
+                'is_popular' => false,
+                'is_custom_price' => false,
+                'is_active' => true,
+                'sort_order' => 3,
+                'billing_period' => 'monthly',
+                'talent_pool_access' => 'full',
+                'job_credits_included' => 50,
+                'unlimited_profile_unlocks' => false,
+                'max_active_jobs' => 50,
+                'features' => [
+                    '50 Active Job Postings',
+                    '50 Job Posting Credits Included',
+                    'Dedicated Hiring Manager',
+                    'Priority Referrals',
+                    'Candidate Screening',
+                    'Interview Coordination',
+                    'Advanced Analytics',
+                    'ATS Access',
+                    'Premium Employer Branding',
+                    'Dedicated Account Support',
+                ],
+            ],
+            [
+                'slug' => 'enterprise',
+                'tier' => 'Tier 04',
+                'name' => 'Enterprise',
+                'tagline' => 'For large organizations needing full-suite recruitment infrastructure.',
+                'price_inr' => null,
+                'price_sub' => 'tailored to your requirements',
+                'cta' => 'Talk to Sales',
+                'is_popular' => false,
+                'is_custom_price' => true,
+                'is_active' => true,
+                'sort_order' => 4,
+                'billing_period' => 'monthly',
+                'talent_pool_access' => 'full',
+                'job_credits_included' => null,
+                'unlimited_profile_unlocks' => true,
+                'max_active_jobs' => null,
+                'features' => [
+                    'Unlimited Hiring',
+                    'Campus & Bulk Hiring',
+                    'Recruitment Process Outsourcing (RPO)',
+                    'HRMS Access',
+                    'Dedicated Recruitment Team',
+                    'API Integrations',
+                    'Custom Analytics',
+                    'Dedicated Success Manager',
+                ],
+            ],
+        ];
+
+        foreach ($plans as $plan) {
+            EmployerPlan::query()->updateOrCreate(
+                ['slug' => $plan['slug']],
+                $plan
+            );
+        }
+
+        \Illuminate\Support\Facades\Cache::forget('employer_plans.catalog');
+    }
+}
