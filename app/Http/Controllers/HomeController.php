@@ -35,8 +35,18 @@ class HomeController extends Controller
         return view('hirevo.index', compact('jobRoles'));
     }
 
-    public function jobList(Request $request, JobCatalogService $jobCatalog): View
+    public function jobList(Request $request, JobCatalogService $jobCatalog, JobOpeningsSearchService $jobSearch): View|RedirectResponse
     {
+        if ($request->filled('q')) {
+            $query = $jobSearch->normalizeQuery((string) $request->get('q'));
+
+            return redirect()->route('job-openings', array_filter([
+                'q' => $query !== '' ? $query : null,
+                'location' => $request->get('location'),
+                'country' => $request->get('country'),
+            ]));
+        }
+
         $jobRoles = $jobCatalog->paginateJobGoals($request, 24);
         $appliedJobIds = auth()->check()
             ? \App\Models\JobApplication::where('user_id', auth()->id())->pluck('job_role_id')->all()

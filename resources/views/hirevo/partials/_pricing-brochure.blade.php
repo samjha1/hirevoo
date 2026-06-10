@@ -51,7 +51,7 @@
                 <i class="mdi mdi-clock-outline"></i>
                 <div>
                     <strong>Payment pending verification</strong>
-                    <span>{{ $pendingMeta['plan_name'] ?? 'Your plan' }} (cheque {{ $pendingPayment->payment_reference }}) — {{ config('hirevo_plans.checkout.pending_message') }}</span>
+                    <span>{{ $pendingMeta['plan_name'] ?? 'Your plan' }} ({{ $pendingPayment->payment_gateway === 'netbanking' ? 'UTR' : 'cheque' }} {{ $pendingPayment->payment_reference }}) — {{ config('hirevo_plans.checkout.pending_message') }}</span>
                 </div>
             </div>
         @endif

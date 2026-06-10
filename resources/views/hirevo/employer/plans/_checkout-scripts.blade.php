@@ -7,10 +7,8 @@
     var quoteUrlTemplate = @json(route('employer.plans.quote', ['planKey' => '__PLAN__']));
     var checkoutUrl = @json(route('employer.plans.checkout.cheque'));
     var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    var profileUrl = @json(route('employer.profile'));
     var userName = @json(auth()->user()->name);
     var userEmail = @json(auth()->user()->email);
-
     var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     var state = { planKey: null, step: 1, quote: null };
 
@@ -29,8 +27,8 @@
         gst: document.getElementById('plan-checkout-gst'),
         total: document.getElementById('plan-checkout-total'),
         priceSub: document.getElementById('plan-checkout-price-sub'),
-        chequeNumber: document.getElementById('plan-checkout-cheque-number'),
-        chequeDate: document.getElementById('plan-checkout-cheque-date'),
+        utr: document.getElementById('plan-checkout-utr'),
+        paymentDate: document.getElementById('plan-checkout-payment-date'),
         agreementBox: document.getElementById('plan-checkout-agreement-body'),
         agreementCheck: document.getElementById('plan-checkout-agreement'),
         backBtn: document.getElementById('plan-checkout-back-btn'),
@@ -97,8 +95,8 @@
         hideError();
         hideSuccess();
         setStep(1);
-        els.chequeNumber.value = '';
-        els.chequeDate.value = '';
+        if (els.utr) els.utr.value = '';
+        if (els.paymentDate) els.paymentDate.value = '';
         els.agreementCheck.checked = false;
         els.nextBtn.disabled = false;
         els.submitBtn.disabled = false;
@@ -108,8 +106,8 @@
 
     function populateQuote(data) {
         state.quote = data;
-        if (data.cheque_notice) {
-            els.notice.textContent = data.cheque_notice;
+        if (data.payment_notice) {
+            els.notice.querySelector('span').textContent = data.payment_notice;
         }
         els.company.value = data.company_name || '';
         els.companyHint.hidden = !!data.company_name;
@@ -123,12 +121,17 @@
         updateAgreementPreview();
     }
 
+    function paymentDetailLine() {
+        var utr = els.utr.value.trim() || '—';
+        var payDate = els.paymentDate.value || '—';
+        return 'Payment method: net banking transfer. UTR / reference: ' + escapeHtml(utr) +
+            ' dated ' + escapeHtml(formatDisplayDate(payDate)) + '.';
+    }
+
     function updateAgreementPreview() {
         if (!els.agreementBox || !state.quote) return;
 
         var q = state.quote;
-        var chequeNo = els.chequeNumber.value.trim() || '—';
-        var chequeDate = els.chequeDate.value || '—';
         var accepted = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 
         els.agreementBox.innerHTML =
@@ -141,9 +144,8 @@
             '<p><strong>2. Fees &amp; payment</strong></p>' +
             '<p>Base amount: ' + formatInr(q.base_amount) + '. GST (' + q.gst_rate + '%): ' +
             formatInr(q.gst_amount) + '. Total payable: ' + formatInr(q.total_amount) +
-            ' (INR). Payment method: cheque #' + escapeHtml(chequeNo) + ' dated ' +
-            escapeHtml(formatDisplayDate(chequeDate)) + '.</p>' +
-            '<p>Subscription activation will occur after cheque verification and clearance.</p>' +
+            ' (INR). ' + paymentDetailLine() + '</p>' +
+            '<p>Subscription activation will occur after payment verification.</p>' +
             '<p><strong>3. Customer obligations</strong></p>' +
             '<p>Customer will use the platform lawfully and comply with Hirevo Terms &amp; Conditions and Privacy Policy.</p>' +
             '<p><strong>4. Term &amp; suspension</strong></p>' +
@@ -151,7 +153,7 @@
             '<p><strong>5. Acknowledgment</strong></p>' +
             '<p>By checking the agreement box, Customer confirms acceptance of this subscription agreement.</p>' +
             '<p class="small text-muted mb-0">Accepted by: ' + escapeHtml(userName) + ' (' + escapeHtml(userEmail) +
-            ') on ' + escapeHtml(accepted) + '.</p>';
+            ') on ' + escapeHtml(accepted) + '. Payment via Net banking (NEFT/RTGS/IMPS).</p>';
     }
 
     function escapeHtml(text) {
@@ -160,6 +162,28 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    function validateStep1() {
+        if (!els.utr.value.trim()) {
+            showError('Please enter the UTR or transaction reference.');
+            return false;
+        }
+        if (!els.paymentDate.value) {
+            showError('Please enter the payment date.');
+            return false;
+        }
+        return true;
+    }
+
+    function buildCheckoutPayload() {
+        return {
+            plan_key: state.planKey,
+            payment_method: 'netbanking',
+            agreement_accepted: '1',
+            utr_reference: els.utr.value.trim(),
+            payment_date: els.paymentDate.value,
+        };
     }
 
     function openCheckout(planKey) {
@@ -200,15 +224,26 @@
         });
     });
 
+    document.querySelectorAll('.plan-checkout-copy-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var targetId = btn.getAttribute('data-copy-target');
+            var target = targetId ? document.getElementById(targetId) : null;
+            if (!target) return;
+
+            var text = target.textContent.trim();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    btn.textContent = 'Copied';
+                    setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+                }).catch(function () {});
+            }
+        });
+    });
+
     els.nextBtn.addEventListener('click', function () {
         hideError();
 
-        if (!els.chequeNumber.value.trim()) {
-            showError('Please enter the cheque number.');
-            return;
-        }
-        if (!els.chequeDate.value) {
-            showError('Please enter the cheque date.');
+        if (!validateStep1()) {
             return;
         }
 
@@ -240,12 +275,7 @@
                 'X-Requested-With': 'XMLHttpRequest',
             },
             credentials: 'same-origin',
-            body: JSON.stringify({
-                plan_key: state.planKey,
-                cheque_number: els.chequeNumber.value.trim(),
-                cheque_date: els.chequeDate.value,
-                agreement_accepted: '1',
-            }),
+            body: JSON.stringify(buildCheckoutPayload()),
         })
             .then(function (res) {
                 return res.json().then(function (data) {
@@ -274,6 +304,12 @@
                 setLoading(false);
                 showError(err.message);
             });
+    });
+
+    [els.utr, els.paymentDate].forEach(function (input) {
+        if (!input) return;
+        input.addEventListener('input', updateAgreementPreview);
+        input.addEventListener('change', updateAgreementPreview);
     });
 
     modalEl.addEventListener('hidden.bs.modal', resetModal);

@@ -86,7 +86,7 @@
                                 <i class="uil uil-envelope"></i>
                             </div>
                             <div class="flex-grow-1 ms-2">
-                                <p class="mb-0">contact@hirevoo.com</p>
+                                <p class="mb-0">info@hirevoo.com</p>
                             </div>
                         </div>
                         <div class="d-flex text-muted align-items-center mt-2">

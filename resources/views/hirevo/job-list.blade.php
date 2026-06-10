@@ -29,7 +29,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('job-list') }}" method="GET" class="mb-4">
+            <form action="{{ route('job-openings') }}" method="GET" class="mb-4">
                 <div class="job-list-search-card bg-white p-3 p-md-4">
                     <div class="row g-2 align-items-end">
                         <div class="col-md-5">
@@ -128,7 +128,7 @@
                                 <i class="uil uil-search text-muted fs-28"></i>
                             </div>
                             @if(isset($searchQuery) && $searchQuery !== '')
-                                <p class="text-muted mb-0">No job goals match "{{ e($searchQuery) }}". Try a different keyword or <a href="{{ route('job-list') }}" class="text-primary">view all job goals</a>.</p>
+                                <p class="text-muted mb-0">No job goals match "{{ $searchQuery }}". Try a different keyword or <a href="{{ route('job-openings') }}" class="text-primary">browse job openings</a>.</p>
                             @else
                                 <p class="text-muted mb-0">Job goals will appear here. Add roles from admin or run seeders.</p>
                             @endif

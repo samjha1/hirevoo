@@ -1,3 +1,6 @@
+@php
+    $bankAccount = config('hirevo_plans.checkout.bank_account', []);
+@endphp
 <div class="modal fade" id="planCheckoutModal" tabindex="-1" aria-labelledby="planCheckoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content plan-checkout-modal">
@@ -12,14 +15,14 @@
             <div class="modal-body pt-3">
                 <div class="plan-checkout-notice" id="plan-checkout-notice" role="status">
                     <i class="mdi mdi-information-outline"></i>
-                    <span>{{ config('hirevo_plans.checkout.cheque_notice') }}</span>
+                    <span>{{ config('hirevo_plans.checkout.payment_notice') }}</span>
                 </div>
 
                 <div id="plan-checkout-error" class="alert alert-danger d-none py-2 px-3 mb-3 small" role="alert"></div>
                 <div id="plan-checkout-success" class="alert alert-success d-none py-2 px-3 mb-3 small" role="status"></div>
 
                 <div id="plan-checkout-step-1">
-                    <p class="text-muted small mb-3">Review your company details and enter cheque information to continue.</p>
+                    <p class="text-muted small mb-3">Review your company details and enter your net banking payment information to continue.</p>
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
@@ -52,14 +55,49 @@
                         <p class="text-muted small mb-0 mt-2" id="plan-checkout-price-sub"></p>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="plan-checkout-cheque-number" class="form-label fw-500">Cheque number <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control plan-checkout-input" id="plan-checkout-cheque-number" maxlength="191" autocomplete="off" required>
+                    <div id="plan-checkout-netbanking-panel">
+                        <div class="plan-checkout-bank-card mb-3">
+                            <div class="plan-checkout-bank-card__head">
+                                <i class="mdi mdi-bank-outline"></i>
+                                <div>
+                                    <div class="fw-600">Transfer to Hirevoo bank account</div>
+                                    <div class="small text-muted">Use NEFT, RTGS, or IMPS via your net banking portal</div>
+                                </div>
+                            </div>
+                            <div class="plan-checkout-bank-card__greeting small text-muted mb-2">
+                                Transfer the <strong>total payable</strong> amount to our {{ $bankAccount['bank_name'] ?? 'IDFC FIRST Bank' }} account using NEFT, RTGS, or IMPS.
+                                Use the account details below, then enter your UTR and payment date to complete your plan request.
+                            </div>
+                            <dl class="plan-checkout-bank-details mb-0">
+                                <div class="plan-checkout-bank-details__row">
+                                    <dt>Name</dt>
+                                    <dd id="plan-checkout-bank-name">{{ $bankAccount['account_name'] ?? 'HIREVOO MARKETING AND Consultancy pvt. Ltd.' }}</dd>
+                                </div>
+                                <div class="plan-checkout-bank-details__row">
+                                    <dt>A/C no</dt>
+                                    <dd>
+                                        <span id="plan-checkout-bank-account">{{ $bankAccount['account_number'] ?? '82828095506' }}</span>
+                                        <button type="button" class="btn btn-link btn-sm p-0 ms-1 plan-checkout-copy-btn" data-copy-target="plan-checkout-bank-account" title="Copy account number">Copy</button>
+                                    </dd>
+                                </div>
+                                <div class="plan-checkout-bank-details__row">
+                                    <dt>IFSC CODE</dt>
+                                    <dd>
+                                        <span id="plan-checkout-bank-ifsc">{{ $bankAccount['ifsc'] ?? 'IDFB0020163' }}</span>
+                                        <button type="button" class="btn btn-link btn-sm p-0 ms-1 plan-checkout-copy-btn" data-copy-target="plan-checkout-bank-ifsc" title="Copy IFSC">Copy</button>
+                                    </dd>
+                                </div>
+                            </dl>
                         </div>
-                        <div class="col-md-6">
-                            <label for="plan-checkout-cheque-date" class="form-label fw-500">Cheque date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control plan-checkout-input" id="plan-checkout-cheque-date" max="{{ now()->format('Y-m-d') }}" required>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="plan-checkout-utr" class="form-label fw-500">UTR / Transaction reference <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control plan-checkout-input" id="plan-checkout-utr" maxlength="191" autocomplete="off" placeholder="e.g. 123456789012">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="plan-checkout-payment-date" class="form-label fw-500">Payment date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control plan-checkout-input" id="plan-checkout-payment-date" max="{{ now()->format('Y-m-d') }}">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -67,7 +105,7 @@
                 <div id="plan-checkout-step-2" hidden>
                     <p class="text-muted small mb-2">Please read and accept the subscription agreement below.</p>
                     <div class="plan-checkout-agreement border rounded p-3 mb-3" id="plan-checkout-agreement-body">
-                        <p class="text-muted mb-0 small">Agreement details will appear here after you enter cheque information.</p>
+                        <p class="text-muted mb-0 small">Agreement details will appear here after you enter payment information.</p>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="plan-checkout-agreement" value="1">
@@ -86,7 +124,7 @@
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="plan-checkout-close-btn">Close</button>
                 <button type="button" class="btn btn-outline-secondary d-none" id="plan-checkout-back-btn">Back</button>
                 <button type="button" class="btn plan-checkout-btn-primary" id="plan-checkout-next-btn">Continue to agreement</button>
-                <button type="button" class="btn plan-checkout-btn-primary d-none" id="plan-checkout-submit-btn">Submit cheque payment</button>
+                <button type="button" class="btn plan-checkout-btn-primary d-none" id="plan-checkout-submit-btn">Submit net banking payment</button>
             </div>
         </div>
     </div>
@@ -160,6 +198,107 @@
     .plan-checkout-summary__total span:last-child {
         color: #1AA399;
         font-family: 'Sora', sans-serif;
+    }
+    .plan-checkout-pay-methods {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    @media (max-width: 575.98px) {
+        .plan-checkout-pay-methods { grid-template-columns: 1fr; }
+    }
+    .plan-checkout-pay-method {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 2px solid #E2E8F0;
+        border-radius: 12px;
+        cursor: pointer;
+        margin: 0;
+        transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+        background: #fff;
+    }
+    .plan-checkout-pay-method.is-active {
+        border-color: #2EC4B6;
+        background: linear-gradient(135deg, #F0FDFA, #ECFEFF);
+        box-shadow: 0 0 0 3px rgba(46,196,182,0.12);
+    }
+    .plan-checkout-pay-method__input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .plan-checkout-pay-method__icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #F1F5F9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #475569;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .plan-checkout-pay-method.is-active .plan-checkout-pay-method__icon {
+        background: linear-gradient(135deg, #2EC4B6, #3A7DFF);
+        color: #fff;
+    }
+    .plan-checkout-pay-method__text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+    }
+    .plan-checkout-pay-method__text small {
+        color: #64748B;
+        font-size: 0.75rem;
+    }
+    .plan-checkout-bank-card {
+        background: linear-gradient(135deg, #F8FAFC, #EFF6FF);
+        border: 1px solid #BFDBFE;
+        border-radius: 14px;
+        padding: 16px 18px;
+    }
+    .plan-checkout-bank-card__head {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .plan-checkout-bank-card__head i {
+        font-size: 1.5rem;
+        color: #3A7DFF;
+        margin-top: 2px;
+    }
+    .plan-checkout-bank-details__row {
+        display: grid;
+        grid-template-columns: 100px 1fr;
+        gap: 8px;
+        padding: 8px 0;
+        border-top: 1px solid rgba(148,163,184,0.25);
+    }
+    .plan-checkout-bank-details__row:first-of-type {
+        border-top: none;
+        padding-top: 0;
+    }
+    .plan-checkout-bank-details dt {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748B;
+        margin: 0;
+    }
+    .plan-checkout-bank-details dd {
+        margin: 0;
+        font-weight: 600;
+        color: #0F172A;
+        word-break: break-word;
+    }
+    .plan-checkout-copy-btn {
+        font-size: 0.75rem;
+        vertical-align: baseline;
     }
     .plan-checkout-agreement {
         max-height: 280px;

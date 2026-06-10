@@ -19,6 +19,8 @@ class Payment extends Model
 
     public const GATEWAY_CHEQUE = 'cheque';
 
+    public const GATEWAY_NETBANKING = 'netbanking';
+
     protected $fillable = [
         'user_id',
         'type',

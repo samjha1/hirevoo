@@ -24,7 +24,7 @@ class JobOpeningsSearchService
 
     public function applyEmployerJobSearch(Builder $query, string $rawQuery): void
     {
-        $rawQuery = trim($rawQuery);
+        $rawQuery = $this->normalizeQuery($rawQuery);
         if ($rawQuery === '') {
             return;
         }
@@ -43,7 +43,7 @@ class JobOpeningsSearchService
 
     public function applyJobRoleSearch(Builder $query, string $rawQuery): void
     {
-        $rawQuery = trim($rawQuery);
+        $rawQuery = $this->normalizeQuery($rawQuery);
         if ($rawQuery === '') {
             return;
         }
@@ -245,9 +245,18 @@ class JobOpeningsSearchService
     /**
      * @return list<string>
      */
+    public function normalizeQuery(string $rawQuery): string
+    {
+        $rawQuery = html_entity_decode(trim($rawQuery), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $rawQuery = preg_replace('/[&\/,+|;]+/u', ' ', $rawQuery) ?? $rawQuery;
+        $rawQuery = preg_replace('/\s+/u', ' ', $rawQuery) ?? $rawQuery;
+
+        return trim($rawQuery);
+    }
+
     public function tokenize(string $q): array
     {
-        $q = mb_strtolower(trim($q));
+        $q = mb_strtolower($this->normalizeQuery($q));
         if ($q === '') {
             return [];
         }

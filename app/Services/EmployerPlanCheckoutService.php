@@ -113,13 +113,13 @@ class EmployerPlanCheckoutService
             ->where('user_id', $user->id)
             ->where('type', self::PAYMENT_TYPE)
             ->where('status', Payment::STATUS_PENDING)
-            ->where('payment_gateway', Payment::GATEWAY_CHEQUE)
+            ->whereIn('payment_gateway', [Payment::GATEWAY_CHEQUE, Payment::GATEWAY_NETBANKING])
             ->where('created_at', '>=', now()->subDays(7))
             ->where('meta->plan_key', strtolower(trim($planKey)))
             ->exists();
 
         if ($hasPending) {
-            throw new InvalidArgumentException('You already have a pending cheque payment for this plan. We will activate it after verification.');
+            throw new InvalidArgumentException('You already have a pending payment for this plan. We will activate it after verification.');
         }
     }
 
@@ -129,34 +129,75 @@ class EmployerPlanCheckoutService
         string $chequeNumber,
         string $chequeDate,
     ): Payment {
+        return $this->createOfflinePayment(
+            user: $user,
+            planKey: $planKey,
+            gateway: Payment::GATEWAY_CHEQUE,
+            paymentReference: $chequeNumber,
+            paymentDate: $chequeDate,
+            paymentDateMetaKey: 'cheque_date',
+        );
+    }
+
+    public function createNetBankingPayment(
+        User $user,
+        string $planKey,
+        string $utrReference,
+        string $paymentDate,
+    ): Payment {
+        return $this->createOfflinePayment(
+            user: $user,
+            planKey: $planKey,
+            gateway: Payment::GATEWAY_NETBANKING,
+            paymentReference: $utrReference,
+            paymentDate: $paymentDate,
+            paymentDateMetaKey: 'payment_date',
+        );
+    }
+
+    protected function createOfflinePayment(
+        User $user,
+        string $planKey,
+        string $gateway,
+        string $paymentReference,
+        string $paymentDate,
+        string $paymentDateMetaKey,
+    ): Payment {
         $this->assertCanPurchase($user, $planKey);
 
         $profile = $user->referrerProfile;
         $plan = $this->resolvePurchasablePlan($planKey);
         $amounts = $this->calculateAmounts((float) $plan['price_inr']);
         $acceptedAt = now()->toIso8601String();
+        $reference = Str::limit(trim($paymentReference), 191);
+
+        $meta = [
+            'plan_key' => $plan['key'],
+            'plan_name' => $plan['name'],
+            'base_amount' => $amounts['base_amount'],
+            'gst_rate' => $amounts['gst_rate'],
+            'gst_amount' => $amounts['gst_amount'],
+            'job_credits_included' => $plan['job_credits_included'] ?? $plan['database_credits_included'] ?? 0,
+            $paymentDateMetaKey => $paymentDate,
+            'company_name' => $profile->company_name,
+            'company_email' => $profile->company_email,
+            'agreement_accepted_at' => $acceptedAt,
+            'billing_period' => $plan['billing_period'] ?? 'monthly',
+        ];
+
+        if ($gateway === Payment::GATEWAY_NETBANKING) {
+            $meta['bank_account'] = config('hirevo_plans.checkout.bank_account', []);
+        }
 
         $payment = Payment::create([
             'user_id' => $user->id,
             'type' => self::PAYMENT_TYPE,
             'amount' => $amounts['total_amount'],
             'currency' => 'INR',
-            'payment_gateway' => Payment::GATEWAY_CHEQUE,
-            'payment_reference' => Str::limit(trim($chequeNumber), 191),
+            'payment_gateway' => $gateway,
+            'payment_reference' => $reference,
             'status' => Payment::STATUS_PENDING,
-            'meta' => [
-                'plan_key' => $plan['key'],
-                'plan_name' => $plan['name'],
-                'base_amount' => $amounts['base_amount'],
-                'gst_rate' => $amounts['gst_rate'],
-                'gst_amount' => $amounts['gst_amount'],
-                'job_credits_included' => $plan['job_credits_included'] ?? $plan['database_credits_included'] ?? 0,
-                'cheque_date' => $chequeDate,
-                'company_name' => $profile->company_name,
-                'company_email' => $profile->company_email,
-                'agreement_accepted_at' => $acceptedAt,
-                'billing_period' => $plan['billing_period'] ?? 'monthly',
-            ],
+            'meta' => $meta,
         ]);
 
         $email = strtolower(trim((string) $profile->company_email));
@@ -168,8 +209,8 @@ class EmployerPlanCheckoutService
                     payment: $payment,
                     plan: $plan,
                     amounts: $amounts,
-                    chequeNumber: trim($chequeNumber),
-                    chequeDate: $chequeDate,
+                    chequeNumber: $reference,
+                    chequeDate: $paymentDate,
                 ));
             } catch (\Throwable $e) {
                 Log::warning('Employer plan agreement email failed', [

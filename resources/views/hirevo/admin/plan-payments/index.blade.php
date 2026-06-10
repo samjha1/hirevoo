@@ -11,7 +11,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h4 mb-1">Employer plan payments</h1>
-            <p class="text-muted small mb-0">Approve cheque payments to activate subscriptions on employer profiles.</p>
+            <p class="text-muted small mb-0">Approve cheque and net banking payments to activate subscriptions on employer profiles.</p>
         </div>
         <a href="{{ route('home') }}" class="btn btn-outline-secondary btn-sm">Back to site</a>
     </div>
@@ -36,7 +36,7 @@
                                 <th>Employer</th>
                                 <th>Plan</th>
                                 <th>Amount</th>
-                                <th>Cheque</th>
+                                <th>Payment</th>
                                 <th>Submitted</th>
                                 <th></th>
                             </tr>
@@ -61,8 +61,9 @@
                                     </td>
                                     <td>₹{{ number_format((float) $payment->amount, 2) }}</td>
                                     <td>
+                                        <div class="small text-muted text-uppercase">{{ str_replace('_', ' ', $payment->payment_gateway) }}</div>
                                         <div>{{ $payment->payment_reference }}</div>
-                                        <div class="small text-muted">{{ $meta['cheque_date'] ?? '' }}</div>
+                                        <div class="small text-muted">{{ $meta['cheque_date'] ?? $meta['payment_date'] ?? '' }}</div>
                                     </td>
                                     <td class="small text-muted">{{ $payment->created_at?->format('d M Y, H:i') }}</td>
                                     <td class="text-end">

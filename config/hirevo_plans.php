@@ -231,7 +231,13 @@ return [
     'checkout' => [
         'mode' => env('PLAN_CHECKOUT_MODE', 'cheque'),
         'gst_rate' => (float) env('PLAN_GST_RATE', 18),
-        'cheque_notice' => 'Currently we are accepting only cheques. Online payment methods are facing issues.',
-        'pending_message' => 'Your plan request is received. We will activate your subscription after cheque verification.',
+        'payment_notice' => 'Pay by net banking (NEFT / RTGS / IMPS). Transfer to our bank account and submit your UTR and payment date below.',
+        'pending_message' => 'Your plan request is received. We will activate your subscription after payment verification.',
+        'bank_account' => [
+            'bank_name' => 'IDFC FIRST Bank',
+            'account_name' => 'HIREVOO MARKETING AND Consultancy pvt. Ltd.',
+            'account_number' => '82828095506',
+            'ifsc' => 'IDFB0020163',
+        ],
     ],
 ];

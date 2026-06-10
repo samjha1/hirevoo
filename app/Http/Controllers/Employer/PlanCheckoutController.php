@@ -32,7 +32,7 @@ class PlanCheckoutController extends Controller
 
             return response()->json(array_merge($quote, [
                 'company_name' => $profile->company_name,
-                'cheque_notice' => config('hirevo_plans.checkout.cheque_notice'),
+                'payment_notice' => config('hirevo_plans.checkout.payment_notice'),
                 'pending_message' => config('hirevo_plans.checkout.pending_message'),
             ]));
         } catch (InvalidArgumentException $e) {
@@ -49,11 +49,11 @@ class PlanCheckoutController extends Controller
         }
 
         try {
-            $payment = $this->checkoutService->createChequePayment(
+            $payment = $this->checkoutService->createNetBankingPayment(
                 user: $user,
                 planKey: $request->validated('plan_key'),
-                chequeNumber: $request->validated('cheque_number'),
-                chequeDate: $request->validated('cheque_date'),
+                utrReference: $request->validated('utr_reference'),
+                paymentDate: $request->validated('payment_date'),
             );
 
             return response()->json([
