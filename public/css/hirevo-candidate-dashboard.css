@@ -22,7 +22,7 @@
     background: radial-gradient(ellipse 50% 80% at 95% 30%, rgba(11,31,59,.04) 0%, transparent 60%);
     pointer-events: none;
 }
-.apps-hero .container { position: relative; z-index: 1; }
+.apps-hero .container-fluid.custom-container { position: relative; z-index: 1; }
 
 .breadcrumb-row {
     display: flex;
@@ -120,11 +120,19 @@
 .stat-num { font-size: 1.25rem; font-weight: 700; line-height: 1; color: #0f172a; }
 .stat-lbl { font-size: .6875rem; color: #64748b; margin-top: .15rem; }
 
+.apps-hero .container-fluid.custom-container,
+.apps-body .container-fluid.custom-container {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
 .apps-body { padding-top: 1.5rem; }
 
 .section-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: .75rem;
     margin-bottom: 1rem;
@@ -299,6 +307,12 @@
     border: 1px dashed rgba(0,0,0,.1);
     border-radius: 14px;
 }
+.empty-state .empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
 .empty-icon {
     width: 52px; height: 52px;
     background: rgba(11,31,59,.08);
@@ -327,7 +341,7 @@
 .btn-outline-accent:hover { background: var(--hirevo-primary); color: #fff; }
 .btn-outline-accent:focus-visible { outline: 2px solid var(--hirevo-primary); outline-offset: 2px; }
 
-.apps-section { margin-bottom: 2rem; scroll-margin-top: 88px; }
+.apps-section { margin-bottom: 1.25rem; scroll-margin-top: 88px; }
 
 .apps-pagination-wrap {
     display: flex;
@@ -385,6 +399,7 @@
     gap: .75rem 1.25rem;
     align-items: center;
     box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    margin-top: 0;
 }
 .legend-title { font-size: .6875rem; font-weight: 600; color: #475569; letter-spacing: .04em; text-transform: uppercase; margin-right: .25rem; }
 .legend-item { display: flex; align-items: center; gap: .3rem; font-size: .75rem; color: #64748b; }
@@ -415,6 +430,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
     margin-bottom: 0.25rem;
+    align-items: stretch;
 }
 @media (max-width: 991px) {
     .dash-insight-grid { grid-template-columns: 1fr; }
@@ -426,6 +442,9 @@
     overflow: hidden;
     box-shadow: 0 2px 14px rgba(11, 31, 59, 0.06);
     border: 1px solid rgba(0, 0, 0, 0.06);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 .dash-card--skills {
     background: linear-gradient(145deg, #ffffff 0%, #f8fafc 55%, rgba(16, 185, 129, 0.06) 100%);
@@ -449,7 +468,13 @@
     flex-direction: column;
     justify-content: center;
 }
-.dash-card-inner { position: relative; z-index: 1; }
+.dash-card-inner {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
 .dash-badge {
     display: inline-flex;
     align-items: center;

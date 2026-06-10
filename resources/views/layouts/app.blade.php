@@ -47,6 +47,7 @@
             $candidateDashCssVer = is_file($candidateDashCss) ? (string) filemtime($candidateDashCss) : '1';
         @endphp
         <link href="{{ asset('css/hirevo-candidate-dashboard.css') }}?v={{ $candidateDashCssVer }}" rel="stylesheet">
+        @include('hirevo.candidate.partials._dashboard-styles-inline')
     @endif
     @if(request()->routeIs('terms', 'privacy'))
         @php
