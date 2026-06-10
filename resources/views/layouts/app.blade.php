@@ -35,7 +35,11 @@
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"></noscript>
     <link href="{{ asset($theme.'/assets/css/app.min.css') }}" id="app-style" rel="stylesheet">
-    <link href="{{ asset('css/hirevo-theme.css') }}" rel="stylesheet">
+    @php
+        $themeCssPath = public_path('css/hirevo-theme.css');
+        $themeCssVer = is_file($themeCssPath) ? (string) filemtime($themeCssPath) : '1';
+    @endphp
+    <link href="{{ asset('css/hirevo-theme.css') }}?v={{ $themeCssVer }}" rel="stylesheet">
     <link href="{{ asset('css/hirevo-sponsored-ads.css') }}" rel="stylesheet">
     @if(request()->routeIs('candidate.dashboard'))
         @php
@@ -50,6 +54,7 @@
             $legalTermsCssVer = is_file($legalTermsCss) ? (string) filemtime($legalTermsCss) : '1';
         @endphp
         <link href="{{ asset('css/hirevo-legal-terms.css') }}?v={{ $legalTermsCssVer }}" rel="stylesheet">
+        @include('hirevo.legal.partials._legal-styles-inline')
     @endif
     @stack('styles')
 </head>
