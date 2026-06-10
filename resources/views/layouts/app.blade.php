@@ -44,6 +44,13 @@
         @endphp
         <link href="{{ asset('css/hirevo-candidate-dashboard.css') }}?v={{ $candidateDashCssVer }}" rel="stylesheet">
     @endif
+    @if(request()->routeIs('terms', 'privacy'))
+        @php
+            $legalTermsCss = public_path('css/hirevo-legal-terms.css');
+            $legalTermsCssVer = is_file($legalTermsCss) ? (string) filemtime($legalTermsCss) : '1';
+        @endphp
+        <link href="{{ asset('css/hirevo-legal-terms.css') }}?v={{ $legalTermsCssVer }}" rel="stylesheet">
+    @endif
     @stack('styles')
 </head>
 <body class="@yield('body_class')">
