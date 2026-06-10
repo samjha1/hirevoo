@@ -72,8 +72,6 @@
 
                 <div class="col-lg-9">
                     <article class="hirevo-legal-apna__content">
-                        <h2 class="hirevo-legal-apna__doc-title">{{ strtoupper($active['title']) }}</h2>
-                        <hr class="hirevo-legal-apna__rule">
                         <div class="hirevo-legal-apna__doc-body">
                             @include($active['partial'], ['lastUpdated' => $lastUpdated])
                         </div>

@@ -17,17 +17,11 @@
 
             <h1 class="hirevo-legal-apna__page-title">Privacy Policy</h1>
 
-            <div class="row justify-content-center">
-                <div class="col-lg-10 col-xl-9">
-                    <article class="hirevo-legal-apna__content">
-                        <h2 class="hirevo-legal-apna__doc-title">Privacy Policy</h2>
-                        <hr class="hirevo-legal-apna__rule">
-                        <div class="hirevo-legal-apna__doc-body">
-                            @include('hirevo.legal.partials._privacy-content', ['lastUpdated' => $lastUpdated])
-                        </div>
-                    </article>
+            <article class="hirevo-legal-apna__content">
+                <div class="hirevo-legal-apna__doc-body">
+                    @include('hirevo.legal.partials._privacy-content', ['lastUpdated' => $lastUpdated])
                 </div>
-            </div>
+            </article>
         </div>
     </div>
 @endsection

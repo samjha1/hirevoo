@@ -1342,10 +1342,11 @@ img, video, iframe { max-width: 100%; height: auto; }
 
 .hirevo-legal-apna__content {
     min-width: 0;
+    width: 100%;
 }
 
 .hirevo-legal-apna--single .hirevo-legal-apna__content {
-    max-width: 820px;
+    max-width: none;
 }
 
 .hirevo-legal-apna__doc-title {

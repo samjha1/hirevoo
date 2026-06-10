@@ -1,4 +1,3 @@
-<h2>Cookie Policy</h2>
 <p class="hirevo-legal-apna__updated">Last Updated: {{ $lastUpdated }}</p>
 
 <p>This Cookie Policy (“Policy”) explains how <strong>Hirevoo Marketing and Consultancy Private Limited</strong> (“Hirevoo”, “Company”, “we”, “our”, or “us”) uses cookies, tracking technologies, pixels, web beacons, and similar technologies when you access or use the Hirevoo website, mobile applications, software platforms, recruitment services, ATS solutions, HRMS solutions, and related services (collectively referred to as the “Platform”).</p>

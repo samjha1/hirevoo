@@ -1,4 +1,3 @@
-<h2>Data Processing &amp; Candidate Privacy Policy</h2>
 <p class="hirevo-legal-apna__updated">Last Updated: {{ $lastUpdated }}</p>
 
 <p>This Data Processing &amp; Candidate Privacy Policy (“Policy”) governs the collection, processing, storage, access, transfer, sharing, and protection of Candidate Data made available through the Hirevoo platform.</p>

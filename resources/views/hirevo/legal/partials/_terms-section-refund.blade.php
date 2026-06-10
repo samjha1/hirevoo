@@ -1,4 +1,3 @@
-<h2>Refund, Cancellation &amp; Subscription Policy</h2>
 <p class="hirevo-legal-apna__updated">Last Updated: {{ $lastUpdated }}</p>
 
 <p>This Refund, Cancellation &amp; Subscription Policy (“Policy”) governs the purchase and use of subscription plans, recruitment services, platform access, software services, and related offerings provided by <strong>Hirevoo Marketing and Consultancy Private Limited</strong> (“Hirevoo”, “Company”, “we”, “our”, or “us”).</p>

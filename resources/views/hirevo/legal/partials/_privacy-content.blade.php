@@ -1,4 +1,3 @@
-<h2>Privacy Policy</h2>
 <p class="hirevo-legal-apna__updated">Last Updated: {{ $lastUpdated }}</p>
 
 <p><strong>Hirevoo Marketing and Consultancy Private Limited</strong> (“Hirevoo”, “Company”, “we”, “our”, or “us”) respects your privacy and is committed to protecting your personal information.</p>

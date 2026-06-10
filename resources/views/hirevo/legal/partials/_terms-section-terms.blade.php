@@ -1,4 +1,3 @@
-<h2>Terms and Conditions</h2>
 <p class="hirevo-legal-apna__updated">Last Updated: {{ $lastUpdated }}</p>
 
 <p>These Terms and Conditions (“Terms”) govern the access to and use of the website, mobile applications, software platforms, recruitment technology solutions, hiring tools, candidate databases, applicant tracking systems, employer services, and related offerings provided by <strong>Hirevoo Marketing and Consultancy Private Limited</strong> (“Hirevoo”, “Company”, “we”, “us”, or “our”).</p>
