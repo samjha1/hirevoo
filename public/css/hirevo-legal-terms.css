@@ -5,12 +5,19 @@
 .hirevo-legal-apna {
     background: #fff;
     min-height: calc(100vh - 72px);
-    padding: 24px 16px 64px;
+    padding: 24px 0 64px;
+}
+
+.hirevo-legal-apna > .container-fluid.custom-container {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .hirevo-legal-apna__inner {
     max-width: 1120px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .hirevo-legal-apna__back {
