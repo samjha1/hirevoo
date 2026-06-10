@@ -42,8 +42,6 @@
                 ← Go Back
             </button>
 
-            <h1 class="hirevo-legal-apna__page-title">Terms &amp; Conditions</h1>
-
             <div class="hirevo-legal-apna__mobile-nav d-lg-none mb-4">
                 <label for="legal-section-select" class="visually-hidden">Select policy section</label>
                 <select id="legal-section-select" class="form-select" aria-label="Select policy section">
@@ -53,30 +51,28 @@
                 </select>
             </div>
 
-            <div class="row g-4 align-items-start">
-                <div class="col-lg-3 d-none d-lg-block">
-                    <aside class="hirevo-legal-apna__sidebar sticky-top" aria-label="Policy sections">
-                        <ul class="hirevo-legal-apna__nav">
-                            @foreach($sections as $key => $section)
-                                <li>
-                                    <a href="{{ route('terms', ['section' => $key]) }}"
-                                       class="{{ $activeSection === $key ? 'is-active' : '' }}"
-                                       @if($activeSection === $key) aria-current="page" @endif>
-                                        {{ $section['label'] }}
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </aside>
-                </div>
+            <div class="hirevo-legal-apna__layout">
+                <aside class="hirevo-legal-apna__sidebar d-none d-lg-block" aria-label="Policy sections">
+                    <p class="hirevo-legal-apna__nav-heading">Policies</p>
+                    <ul class="hirevo-legal-apna__nav">
+                        @foreach($sections as $key => $section)
+                            <li>
+                                <a href="{{ route('terms', ['section' => $key]) }}"
+                                   class="{{ $activeSection === $key ? 'is-active' : '' }}"
+                                   @if($activeSection === $key) aria-current="page" @endif>
+                                    {{ $section['label'] }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </aside>
 
-                <div class="col-lg-9">
-                    <article class="hirevo-legal-apna__content">
-                        <div class="hirevo-legal-apna__doc-body">
-                            @include($active['partial'], ['lastUpdated' => $lastUpdated])
-                        </div>
-                    </article>
-                </div>
+                <article class="hirevo-legal-apna__content">
+                    <h1 class="hirevo-legal-apna__page-title">{{ $active['label'] }}</h1>
+                    <div class="hirevo-legal-apna__doc-body">
+                        @include($active['partial'], ['lastUpdated' => $lastUpdated])
+                    </div>
+                </article>
             </div>
         </div>
     </div>

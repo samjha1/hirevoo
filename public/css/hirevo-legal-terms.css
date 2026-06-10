@@ -37,31 +37,51 @@
     font-size: 1.75rem;
     font-weight: 700;
     color: #202124;
-    margin: 0 0 28px;
+    margin: 0 0 24px;
     line-height: 1.25;
 }
 
+.hirevo-legal-apna__layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+}
+
 .hirevo-legal-apna__sidebar {
+    position: sticky;
     top: 88px;
 }
 
+.hirevo-legal-apna__nav-heading {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #80868b;
+    margin: 0 0 12px;
+}
+
 .hirevo-legal-apna__nav {
-    list-style: disc;
-    padding-left: 1.25rem;
+    list-style: none;
+    padding-left: 0;
     margin: 0;
 }
 
 .hirevo-legal-apna__nav li {
-    margin-bottom: 14px;
-    color: #202124;
+    margin-bottom: 10px;
 }
 
 .hirevo-legal-apna__nav a {
+    display: block;
     color: #3c4043;
     text-decoration: none;
     font-size: 0.9375rem;
     line-height: 1.45;
     font-weight: 500;
+    padding: 4px 0;
+    border-left: 2px solid transparent;
+    padding-left: 12px;
 }
 
 .hirevo-legal-apna__nav a:hover {
@@ -71,6 +91,7 @@
 .hirevo-legal-apna__nav a.is-active {
     color: #1aa399;
     font-weight: 700;
+    border-left-color: #1aa399;
 }
 
 .hirevo-legal-apna__content {
@@ -174,5 +195,10 @@
 @media (max-width: 991.98px) {
     .hirevo-legal-apna {
         padding-top: 16px;
+    }
+
+    .hirevo-legal-apna__layout {
+        grid-template-columns: 1fr;
+        gap: 0;
     }
 }
