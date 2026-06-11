@@ -10,7 +10,7 @@
     var userName = @json(auth()->user()->name);
     var userEmail = @json(auth()->user()->email);
     var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    var state = { planKey: null, step: 1, quote: null };
+    var state = { planKey: null, step: 1, quote: null, appliedCoupon: null };
 
     var els = {
         notice: document.getElementById('plan-checkout-notice'),
@@ -22,6 +22,15 @@
         company: document.getElementById('plan-checkout-company'),
         companyHint: document.getElementById('plan-checkout-company-hint'),
         planName: document.getElementById('plan-checkout-plan-name'),
+        couponCode: document.getElementById('plan-checkout-coupon-code'),
+        couponApply: document.getElementById('plan-checkout-coupon-apply'),
+        couponHint: document.getElementById('plan-checkout-coupon-hint'),
+        couponSuccess: document.getElementById('plan-checkout-coupon-success'),
+        originalRow: document.getElementById('plan-checkout-original-row'),
+        originalBase: document.getElementById('plan-checkout-original-base'),
+        discountRow: document.getElementById('plan-checkout-discount-row'),
+        discountLabel: document.getElementById('plan-checkout-discount-label'),
+        discount: document.getElementById('plan-checkout-discount'),
         base: document.getElementById('plan-checkout-base'),
         gstLabel: document.getElementById('plan-checkout-gst-label'),
         gst: document.getElementById('plan-checkout-gst'),
@@ -91,12 +100,19 @@
     function resetModal() {
         state.planKey = null;
         state.quote = null;
+        state.appliedCoupon = null;
         state.step = 1;
         hideError();
         hideSuccess();
         setStep(1);
         if (els.utr) els.utr.value = '';
         if (els.paymentDate) els.paymentDate.value = '';
+        if (els.couponCode) els.couponCode.value = '';
+        if (els.couponSuccess) {
+            els.couponSuccess.textContent = '';
+            els.couponSuccess.classList.add('d-none');
+        }
+        if (els.couponApply) els.couponApply.textContent = 'Apply';
         els.agreementCheck.checked = false;
         els.nextBtn.disabled = false;
         els.submitBtn.disabled = false;
@@ -112,6 +128,30 @@
         els.company.value = data.company_name || '';
         els.companyHint.hidden = !!data.company_name;
         els.planName.value = data.plan_name || '';
+
+        var hasDiscount = !!data.coupon_applied && Number(data.discount_amount) > 0;
+        if (els.originalRow) els.originalRow.hidden = !hasDiscount;
+        if (els.discountRow) els.discountRow.hidden = !hasDiscount;
+        if (hasDiscount) {
+            els.originalBase.textContent = formatInr(data.original_base_amount);
+            els.discountLabel.textContent = 'Discount (' + data.discount_percent + '%)';
+            els.discount.textContent = '−' + formatInr(data.discount_amount);
+            state.appliedCoupon = data.coupon_code || null;
+            if (els.couponCode) els.couponCode.value = data.coupon_code || '';
+            if (els.couponSuccess) {
+                els.couponSuccess.textContent = 'Coupon "' + data.coupon_code + '" applied.';
+                els.couponSuccess.classList.remove('d-none');
+            }
+            if (els.couponApply) els.couponApply.textContent = 'Applied';
+        } else {
+            state.appliedCoupon = null;
+            if (els.couponSuccess) {
+                els.couponSuccess.textContent = '';
+                els.couponSuccess.classList.add('d-none');
+            }
+            if (els.couponApply) els.couponApply.textContent = 'Apply';
+        }
+
         els.base.textContent = formatInr(data.base_amount);
         els.gstLabel.textContent = 'GST (' + data.gst_rate + '%)';
         els.gst.textContent = formatInr(data.gst_amount);
@@ -142,7 +182,12 @@
             '<p><strong>1. Subscription &amp; access</strong></p>' +
             '<p>Subscription fees provide access to Hirevo platform features for the selected billing period. Payment is for access, not for any guaranteed hiring outcome.</p>' +
             '<p><strong>2. Fees &amp; payment</strong></p>' +
-            '<p>Base amount: ' + formatInr(q.base_amount) + '. GST (' + q.gst_rate + '%): ' +
+            '<p>' +
+            (q.coupon_applied && Number(q.discount_amount) > 0
+                ? 'List price: ' + formatInr(q.original_base_amount) + '. Discount (' + q.discount_percent + '%): −' +
+                    formatInr(q.discount_amount) + '. Coupon: ' + escapeHtml(q.coupon_code || '') + '. '
+                : '') +
+            'Base amount: ' + formatInr(q.base_amount) + '. GST (' + q.gst_rate + '%): ' +
             formatInr(q.gst_amount) + '. Total payable: ' + formatInr(q.total_amount) +
             ' (INR). ' + paymentDetailLine() + '</p>' +
             '<p>Subscription activation will occur after payment verification.</p>' +
@@ -177,13 +222,36 @@
     }
 
     function buildCheckoutPayload() {
-        return {
+        var payload = {
             plan_key: state.planKey,
             payment_method: 'netbanking',
             agreement_accepted: '1',
             utr_reference: els.utr.value.trim(),
             payment_date: els.paymentDate.value,
         };
+
+        if (state.appliedCoupon) {
+            payload.coupon_code = state.appliedCoupon;
+        }
+
+        return payload;
+    }
+
+    function fetchQuote(planKey, couponCode) {
+        var url = quoteUrlTemplate.replace('__PLAN__', encodeURIComponent(planKey));
+        if (couponCode) {
+            url += (url.indexOf('?') >= 0 ? '&' : '?') + 'coupon_code=' + encodeURIComponent(couponCode);
+        }
+
+        return fetch(url, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+        }).then(function (res) {
+            return res.json().then(function (data) {
+                if (!res.ok) throw new Error(data.message || 'Unable to load plan quote.');
+                return data;
+            });
+        });
     }
 
     function openCheckout(planKey) {
@@ -193,18 +261,7 @@
         setLoading(true);
         modal.show();
 
-        var url = quoteUrlTemplate.replace('__PLAN__', encodeURIComponent(planKey));
-
-        fetch(url, {
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin',
-        })
-            .then(function (res) {
-                return res.json().then(function (data) {
-                    if (!res.ok) throw new Error(data.message || 'Unable to load plan quote.');
-                    return data;
-                });
-            })
+        fetchQuote(planKey, null)
             .then(function (data) {
                 populateQuote(data);
                 setLoading(false);
@@ -215,6 +272,47 @@
                 els.step1.hidden = true;
                 els.nextBtn.classList.add('d-none');
             });
+    }
+
+    function applyCoupon() {
+        if (!state.planKey || !els.couponCode) return;
+
+        hideError();
+        var code = els.couponCode.value.trim();
+        if (!code) {
+            showError('Please enter a coupon code.');
+            return;
+        }
+
+        setLoading(true);
+        fetchQuote(state.planKey, code)
+            .then(function (data) {
+                populateQuote(data);
+                setLoading(false);
+            })
+            .catch(function (err) {
+                setLoading(false);
+                state.appliedCoupon = null;
+                if (els.couponSuccess) {
+                    els.couponSuccess.textContent = '';
+                    els.couponSuccess.classList.add('d-none');
+                }
+                if (els.couponApply) els.couponApply.textContent = 'Apply';
+                showError(err.message);
+            });
+    }
+
+    if (els.couponApply) {
+        els.couponApply.addEventListener('click', applyCoupon);
+    }
+
+    if (els.couponCode) {
+        els.couponCode.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                applyCoupon();
+            }
+        });
     }
 
     document.querySelectorAll('.js-plan-checkout').forEach(function (btn) {

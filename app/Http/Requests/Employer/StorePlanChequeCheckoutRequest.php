@@ -35,6 +35,7 @@ class StorePlanChequeCheckoutRequest extends FormRequest
             'utr_reference' => ['required', 'string', 'max:191'],
             'payment_date' => ['required', 'date', 'before_or_equal:today'],
             'agreement_accepted' => ['required', 'accepted'],
+            'coupon_code' => ['nullable', 'string', 'max:64'],
         ];
     }
 

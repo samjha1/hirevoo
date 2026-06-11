@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\ReferrerProfile;
 use App\Rules\StrictEmail;
 use App\Rules\ValidEmployerReferralCode;
+use App\Services\CandidateLeadService;
 use App\Services\CrmEmployerProspectBridge;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -85,6 +86,8 @@ class RegisterController extends Controller
             return redirect(route('verify-email'))
                 ->with('success', 'Welcome! Please verify your email to activate your account.');
         }
+
+        app(CandidateLeadService::class)->applyPendingReferralIntent($user->id);
 
         return redirect()
             ->route('profile')

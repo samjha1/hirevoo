@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\CandidateProfile;
 use App\Models\User;
+use App\Services\CandidateLeadService;
 use App\Support\EmployerVerification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -113,6 +114,8 @@ class SocialAuthController extends Controller
                 ['user_id' => $user->id],
                 []
             );
+
+            app(CandidateLeadService::class)->applyPendingReferralIntent($user->id);
         }
 
         Auth::login($user, true);

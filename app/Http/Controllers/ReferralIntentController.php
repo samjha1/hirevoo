@@ -56,7 +56,7 @@ class ReferralIntentController extends Controller
                 );
             }
         } else {
-            $candidateLeads->recordGuestReferral(
+            $candidateLeads->storePendingReferralIntent(
                 $source,
                 $request->filled('job_role_id') ? (int) $request->job_role_id : null,
                 $request->filled('employer_job_id') ? (int) $request->employer_job_id : null

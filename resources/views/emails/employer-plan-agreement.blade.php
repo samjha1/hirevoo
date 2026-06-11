@@ -27,6 +27,10 @@
                                     <td style="padding:16px 18px;font-size:14px;">
                                         <p style="margin:0 0 8px;"><strong>Cheque number:</strong> {{ $chequeNumber }}</p>
                                         <p style="margin:0 0 8px;"><strong>Cheque date:</strong> {{ \Illuminate\Support\Carbon::parse($chequeDate)->format('d M Y') }}</p>
+                                        @if(!empty($amounts['coupon_applied']) && (float) ($amounts['discount_amount'] ?? 0) > 0)
+                                            <p style="margin:0 0 8px;"><strong>List price:</strong> ₹{{ number_format((float) ($amounts['original_base_amount'] ?? 0), 2) }}</p>
+                                            <p style="margin:0 0 8px;"><strong>Discount ({{ rtrim(rtrim(number_format((float) ($amounts['discount_percent'] ?? 0), 2), '0'), '.') }}%):</strong> −₹{{ number_format((float) ($amounts['discount_amount'] ?? 0), 2) }} @if(!empty($amounts['coupon_code']))<span style="color:#059669;">({{ $amounts['coupon_code'] }})</span>@endif</p>
+                                        @endif
                                         <p style="margin:0 0 8px;"><strong>Base amount:</strong> ₹{{ number_format((float) ($amounts['base_amount'] ?? 0), 2) }}</p>
                                         <p style="margin:0 0 8px;"><strong>GST ({{ number_format((float) ($amounts['gst_rate'] ?? 18), 0) }}%):</strong> ₹{{ number_format((float) ($amounts['gst_amount'] ?? 0), 2) }}</p>
                                         <p style="margin:0;"><strong>Total payable:</strong> ₹{{ number_format((float) ($amounts['total_amount'] ?? 0), 2) }}</p>

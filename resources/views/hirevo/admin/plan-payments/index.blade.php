@@ -13,7 +13,10 @@
             <h1 class="h4 mb-1">Employer plan payments</h1>
             <p class="text-muted small mb-0">Approve cheque and net banking payments to activate subscriptions on employer profiles.</p>
         </div>
-        <a href="{{ route('home') }}" class="btn btn-outline-secondary btn-sm">Back to site</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.plan-coupons.index') }}" class="btn btn-outline-primary btn-sm">Coupon codes</a>
+            <a href="{{ route('home') }}" class="btn btn-outline-secondary btn-sm">Back to site</a>
+        </div>
     </div>
 
     @if(session('success'))
@@ -59,7 +62,12 @@
                                             <div class="small text-muted">+{{ $meta['job_credits_included'] }} job credits</div>
                                         @endif
                                     </td>
-                                    <td>₹{{ number_format((float) $payment->amount, 2) }}</td>
+                                    <td>
+                                        ₹{{ number_format((float) $payment->amount, 2) }}
+                                        @if(!empty($meta['coupon_code']))
+                                            <div class="small text-success">Coupon: {{ $meta['coupon_code'] }} (−₹{{ number_format((float) ($meta['discount_amount'] ?? 0), 2) }})</div>
+                                        @endif
+                                    </td>
                                     <td>
                                         <div class="small text-muted text-uppercase">{{ str_replace('_', ' ', $payment->payment_gateway) }}</div>
                                         <div>{{ $payment->payment_reference }}</div>

@@ -81,7 +81,7 @@ class ResumeController extends Controller
         $user->refresh();
         $user->syncCandidateProfileCompletion();
 
-        $this->candidateLeads->ensureCandidateCrmLead($user->id, 'resume_upload');
+        $this->candidateLeads->ensureCandidateLeadFromActivity($user->id, $resume, 'resume_upload');
 
         if ($request->input('return_to') === 'profile') {
             return redirect()->route('profile')

@@ -179,28 +179,73 @@ class CandidateLeadService
         return $lead->fresh();
     }
 
-    public function recordGuestReferral(string $source, ?int $jobRoleId, ?int $employerJobId): Lead
+    /**
+     * Remember referral intent for guests — lead row is created only after signup (with candidate_id).
+     */
+    public function storePendingReferralIntent(string $source, ?int $jobRoleId, ?int $employerJobId): void
     {
-        $meta = ['source' => $source];
-        if (auth()->check()) {
-            $meta['user_id'] = auth()->id();
-            $u = auth()->user();
-            $meta['account'] = $u->isCandidate() ? 'candidate' : ($u->isReferrer() ? 'referrer' : 'other');
+        session([
+            'pending_referral_source' => $source,
+            'pending_referral_job_role_id' => $jobRoleId,
+            'pending_referral_employer_job_id' => $employerJobId,
+        ]);
+    }
+
+    /**
+     * Create or update the candidate lead from session referral intent (if any).
+     */
+    public function applyPendingReferralIntent(int $candidateId, ?Resume $resume = null): ?Lead
+    {
+        $source = session('pending_referral_source');
+        if (! $source) {
+            return null;
         }
 
-        return Lead::query()->create([
-            'candidate_id' => null,
-            'skill_analysis_id' => null,
-            'job_role_id' => $jobRoleId,
-            'employer_job_id' => $employerJobId,
-            'upskill_opportunity_id' => null,
-            'match_percentage' => null,
-            'missing_skills' => null,
-            'intent_score' => null,
-            'status' => 'available',
-            'referral_source' => $source,
-            'lead_summary' => json_encode($meta),
+        $jobRoleId = session('pending_referral_job_role_id');
+        $employerJobId = session('pending_referral_employer_job_id');
+
+        session()->forget([
+            'pending_referral_source',
+            'pending_referral_job_role_id',
+            'pending_referral_employer_job_id',
         ]);
+
+        if ($resume && $jobRoleId) {
+            $jobRole = JobRole::with('requiredSkills')->find($jobRoleId);
+            if ($jobRole) {
+                $lead = $this->recordSkillGapLead($resume, $jobRole);
+                $this->tagLatestLead($candidateId, ['job_role_id' => $jobRole->id], $source);
+
+                return $lead;
+            }
+        }
+
+        if ($resume && $employerJobId) {
+            $job = EmployerJob::where('status', 'active')->find($employerJobId);
+            if ($job) {
+                $lead = $this->recordEmployerJobLead($resume, $job, null, $source);
+                $this->tagLatestLead($candidateId, ['employer_job_id' => $job->id], $source);
+
+                return $lead;
+            }
+        }
+
+        if ($resume) {
+            return $this->recordGenericReferralLead($candidateId, $source);
+        }
+
+        return $this->recordReferralLeadWithoutResume(
+            $candidateId,
+            $source,
+            $jobRoleId ? (int) $jobRoleId : null,
+            $employerJobId ? (int) $employerJobId : null,
+        );
+    }
+
+    public function ensureCandidateLeadFromActivity(int $candidateId, ?Resume $resume = null, string $fallbackSource = 'resume_upload'): Lead
+    {
+        return $this->applyPendingReferralIntent($candidateId, $resume)
+            ?? $this->ensureCandidateCrmLead($candidateId, $fallbackSource);
     }
 
     protected function findCandidateLead(int $candidateId): ?Lead

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CandidateProfile;
 use App\Models\User;
 use App\Notifications\WelcomeSetPasswordNotification;
+use App\Services\CandidateLeadService;
 use App\Services\CandidateProfileFillerFromResume;
 use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +21,8 @@ class GuestResumeController extends Controller
 {
     public function __construct(
         protected ResumeAnalysisService $resumeAnalysis,
-        protected CandidateProfileFillerFromResume $profileFiller
+        protected CandidateProfileFillerFromResume $profileFiller,
+        protected CandidateLeadService $candidateLeads,
     ) {}
 
     /**
@@ -110,6 +112,8 @@ class GuestResumeController extends Controller
             $existingUser->refresh();
             $existingUser->syncCandidateProfileCompletion();
 
+            $this->candidateLeads->ensureCandidateLeadFromActivity($existingUser->id, $resume, 'resume_upload');
+
             Auth::login($existingUser);
 
             return redirect()->route('resume.results', $resume)
@@ -151,6 +155,8 @@ class GuestResumeController extends Controller
 
         $user->refresh();
         $user->syncCandidateProfileCompletion();
+
+        $this->candidateLeads->ensureCandidateLeadFromActivity($user->id, $resume, 'resume_upload');
 
         Auth::login($user);
 

@@ -38,8 +38,26 @@
                         </div>
                     </div>
 
+                    <div class="plan-checkout-coupon mb-3">
+                        <label for="plan-checkout-coupon-code" class="form-label fw-500 mb-2">Coupon code</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control plan-checkout-input" id="plan-checkout-coupon-code" maxlength="64" autocomplete="off" placeholder="Enter coupon code">
+                            <button type="button" class="btn btn-outline-secondary" id="plan-checkout-coupon-apply">Apply</button>
+                        </div>
+                        <div class="form-text" id="plan-checkout-coupon-hint">Have a promo code? Apply it before payment.</div>
+                        <div class="small text-success mt-1 d-none" id="plan-checkout-coupon-success"></div>
+                    </div>
+
                     <div class="plan-checkout-summary mb-3">
                         <div class="plan-checkout-summary__title">Order summary</div>
+                        <div class="d-flex justify-content-between small mb-1" id="plan-checkout-original-row" hidden>
+                            <span>List price</span>
+                            <span id="plan-checkout-original-base">—</span>
+                        </div>
+                        <div class="d-flex justify-content-between small mb-1 text-success" id="plan-checkout-discount-row" hidden>
+                            <span id="plan-checkout-discount-label">Discount</span>
+                            <span id="plan-checkout-discount">—</span>
+                        </div>
                         <div class="d-flex justify-content-between small mb-1">
                             <span>Base amount</span>
                             <span id="plan-checkout-base">—</span>
@@ -175,6 +193,13 @@
     .plan-checkout-input:focus {
         border-color: #2EC4B6;
         box-shadow: 0 0 0 3px rgba(46,196,182,0.15);
+    }
+    .plan-checkout-coupon .input-group .btn {
+        border-radius: 0 10px 10px 0;
+        font-weight: 600;
+    }
+    .plan-checkout-coupon .input-group .form-control {
+        border-radius: 10px 0 0 10px;
     }
     .plan-checkout-summary {
         background: linear-gradient(135deg, #F8FAFC, #F1F5F9);

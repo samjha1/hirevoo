@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\EmployerPlanAgreementMail;
 use App\Models\EmployerPlan;
 use App\Models\Payment;
+use App\Models\PlanCoupon;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -17,6 +18,7 @@ class EmployerPlanCheckoutService
 
     public function __construct(
         protected EmployerPlanService $planService,
+        protected PlanCouponService $couponService,
     ) {}
 
     public function isChequeMode(): bool
@@ -51,10 +53,11 @@ class EmployerPlanCheckoutService
     /**
      * @return array<string, mixed>
      */
-    public function quote(string $planKey): array
+    public function quote(string $planKey, ?string $couponCode = null): array
     {
         $plan = $this->resolvePurchasablePlan($planKey);
-        $amounts = $this->calculateAmounts((float) $plan['price_inr']);
+        $coupon = $this->resolveOptionalCoupon($couponCode, $plan['key']);
+        $amounts = $this->calculateAmounts((float) $plan['price_inr'], $coupon);
 
         return array_merge([
             'plan_key' => $plan['key'],
@@ -67,19 +70,39 @@ class EmployerPlanCheckoutService
     /**
      * @return array<string, mixed>
      */
-    public function calculateAmounts(float $baseAmount): array
+    public function calculateAmounts(float $listPrice, ?PlanCoupon $coupon = null): array
     {
         $gstRate = (float) config('hirevo_plans.checkout.gst_rate', 18);
+        $originalBase = round($listPrice, 2);
+        $discountPercent = $coupon !== null ? (float) $coupon->discount_percent : 0.0;
+        $discountAmount = $coupon !== null
+            ? round($originalBase * $discountPercent / 100, 2)
+            : 0.0;
+        $baseAmount = round(max(0, $originalBase - $discountAmount), 2);
         $gstAmount = round($baseAmount * $gstRate / 100, 2);
         $totalAmount = round($baseAmount + $gstAmount, 2);
 
         return [
+            'original_base_amount' => $originalBase,
             'base_amount' => $baseAmount,
+            'discount_percent' => $discountPercent,
+            'discount_amount' => $discountAmount,
             'gst_rate' => $gstRate,
             'gst_amount' => $gstAmount,
             'total_amount' => $totalAmount,
             'currency' => 'INR',
+            'coupon_code' => $coupon?->code,
+            'coupon_applied' => $coupon !== null,
         ];
+    }
+
+    protected function resolveOptionalCoupon(?string $couponCode, string $planKey): ?PlanCoupon
+    {
+        if ($couponCode === null || trim($couponCode) === '') {
+            return null;
+        }
+
+        return $this->couponService->resolveForPlan($couponCode, $planKey);
     }
 
     public function assertCanPurchase(User $user, string $planKey): void
@@ -144,6 +167,7 @@ class EmployerPlanCheckoutService
         string $planKey,
         string $utrReference,
         string $paymentDate,
+        ?string $couponCode = null,
     ): Payment {
         return $this->createOfflinePayment(
             user: $user,
@@ -152,6 +176,7 @@ class EmployerPlanCheckoutService
             paymentReference: $utrReference,
             paymentDate: $paymentDate,
             paymentDateMetaKey: 'payment_date',
+            couponCode: $couponCode,
         );
     }
 
@@ -162,19 +187,24 @@ class EmployerPlanCheckoutService
         string $paymentReference,
         string $paymentDate,
         string $paymentDateMetaKey,
+        ?string $couponCode = null,
     ): Payment {
         $this->assertCanPurchase($user, $planKey);
 
         $profile = $user->referrerProfile;
         $plan = $this->resolvePurchasablePlan($planKey);
-        $amounts = $this->calculateAmounts((float) $plan['price_inr']);
+        $coupon = $this->resolveOptionalCoupon($couponCode, $plan['key']);
+        $amounts = $this->calculateAmounts((float) $plan['price_inr'], $coupon);
         $acceptedAt = now()->toIso8601String();
         $reference = Str::limit(trim($paymentReference), 191);
 
         $meta = [
             'plan_key' => $plan['key'],
             'plan_name' => $plan['name'],
+            'original_base_amount' => $amounts['original_base_amount'],
             'base_amount' => $amounts['base_amount'],
+            'discount_percent' => $amounts['discount_percent'],
+            'discount_amount' => $amounts['discount_amount'],
             'gst_rate' => $amounts['gst_rate'],
             'gst_amount' => $amounts['gst_amount'],
             'job_credits_included' => $plan['job_credits_included'] ?? $plan['database_credits_included'] ?? 0,
@@ -184,6 +214,11 @@ class EmployerPlanCheckoutService
             'agreement_accepted_at' => $acceptedAt,
             'billing_period' => $plan['billing_period'] ?? 'monthly',
         ];
+
+        if ($coupon !== null) {
+            $meta['coupon_code'] = $coupon->code;
+            $meta['coupon_id'] = $coupon->id;
+        }
 
         if ($gateway === Payment::GATEWAY_NETBANKING) {
             $meta['bank_account'] = config('hirevo_plans.checkout.bank_account', []);
@@ -199,6 +234,10 @@ class EmployerPlanCheckoutService
             'status' => Payment::STATUS_PENDING,
             'meta' => $meta,
         ]);
+
+        if ($coupon !== null) {
+            $coupon->incrementUsage();
+        }
 
         $email = strtolower(trim((string) $profile->company_email));
         if ($email !== '') {

@@ -27,7 +27,8 @@ class PlanCheckoutController extends Controller
 
         try {
             $this->checkoutService->assertCanPurchase($user, $planKey);
-            $quote = $this->checkoutService->quote($planKey);
+            $couponCode = request()->query('coupon_code');
+            $quote = $this->checkoutService->quote($planKey, is_string($couponCode) ? $couponCode : null);
             $profile = $user->referrerProfile;
 
             return response()->json(array_merge($quote, [
@@ -54,6 +55,7 @@ class PlanCheckoutController extends Controller
                 planKey: $request->validated('plan_key'),
                 utrReference: $request->validated('utr_reference'),
                 paymentDate: $request->validated('payment_date'),
+                couponCode: $request->validated('coupon_code'),
             );
 
             return response()->json([

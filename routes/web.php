@@ -25,6 +25,7 @@ use App\Http\Controllers\CareerConsultationController;
 use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\ReferralIntentController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\Admin\PlanCouponController as AdminPlanCouponController;
 use App\Http\Controllers\Admin\PlanPaymentController as AdminPlanPaymentController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
@@ -162,4 +163,5 @@ Route::post('/referral-signup', [ReferralSignupController::class, 'store'])->mid
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/plan-payments', [AdminPlanPaymentController::class, 'index'])->name('plan-payments.index');
     Route::post('/plan-payments/{payment}/approve', [AdminPlanPaymentController::class, 'approve'])->name('plan-payments.approve');
+    Route::resource('plan-coupons', AdminPlanCouponController::class)->except(['show']);
 });
