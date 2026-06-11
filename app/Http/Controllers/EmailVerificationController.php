@@ -121,7 +121,7 @@ class EmailVerificationController extends Controller
                 'is_approved' => true,
                 'approved_at' => now(),
                 'company_email_verified' => true,
-                'credits' => (int) config('hirevo_plans.employer_approval_credits', 1),
+                'credits' => 0,
             ]);
         }
 
