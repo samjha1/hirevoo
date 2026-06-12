@@ -34,7 +34,7 @@ class EmployerPlanAgreementMail extends Mailable
         $planName = (string) ($this->plan['name'] ?? 'Plan');
 
         return new Envelope(
-            subject: 'Hirevo '.$planName.' subscription agreement — cheque payment pending',
+            subject: 'Hirevo '.$planName.' — payment received, pending verification',
         );
     }
 
