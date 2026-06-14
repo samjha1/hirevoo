@@ -187,6 +187,63 @@ class GptService
     }
 
     /**
+     * Map a talent pool keyword search to a sector label and related search terms.
+     *
+     * @return array{sector: string, keywords: list<string>}|null
+     */
+    public function expandTalentPoolSearchTerms(string $query): ?array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return null;
+        }
+
+        $departments = implode(', ', config('hirevo.employer_job_departments', []));
+        $messages = [
+            [
+                'role' => 'system',
+                'content' => 'You help employers search IT staffing and recruitment talent pools in India. '
+                    . 'Given a search query, infer the closest job sector/department and 5-8 related keywords '
+                    . '(job titles, skills, role names) that would find similar candidates. '
+                    . 'Handle staffing jargon (e.g. bench sales, benchsales recruiter → recruitment/staffing). '
+                    . 'Reply ONLY with JSON: {"sector":"...", "keywords":["...", "..."]}. '
+                    . 'No markdown. Sector must be one of: '.$departments.', Human Resources & Recruitment, or a short custom sector name.',
+            ],
+            [
+                'role' => 'user',
+                'content' => 'Search query: '.$query,
+            ],
+        ];
+
+        $response = $this->chat($messages, 220);
+        if (! $response) {
+            return null;
+        }
+
+        $decoded = $this->parseJsonObject($response);
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $sector = trim((string) ($decoded['sector'] ?? ''));
+        $keywords = [];
+        foreach ($decoded['keywords'] ?? [] as $item) {
+            if (is_string($item) && trim($item) !== '') {
+                $keywords[] = trim($item);
+            }
+        }
+
+        if ($sector === '' || $keywords === []) {
+            return null;
+        }
+
+        return [
+            'sector' => $sector,
+            'keywords' => array_values(array_unique($keywords)),
+        ];
+    }
+
+    /**
      * Single LLM round-trip: summary + ATS score + explanation + skills (replaces three separate calls).
      *
      * @return array{summary: string, score: int, explanation: string, skills: list<string>}|null

@@ -9,6 +9,7 @@ use App\Models\TalentPoolCandidate;
 use App\Models\User;
 use App\Services\EmployerPlanService;
 use App\Services\TalentPoolSearchService;
+use App\Support\TalentPoolDisplay;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,15 +51,14 @@ class TalentPoolController extends Controller
         $canAccess = $this->planService->canAccessTalentPool($profile);
 
         $filters = $this->filtersFromRequest($request, $user->id);
-        $hasCriteria = $this->searchService->hasSearchCriteria($filters);
         $perPage = max(10, min(30, (int) $request->input('per_page', 20)));
         $result = $this->searchService->search(
             $user->id,
             $filters,
             $perPage,
             (int) $request->input('page', 1),
-            withFacets: $hasCriteria,
-            includeTotal: true,
+            withFacets: false,
+            includeTotal: false,
         );
 
         $items = $result['items']->map(fn (array $row) => $this->planService->maskCandidateRow($row, $user, true));
@@ -66,17 +66,18 @@ class TalentPoolController extends Controller
         return view('hirevo.employer.talent-pool.results', [
             'filters' => $filters,
             'selectedLocations' => $this->searchService->selectedLocations($filters),
-            'facets' => $result['facets'] ?? ['locations' => [], 'education' => [], 'experience' => []],
+            'facets' => TalentPoolDisplay::applyFacetCounts(['locations' => [], 'education' => [], 'experience' => []]),
             'activeFilterCount' => $result['active_filter_count'],
             'educationOptions' => CandidateProfile::educationDegreeValues(),
             'candidates' => $items,
             'paginator' => $result['paginator'],
             'perPage' => $perPage,
-            'totalCount' => (int) ($result['total_count'] ?? 0),
-            'matchingSkills' => $this->searchService->parseListFilterPublic($filters['skills'] ?? ''),
+            'totalCount' => isset($result['total_count']) ? TalentPoolDisplay::count((int) $result['total_count']) : null,
+            'matchingSkills' => $this->matchingHighlightTerms($filters, $result['related_fallback'] ?? null),
             'requiresSearch' => (bool) ($result['requires_search'] ?? false),
             'canAccessTalentPool' => $canAccess,
             'currentPlan' => $this->planService->planKey($profile),
+            'relatedFallback' => $result['related_fallback'] ?? null,
         ]);
     }
 
@@ -96,10 +97,46 @@ class TalentPoolController extends Controller
             ]);
         }
 
+        $countOnly = $request->boolean('count_only');
+
+        if ($countOnly) {
+            return response()->json($this->facetCountPayload($filters));
+        }
+
+        $facetFilters = $this->searchService->filtersForFacetComputation($filters);
+        $facets = TalentPoolDisplay::applyFacetCounts($this->searchService->filterFacets($facetFilters));
+
         return response()->json([
-            'facets' => $this->searchService->filterFacets($filters),
-            'total_count' => $this->searchService->countMatchingCandidates($filters),
+            'facets' => $facets,
+            'filters_html' => view('hirevo.employer.talent-pool._filters', [
+                'filters' => $filters,
+                'selectedLocations' => $this->searchService->selectedLocations($filters),
+                'facets' => $facets,
+                'activeFilterCount' => $this->searchService->countActiveFilters($filters),
+                'educationOptions' => CandidateProfile::educationDegreeValues(),
+            ])->render(),
+            ...$this->facetCountPayload($filters),
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{total_count: int, exact_count?: int, related_fallback?: array<string, mixed>|null}
+     */
+    protected function facetCountPayload(array $filters): array
+    {
+        $counts = $this->searchService->countWithRelatedFallback($filters);
+
+        $payload = [
+            'total_count' => TalentPoolDisplay::count((int) $counts['total_count']),
+            'exact_count' => TalentPoolDisplay::count((int) $counts['exact_count']),
+        ];
+
+        if (! empty($counts['related_fallback'])) {
+            $payload['related_fallback'] = $counts['related_fallback'];
+        }
+
+        return $payload;
     }
 
     public function search(Request $request): JsonResponse|RedirectResponse
@@ -131,24 +168,26 @@ class TalentPoolController extends Controller
             'candidates' => $items,
             'paginator' => $result['paginator'],
             'perPage' => $perPage,
-            'totalCount' => (int) ($result['total_count'] ?? 0),
-            'matchingSkills' => $this->searchService->parseListFilterPublic($filters['skills'] ?? ''),
+            'totalCount' => TalentPoolDisplay::count((int) ($result['total_count'] ?? 0)),
+            'matchingSkills' => $this->matchingHighlightTerms($filters, $result['related_fallback'] ?? null),
             'requiresSearch' => (bool) ($result['requires_search'] ?? false),
             'canAccessTalentPool' => $canAccess,
+            'relatedFallback' => $result['related_fallback'] ?? null,
         ])->render();
 
         $payload = [
             'html' => $html,
             'active_filter_count' => $result['active_filter_count'],
-            'total_count' => $includeTotal ? (int) ($result['total_count'] ?? 0) : null,
+            'total_count' => $includeTotal ? TalentPoolDisplay::count((int) ($result['total_count'] ?? 0)) : null,
             'requires_search' => (bool) ($result['requires_search'] ?? false),
+            'related_fallback' => $result['related_fallback'] ?? null,
         ];
 
         if ($withFacets) {
             $payload['filters_html'] = view('hirevo.employer.talent-pool._filters', [
                 'filters' => $filters,
                 'selectedLocations' => $this->searchService->selectedLocations($filters),
-                'facets' => $result['facets'] ?? ['locations' => [], 'education' => [], 'experience' => []],
+                'facets' => TalentPoolDisplay::applyFacetCounts($result['facets'] ?? ['locations' => [], 'education' => [], 'experience' => []]),
                 'activeFilterCount' => $result['active_filter_count'],
                 'educationOptions' => CandidateProfile::educationDegreeValues(),
             ])->render();
@@ -335,5 +374,26 @@ class TalentPoolController extends Controller
         }
 
         return TalentPoolCandidate::query()->discoverable()->whereKey($sourceId)->exists();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @param  array<string, mixed>|null  $relatedFallback
+     * @return list<string>
+     */
+    protected function matchingHighlightTerms(array $filters, ?array $relatedFallback): array
+    {
+        $terms = $this->searchService->parseListFilterPublic($filters['skills'] ?? '');
+        $queryTerms = preg_split('/[\s,;]+/', (string) ($filters['q'] ?? '')) ?: [];
+        $terms = array_merge($terms, array_map('trim', $queryTerms));
+
+        if (is_array($relatedFallback['keywords'] ?? null)) {
+            $terms = array_merge($terms, $relatedFallback['keywords']);
+        }
+
+        return array_values(array_unique(array_filter(
+            $terms,
+            static fn (string $term): bool => strlen($term) >= 2
+        )));
     }
 }

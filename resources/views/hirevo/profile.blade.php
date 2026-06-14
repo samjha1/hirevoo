@@ -1,12 +1,75 @@
-@extends('layouts.app')
+@php
+    $isCandidatePortal = auth()->check() && auth()->user()->isCandidate();
+@endphp
+@extends($isCandidatePortal ? 'layouts.candidate' : 'layouts.app')
 
 @section('title', 'My Profile')
 
+@if($isCandidatePortal)
+@section('body_class', 'candidate-profile-page')
+
+@section('header_greeting')
+    <div class="cp-greeting">
+        <h1 class="cp-greeting-title">Profile & Resume</h1>
+        <p class="cp-greeting-sub">Update your details, photo, and resume to strengthen your hiring score.</p>
+    </div>
+@endsection
+
+@section('header_actions')
+    <button type="button" class="cp-btn cp-btn--outline" data-bs-toggle="modal" data-bs-target="#referralSignupModal">
+        <i class="mdi mdi-gift-outline"></i>
+        <span>Refer & Earn</span>
+    </button>
+
+    <div class="dropdown cp-notify-wrap">
+        <button type="button" class="cp-icon-btn" data-bs-toggle="dropdown" aria-label="Notifications">
+            <i class="mdi mdi-bell-outline"></i>
+            @if(($navUnreadCount ?? 0) > 0)
+                <span class="cp-notify-badge">{{ ($navUnreadCount ?? 0) > 9 ? '9+' : $navUnreadCount }}</span>
+            @endif
+        </button>
+        <div class="dropdown-menu dropdown-menu-end cp-notify-menu shadow border-0">
+            <div class="cp-notify-head"><strong>Notifications</strong></div>
+            <div class="cp-notify-list">
+                @forelse($navNotifications ?? [] as $note)
+                    @php $payload = is_array($note->data) ? $note->data : []; @endphp
+                    <form action="{{ route('notifications.read', $note->id) }}" method="post" class="mb-0">
+                        @csrf
+                        <button type="submit" class="cp-notify-item {{ $note->read_at ? 'is-read' : '' }}">
+                            <strong>{{ $payload['title'] ?? 'Update' }}</strong>
+                            <span>{{ \Illuminate\Support\Str::limit($payload['body'] ?? '', 120) }}</span>
+                        </button>
+                    </form>
+                @empty
+                    <div class="cp-notify-empty">No notifications yet.</div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    @php
+        $displayName = trim($user->name) !== '' ? \Illuminate\Support\Str::title(\Illuminate\Support\Str::lower(trim($user->name))) : 'Account';
+        $profilePct = (int) (($profileCompletion ?? ['percent' => 0])['percent'] ?? 0);
+    @endphp
+    <a href="{{ route('profile') }}" class="cp-user-chip">
+        <span class="cp-user-avatar">{{ $user->initials() }}</span>
+        <span class="cp-user-meta">
+            <span class="cp-user-name">{{ $displayName }}</span>
+            <span class="cp-user-progress-label">Profile: {{ $profilePct }}%</span>
+            <span class="cp-user-progress-bar"><span style="width: {{ $profilePct }}%"></span></span>
+        </span>
+    </a>
+@endsection
+@endif
+
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/hirevo-marketing-system.css') }}">
+@if($isCandidatePortal)
+<link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+@endif
 <style>
 .hirevo-marketing-inner { min-height: auto; background: linear-gradient(165deg, #f4f4f5 0%, #fafafa 40%, #fff 100%); }
-.cp-wrap { max-width: 920px; margin: 0 auto; }
+.cp-profile-wrap { max-width: 920px; margin: 0 auto; }
 .cp-hero-card { border-radius: 20px; border: 1px solid rgba(24,24,27,0.08); overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
 .cp-cover { height: 112px; background: linear-gradient(135deg, #18181b 0%, #3f3f46 50%, #0d9488 100%); }
 .cp-hero-photo-col { width: 100%; max-width: 132px; margin-left: auto; margin-right: auto; }
@@ -75,20 +138,26 @@
     $secDone = $profileSectionsDone ?? [];
 @endphp
 
+@if($isCandidatePortal)
+<div class="cp-profile-page">
+@else
 <div class="hirevo-marketing-inner py-4">
-    <div class="container cp-wrap">
+@endif
+    <div class="container cp-profile-wrap">
 
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 mb-3" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        @if(session('info'))
-            <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm rounded-3 mb-3" role="alert">
-                {{ session('info') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        @if(! $isCandidatePortal)
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 mb-3" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+            @if(session('info'))
+                <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm rounded-3 mb-3" role="alert">
+                    {{ session('info') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
         @endif
 
         @if($user->isCandidate())
@@ -580,7 +649,11 @@
         @endif
 
     </div>
+@if($isCandidatePortal)
 </div>
+@else
+</div>
+@endif
 @endsection
 
 @push('scripts')

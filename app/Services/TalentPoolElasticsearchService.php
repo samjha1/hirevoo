@@ -574,6 +574,16 @@ class TalentPoolElasticsearchService
             ...$this->buildEmployerDocFilters($filters),
         ];
 
+        $relatedTerms = $this->parseRelatedTerms($filters);
+        if ($relatedTerms !== []) {
+            return [
+                'bool' => [
+                    'filter' => $boolFilter,
+                    'must' => [$this->buildRelatedTermsQuery($relatedTerms)],
+                ],
+            ];
+        }
+
         $searchText = $this->buildSearchText($filters);
         if ($searchText === '') {
             return ['bool' => ['filter' => $boolFilter]];
@@ -634,6 +644,63 @@ class TalentPoolElasticsearchService
                 'minimum_should_match' => 1,
             ],
         ];
+    }
+
+    /**
+     * @param  list<string>  $terms
+     */
+    protected function buildRelatedTermsQuery(array $terms): array
+    {
+        $fields = [
+            'name^4',
+            'title^3',
+            'skills^3',
+            'profile_text^2',
+            'education^2',
+            'location',
+            'email',
+        ];
+
+        $should = [];
+        foreach ($terms as $term) {
+            $term = trim($term);
+            if ($term === '') {
+                continue;
+            }
+
+            $should[] = [
+                'multi_match' => [
+                    'query' => $term,
+                    'fields' => $fields,
+                    'type' => 'best_fields',
+                    'fuzziness' => 'AUTO',
+                ],
+            ];
+        }
+
+        return [
+            'bool' => [
+                'should' => $should,
+                'minimum_should_match' => 1,
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<string>
+     */
+    protected function parseRelatedTerms(array $filters): array
+    {
+        $terms = $filters['_related_terms'] ?? [];
+        if (! is_array($terms)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            static fn ($term) => trim((string) $term),
+            $terms
+        ), static fn (string $term): bool => $term !== ''));
     }
 
     /**

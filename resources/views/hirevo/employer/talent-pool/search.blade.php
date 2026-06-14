@@ -111,7 +111,7 @@
     var preview = document.getElementById('tp-search-preview');
     var submitBtn = document.getElementById('tp-search-submit');
     var facetsUrl = @json(route('employer.talent-pool.facets'));
-    var countCacheKey = 'tp_search_count_v1';
+    var countCacheKey = 'tp_search_count_v2';
     var minLen = 2;
     var timer;
     var previewRequest = null;
@@ -170,7 +170,7 @@
         if (previewRequest) previewRequest.abort();
         var controller = new AbortController();
         previewRequest = controller;
-        fetch(facetsUrl + '?' + collectParams(), {
+        fetch(facetsUrl + '?' + collectParams() + '&count_only=1', {
             signal: controller.signal,
             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         })
@@ -181,7 +181,15 @@
                     setPreview('');
                     return;
                 }
-                var label = n.toLocaleString() + ' ' + (n === 1 ? 'candidate matches' : 'candidates match') + ' this search';
+                var label;
+                if (n === 0) {
+                    label = 'No exact matches for this search';
+                } else if (data.related_fallback && (data.exact_count === 0 || data.exact_count == null)) {
+                    label = n.toLocaleString() + ' related ' + (n === 1 ? 'candidate' : 'candidates')
+                        + ' in ' + (data.related_fallback.sector || 'related sector');
+                } else {
+                    label = n.toLocaleString() + ' ' + (n === 1 ? 'candidate matches' : 'candidates match') + ' this search';
+                }
                 setPreview(label);
                 try {
                     sessionStorage.setItem(countCacheKey, JSON.stringify({ key: collectParams(), n: n }));

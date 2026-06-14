@@ -22,6 +22,7 @@ class TalentPoolSearchService
 
     public function __construct(
         protected TalentPoolElasticsearchService $elasticsearch,
+        protected TalentPoolSearchExpansionService $expansion,
     ) {}
 
     private ?string $searchMemoKey = null;
@@ -30,6 +31,11 @@ class TalentPoolSearchService
     private ?array $memoRankedHits = null;
 
     private ?int $memoFilteredCount = null;
+
+    private ?string $memoRelatedSearchKey = null;
+
+    /** @var array{filters: array<string, mixed>, meta: array{sector: string, keywords: list<string>, original_query: string}}|null */
+    private ?array $memoRelatedSearch = null;
 
     /**
      * @param  array<string, mixed>  $filters
@@ -65,8 +71,21 @@ class TalentPoolSearchService
             ];
         }
 
+        $activeFilterCount = $this->countActiveFilters($filters);
+        $proactiveRelated = $this->resolveProactiveRelatedExpansion($filters);
+        $searchFilters = $filters;
+        $relatedFallback = null;
+
+        if ($proactiveRelated !== null) {
+            $searchFilters = $proactiveRelated['filters'];
+            $relatedFallback = $proactiveRelated['meta'];
+        }
+
         $offset = ($page - 1) * $perPage;
-        $rows = $this->fetchUnionPage($filters, $offset, $perPage + 1);
+        $rows = $relatedFallback !== null
+            ? $this->fetchUnionPageUncached($searchFilters, $offset, $perPage + 1)
+            : $this->fetchUnionPage($filters, $offset, $perPage + 1);
+
         $hasMore = $rows->count() > $perPage;
         if ($hasMore) {
             $rows = $rows->take($perPage);
@@ -83,6 +102,34 @@ class TalentPoolSearchService
             return $row;
         });
 
+        if ($items->isEmpty() && $relatedFallback === null && $this->canTryRelatedFallback($filters)) {
+            $related = $this->searchRelatedFallback($employerUserId, $filters, $perPage, $page);
+            if ($related !== null) {
+                $items = $related['items'];
+                $hasMore = $related['paginator']->hasMorePages();
+                $relatedFallback = $related['meta'];
+                $searchFilters = $related['filters'];
+
+                $paginator = $related['paginator'];
+                $totalCount = $includeTotal ? $related['total_count'] : null;
+
+                $result = [
+                    'items' => $items,
+                    'paginator' => $paginator,
+                    'active_filter_count' => $activeFilterCount,
+                    'total_count' => $totalCount,
+                    'requires_search' => false,
+                    'related_fallback' => $relatedFallback,
+                ];
+
+                if ($withFacets) {
+                    $result['facets'] = $this->filterFacets($searchFilters);
+                }
+
+                return $result;
+            }
+        }
+
         $paginator = new Paginator(
             $items,
             $perPage,
@@ -96,19 +143,237 @@ class TalentPoolSearchService
             $paginator->hasMorePagesWhen(true);
         }
 
+        $totalCount = null;
+        if ($includeTotal) {
+            if ($relatedFallback !== null) {
+                $totalCount = $this->countMatchingCandidates($searchFilters);
+            } elseif ($items->isEmpty() && $page === 1) {
+                $totalCount = 0;
+            } else {
+                $totalCount = $this->countMatchingCandidates($filters);
+            }
+        }
+
         $result = [
             'items' => $items,
             'paginator' => $paginator,
-            'active_filter_count' => $this->countActiveFilters($filters),
-            'total_count' => $includeTotal ? $this->countMatchingCandidates($filters) : null,
+            'active_filter_count' => $activeFilterCount,
+            'total_count' => $totalCount,
             'requires_search' => false,
         ];
 
+        if ($relatedFallback !== null) {
+            $result['related_fallback'] = $relatedFallback;
+        }
+
         if ($withFacets) {
-            $result['facets'] = $this->filterFacets($filters);
+            $result['facets'] = $this->filterFacets($relatedFallback !== null ? $searchFilters : $filters);
         }
 
         return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    public function countWithRelatedFallback(array $filters): array
+    {
+        $proactive = $this->resolveProactiveRelatedExpansion($filters);
+        if ($proactive !== null) {
+            return [
+                'exact_count' => 0,
+                'total_count' => $this->countMatchingCandidates($proactive['filters']),
+                'related_fallback' => $proactive['meta'],
+            ];
+        }
+
+        $exact = $this->countMatchingCandidates($filters);
+        if ($exact > 0 || ! $this->canTryRelatedFallback($filters)) {
+            return [
+                'exact_count' => $exact,
+                'total_count' => $exact,
+                'related_fallback' => null,
+            ];
+        }
+
+        $related = $this->buildRelatedSearch($filters);
+        if ($related === null) {
+            return [
+                'exact_count' => 0,
+                'total_count' => 0,
+                'related_fallback' => null,
+            ];
+        }
+
+        return [
+            'exact_count' => 0,
+            'total_count' => $this->countMatchingCandidates($related['filters']),
+            'related_fallback' => $related['meta'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{filters: array<string, mixed>, meta: array{sector: string, keywords: list<string>, original_query: string}}|null
+     */
+    protected function resolveProactiveRelatedExpansion(array $filters): ?array
+    {
+        if (! $this->canTryRelatedFallback($filters)) {
+            return null;
+        }
+
+        $query = $this->expansion->extractSearchText($filters);
+        if ($query === '' || ! $this->expansion->hasStaticAliasMatch($query)) {
+            return null;
+        }
+
+        return $this->buildRelatedSearch($filters);
+    }
+
+    /**
+     * Facet sidebar should reflect the same candidate set as visible results (including related fallback).
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function filtersForFacetComputation(array $filters): array
+    {
+        $proactive = $this->resolveProactiveRelatedExpansion($filters);
+        if ($proactive !== null) {
+            return $proactive['filters'];
+        }
+
+        $counts = $this->countWithRelatedFallback($filters);
+        if (! empty($counts['related_fallback'])) {
+            $related = $this->buildRelatedSearch($filters);
+
+            return $related['filters'] ?? $filters;
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    protected function canTryRelatedFallback(array $filters): bool
+    {
+        if ($this->expansion->extractSearchText($filters) === '') {
+            return false;
+        }
+
+        if (filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            || filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{
+     *     items: Collection<int, array<string, mixed>>,
+     *     paginator: Paginator,
+     *     total_count: int,
+     *     filters: array<string, mixed>,
+     *     meta: array{sector: string, keywords: list<string>, original_query: string}
+     * }|null
+     */
+    protected function searchRelatedFallback(int $employerUserId, array $filters, int $perPage, int $page = 1): ?array
+    {
+        $related = $this->buildRelatedSearch($filters);
+        if ($related === null) {
+            return null;
+        }
+
+        $relatedFilters = $related['filters'];
+        $offset = (max(1, $page) - 1) * $perPage;
+        $rows = $this->fetchUnionPageUncached($relatedFilters, $offset, $perPage + 1);
+        $hasMore = $rows->count() > $perPage;
+        if ($hasMore) {
+            $rows = $rows->take($perPage);
+        }
+
+        $items = $this->hydrateUnionRows($rows);
+        if ($items->isEmpty()) {
+            return null;
+        }
+
+        $actionMap = $this->actionMapForEmployer($employerUserId, $items);
+        $items = $items->map(function (array $row) use ($actionMap) {
+            $key = $row['source'].':'.$row['source_id'];
+            $action = $actionMap[$key] ?? null;
+            $row['is_saved'] = (bool) ($action['is_saved'] ?? false);
+            $row['is_shortlisted'] = (bool) ($action['is_shortlisted'] ?? false);
+
+            return $row;
+        });
+
+        $paginator = new Paginator(
+            $items,
+            $perPage,
+            max(1, $page),
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
+        if ($hasMore) {
+            $paginator->hasMorePagesWhen(true);
+        }
+
+        return [
+            'items' => $items,
+            'paginator' => $paginator,
+            'total_count' => $this->countMatchingCandidates($relatedFilters),
+            'filters' => $relatedFilters,
+            'meta' => $related['meta'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{filters: array<string, mixed>, meta: array{sector: string, keywords: list<string>, original_query: string}}|null
+     */
+    protected function buildRelatedSearch(array $filters): ?array
+    {
+        $memoKey = hash('xxh128', json_encode($this->filtersForMemo($filters)));
+        if ($this->memoRelatedSearchKey === $memoKey) {
+            return $this->memoRelatedSearch;
+        }
+
+        $expansion = $this->expansion->expandFromFilters($filters);
+        if ($expansion === null || ($expansion['keywords'] ?? []) === []) {
+            $this->memoRelatedSearchKey = $memoKey;
+            $this->memoRelatedSearch = null;
+
+            return null;
+        }
+
+        $relatedFilters = $filters;
+        unset($relatedFilters['q'], $relatedFilters['skills']);
+        $keywords = $expansion['keywords'];
+        if (! $this->elasticsearch->canUseElasticsearch()) {
+            $keywords = array_slice(
+                $keywords,
+                0,
+                (int) config('hirevo.talent_pool_related_search.sql_max_keywords', 4)
+            );
+        }
+        $relatedFilters['_related_terms'] = $keywords;
+
+        $this->memoRelatedSearchKey = $memoKey;
+        $this->memoRelatedSearch = [
+            'filters' => $relatedFilters,
+            'meta' => [
+                'sector' => $expansion['sector'],
+                'keywords' => $expansion['keywords'],
+                'original_query' => $this->expansion->extractSearchText($filters),
+            ],
+        ];
+
+        return $this->memoRelatedSearch;
     }
 
     /**
@@ -160,6 +425,9 @@ class TalentPoolSearchService
             return true;
         }
         if (filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            return true;
+        }
+        if (is_array($filters['_related_terms'] ?? null) && ($filters['_related_terms'] ?? []) !== []) {
             return true;
         }
 
@@ -773,6 +1041,75 @@ class TalentPoolSearchService
 
     /**
      * @param  array<string, mixed>  $filters
+     * @return list<string>
+     */
+    protected function relatedTerms(array $filters): array
+    {
+        $terms = $filters['_related_terms'] ?? [];
+        if (! is_array($terms)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            static fn ($term) => trim((string) $term),
+            $terms
+        ), static fn (string $term): bool => $term !== ''));
+    }
+
+    /**
+     * @param  list<string>  $terms
+     */
+    protected function applyRelatedTermsSearch(Builder $query, array $terms, string $source): void
+    {
+        if ($terms === []) {
+            return;
+        }
+
+        $query->where(function (Builder $outer) use ($terms, $source) {
+            foreach ($terms as $term) {
+                $like = '%'.$term.'%';
+                $outer->orWhere(function (Builder $inner) use ($like, $source) {
+                    if ($source === 'verified') {
+                        $this->applyVerifiedLikeMatch($inner, $like);
+                    } else {
+                        $this->applyTalentLikeMatch($inner, $like);
+                    }
+                });
+            }
+        });
+    }
+
+    protected function applyVerifiedLikeMatch(Builder $query, string $like): void
+    {
+        $query->where('users.name', 'like', $like)
+            ->orWhere('users.email', 'like', $like)
+            ->orWhere('users.phone', 'like', $like)
+            ->orWhereHas('candidateProfile', function (Builder $profile) use ($like) {
+                $profile->where('headline', 'like', $like)
+                    ->orWhere('location', 'like', $like)
+                    ->orWhere('preferred_job_location', 'like', $like)
+                    ->orWhere('education', 'like', $like)
+                    ->orWhere('skills', 'like', $like)
+                    ->orWhere('bio_summary', 'like', $like)
+                    ->orWhere('career_objective', 'like', $like)
+                    ->orWhere('current_company', 'like', $like);
+            });
+    }
+
+    protected function applyTalentLikeMatch(Builder $query, string $like): void
+    {
+        $query->where('full_name', 'like', $like)
+            ->orWhere('title', 'like', $like)
+            ->orWhere('location', 'like', $like)
+            ->orWhere('education', 'like', $like)
+            ->orWhere('skills', 'like', $like)
+            ->orWhere('profile_summary', 'like', $like)
+            ->orWhere('email', 'like', $like)
+            ->orWhere('phone', 'like', $like);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
      */
     protected function verifiedCandidatesQuery(array $filters): Builder
     {
@@ -782,7 +1119,10 @@ class TalentPoolSearchService
             ->whereHas('candidateProfile');
 
         $q = trim((string) ($filters['q'] ?? ''));
-        if ($q !== '') {
+        $relatedTerms = $this->relatedTerms($filters);
+        if ($relatedTerms !== []) {
+            $this->applyRelatedTermsSearch($query, $relatedTerms, 'verified');
+        } elseif ($q !== '') {
             $this->applyVerifiedKeywordSearch($query, $q);
         }
 
@@ -833,7 +1173,10 @@ class TalentPoolSearchService
         $query = TalentPoolCandidate::query()->discoverable();
 
         $q = trim((string) ($filters['q'] ?? ''));
-        if ($q !== '') {
+        $relatedTerms = $this->relatedTerms($filters);
+        if ($relatedTerms !== []) {
+            $this->applyRelatedTermsSearch($query, $relatedTerms, 'talent_pool');
+        } elseif ($q !== '') {
             $this->applyTalentKeywordSearch($query, $q);
         }
 
@@ -1200,14 +1543,49 @@ class TalentPoolSearchService
             ['label' => '10+ years', 'min' => 10, 'max' => null],
         ];
 
+        $caseSql = [];
+        foreach ($buckets as $index => $bucket) {
+            $min = (int) $bucket['min'];
+            if ($bucket['max'] === null) {
+                $caseSql[] = "SUM(CASE WHEN experience_years >= {$min} THEN 1 ELSE 0 END) as b{$index}";
+            } else {
+                $max = (int) $bucket['max'];
+                $caseSql[] = "SUM(CASE WHEN experience_years >= {$min} AND experience_years <= {$max} THEN 1 ELSE 0 END) as b{$index}";
+            }
+        }
+        $caseExpr = implode(', ', $caseSql);
+
+        $counts = array_fill(0, count($buckets), 0);
+
+        $verifiedSub = $this->verifiedCandidatesQuery($filters)->select('users.id');
+        $verifiedRow = DB::table('candidate_profiles')
+            ->whereIn('user_id', $verifiedSub)
+            ->selectRaw($caseExpr)
+            ->first();
+
+        if ($verifiedRow !== null) {
+            foreach ($buckets as $index => $bucket) {
+                $counts[$index] += (int) ($verifiedRow->{'b'.$index} ?? 0);
+            }
+        }
+
+        $talentRow = DB::query()
+            ->fromSub(
+                $this->talentPoolCandidatesQuery($filters)->select('talent_pool_candidates.experience_years'),
+                't'
+            )
+            ->selectRaw($caseExpr)
+            ->first();
+
+        if ($talentRow !== null) {
+            foreach ($buckets as $index => $bucket) {
+                $counts[$index] += (int) ($talentRow->{'b'.$index} ?? 0);
+            }
+        }
+
         $result = [];
-        foreach ($buckets as $bucket) {
-            $bucketFilters = array_merge($filters, [
-                'experience_min' => $bucket['min'],
-                'experience_max' => $bucket['max'],
-            ]);
-            $count = $this->verifiedCandidatesQuery($bucketFilters)->count()
-                + $this->talentPoolCandidatesQuery($bucketFilters)->count();
+        foreach ($buckets as $index => $bucket) {
+            $count = $counts[$index];
             if ($count > 0) {
                 $result[] = [
                     'label' => $bucket['label'],

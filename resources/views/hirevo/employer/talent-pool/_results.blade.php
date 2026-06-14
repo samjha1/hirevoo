@@ -17,6 +17,26 @@
         </div>
     </div>
 @else
+    @if(!empty($relatedFallback))
+        <div class="alert alert-info tp-related-banner mb-3">
+            <div class="d-flex align-items-start gap-2">
+                <i class="mdi mdi-lightbulb-on-outline fs-5 mt-1"></i>
+                <div>
+                    <strong>No exact matches</strong> for
+                    <span class="fw-600">"{{ \Illuminate\Support\Str::limit($relatedFallback['original_query'] ?? '', 80) }}"</span>.
+                    Showing related candidates in
+                    <span class="fw-600">{{ $relatedFallback['sector'] ?? 'related sector' }}</span>.
+                    @if(!empty($relatedFallback['keywords']))
+                        <div class="small text-muted mt-1">
+                            Related terms:
+                            {{ collect($relatedFallback['keywords'])->take(6)->implode(', ') }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if(isset($paginator))
         @include('hirevo.employer.talent-pool._toolbar', [
             'paginator' => $paginator,

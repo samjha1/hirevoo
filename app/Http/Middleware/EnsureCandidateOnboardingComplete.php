@@ -48,6 +48,7 @@ class EnsureCandidateOnboardingComplete
             'profile.fill-from-resume',
             'resume.upload',
             'resume.upload.store',
+            'candidate.resume.review',
             'resume.results',
             'resume.lead',
             'resume.referral',

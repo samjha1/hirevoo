@@ -51,6 +51,58 @@ return [
      */
     'talent_pool_location_facet_min_count' => max(0, (int) env('TALENT_POOL_LOCATION_FACET_MIN_COUNT', 5)),
 
+    /** Multiplier applied to talent pool candidate counts shown in the UI (e.g. 10 → 1,908 displays as 19,080). */
+    'talent_pool_display_count_multiplier' => max(1, (int) env('TALENT_POOL_DISPLAY_COUNT_MULTIPLIER', 10)),
+
+    /**
+     * When an exact talent pool search returns zero matches, expand to related sector keywords (AI + static aliases).
+     */
+    'talent_pool_related_search' => [
+        'enabled' => filter_var(env('TALENT_POOL_RELATED_SEARCH', true), FILTER_VALIDATE_BOOLEAN),
+        'cache_ttl' => max(300, (int) env('TALENT_POOL_RELATED_SEARCH_CACHE_TTL', 86400)),
+        'max_keywords' => max(3, min(12, (int) env('TALENT_POOL_RELATED_SEARCH_MAX_KEYWORDS', 8))),
+        /** Fewer OR terms in SQL mode — each extra keyword adds heavy LIKE clauses. */
+        'sql_max_keywords' => max(2, min(6, (int) env('TALENT_POOL_RELATED_SQL_MAX_KEYWORDS', 4))),
+        'aliases' => [
+            [
+                'sector' => 'Human Resources & Recruitment',
+                'patterns' => [
+                    'benchsales', 'bench sales', 'bench recruiter', 'bench sales recruiter',
+                    'staffing recruiter', 'it recruiter', 'technical recruiter', 'talent acquisition',
+                    'recruitment consultant', 'staffing sales',
+                ],
+                'keywords' => [
+                    'recruitment', 'talent acquisition', 'staffing', 'recruiter', 'HR',
+                    'bench sales', 'IT recruiter', 'technical recruiter', 'hiring',
+                ],
+            ],
+            [
+                'sector' => 'Sales',
+                'patterns' => ['business development', 'inside sales', 'field sales', 'account manager', 'bdr', 'sdr'],
+                'keywords' => ['sales', 'business development', 'account management', 'B2B sales', 'client acquisition'],
+            ],
+            [
+                'sector' => 'Engineering',
+                'patterns' => ['full stack', 'fullstack', 'backend developer', 'frontend developer', 'software engineer', 'devops engineer'],
+                'keywords' => ['software engineer', 'developer', 'full stack', 'backend', 'frontend', 'DevOps'],
+            ],
+            [
+                'sector' => 'CRM, ERP & platforms',
+                'patterns' => ['sap consultant', 'sap fico', 'sap mm', 'salesforce admin', 'workday consultant'],
+                'keywords' => ['SAP', 'Salesforce', 'Workday', 'ERP', 'SAP FI', 'SAP MM'],
+            ],
+        ],
+        'department_hints' => [
+            'Sales' => ['sales', 'business development', 'account executive', 'bdr', 'sdr', 'pre sales'],
+            'Marketing' => ['marketing', 'digital marketing', 'seo', 'sem', 'content marketing', 'growth'],
+            'Human Resources' => ['hr', 'recruitment', 'recruiter', 'talent acquisition', 'staffing', 'bench', 'hiring'],
+            'Finance' => ['finance', 'accounting', 'audit', 'fp&a', 'taxation', 'gst'],
+            'Engineering' => ['developer', 'engineer', 'programmer', 'software', 'devops', 'qa', 'tester'],
+            'Operations' => ['operations', 'supply chain', 'logistics', 'procurement'],
+            'Customer Support' => ['customer support', 'customer service', 'call center', 'helpdesk'],
+        ],
+    ],
+
     /**
      * Main Indian metros shown in the talent pool city dropdown (aliases roll up to label).
      *

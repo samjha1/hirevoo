@@ -71,6 +71,7 @@ Route::get('/auth/microsoft/callback', [SocialAuthController::class, 'handleMicr
 
 Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
     Route::get('/dashboard', [CandidateDashboardController::class, 'index'])->name('candidate.dashboard');
+    Route::get('/resume/review', [ResumeController::class, 'review'])->name('candidate.resume.review');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');

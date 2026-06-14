@@ -315,7 +315,11 @@
             @endif
             @if(empty($requiresSearch))
                 <span class="tp-results-count" id="tp-total-count">
-                    {{ number_format($totalCount ?? 0) }} {{ ($totalCount ?? 0) === 1 ? 'candidate' : 'candidates' }}
+                    @if(isset($totalCount))
+                        {{ number_format($totalCount) }} {{ $totalCount === 1 ? 'candidate' : 'candidates' }}
+                    @else
+                        <span class="text-muted fw-normal">Loading count…</span>
+                    @endif
                 </span>
             @endif
         </div>
@@ -346,6 +350,7 @@
                         'matchingSkills' => $matchingSkills,
                         'requiresSearch' => $requiresSearch ?? false,
                         'canAccessTalentPool' => $canAccessTalentPool,
+                        'relatedFallback' => $relatedFallback ?? null,
                     ])
                 </div>
             </div>
@@ -367,7 +372,7 @@
 @endsection
 
 @php
-    $tpHighlightTerms = array_values(array_unique(array_filter(array_map(
+    $tpHighlightTerms = $matchingSkills ?? array_values(array_unique(array_filter(array_map(
         'trim',
         array_merge(
             preg_split('/[\s,;]+/', (string) ($filters['q'] ?? '')) ?: [],

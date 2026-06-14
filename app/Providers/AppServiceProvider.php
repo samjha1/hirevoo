@@ -43,9 +43,9 @@ class AppServiceProvider extends ServiceProvider
 
         $seoResolver = fn ($view) => $view->with('seo', app(SeoMetaResolver::class)->resolve(request()));
 
-        View::composer(['layouts.app', 'layouts.employer'], $seoResolver);
+        View::composer(['layouts.app', 'layouts.employer', 'layouts.candidate'], $seoResolver);
 
-        View::composer('layouts.app', function ($view) {
+        View::composer(['layouts.app', 'layouts.candidate'], function ($view) {
             $navUnreadCount = 0;
             $navNotifications = collect();
             if (Auth::check() && Auth::user()->isCandidate()) {

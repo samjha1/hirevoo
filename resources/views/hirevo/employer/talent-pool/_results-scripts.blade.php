@@ -18,7 +18,7 @@
     var debounceKeywordResultsTimer;
     var activeRow = null;
     var totalCountEl = document.getElementById('tp-total-count');
-    var countCacheKey = 'tp_search_count_v1';
+    var countCacheKey = 'tp_search_count_v2';
     var pendingRequest = null;
 
     var backdrop = document.getElementById('tp-drawer-backdrop');
@@ -68,7 +68,7 @@
 
     function fetchFacets() {
         if (!filtersEl) return;
-        fetch(searchUrl + '?' + collectParams(1, { withFacets: true, skipTotal: true }).toString(), {
+        fetch(facetsUrl + '?' + collectParams(1).toString(), {
             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         })
             .then(function (r) { return r.json(); })
@@ -81,7 +81,7 @@
 
     function fetchTotalCount() {
         showCachedCount();
-        fetch(facetsUrl + '?' + collectParams(1).toString(), {
+        fetch(facetsUrl + '?' + collectParams(1).toString() + '&count_only=1', {
             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         })
             .then(function (r) { return r.json(); })
@@ -497,5 +497,7 @@
 
     showCachedCount();
     bindAll();
+    if (filtersEl) fetchFacets();
+    if (totalCountEl) fetchTotalCount();
 })();
 </script>

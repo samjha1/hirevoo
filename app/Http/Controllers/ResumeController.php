@@ -42,6 +42,32 @@ class ResumeController extends Controller
         return view('hirevo.resume-upload');
     }
 
+    /**
+     * Candidate portal: show primary resume with saved ATS score, summary, and skills.
+     */
+    public function review(Request $request): View|RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user->isCandidate()) {
+            return redirect()->route('home')->with('info', 'Resume review is for candidates.');
+        }
+
+        $allResumes = $user->resumes()->orderByDesc('is_primary')->orderByDesc('created_at')->get();
+
+        $resume = null;
+        if ($request->filled('resume')) {
+            $resume = $allResumes->firstWhere('id', (int) $request->query('resume'));
+        }
+        if (! $resume) {
+            $resume = $allResumes->firstWhere('is_primary', true) ?? $allResumes->first();
+        }
+
+        return view('hirevo.candidate.resume-review', [
+            'resume' => $resume,
+            'allResumes' => $allResumes,
+        ]);
+    }
+
     public function upload(Request $request): RedirectResponse
     {
         $request->validate([
