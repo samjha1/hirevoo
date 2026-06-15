@@ -20,6 +20,16 @@
         $candidateDashCssVer = is_file($candidateDashCss) ? (string) filemtime($candidateDashCss) : '1';
     @endphp
     <link href="{{ asset('css/hirevo-candidate-dashboard.css') }}?v={{ $candidateDashCssVer }}" rel="stylesheet">
+    @php
+        $notifyCss = public_path('css/hirevo-candidate-notifications.css');
+        $notifyCssVer = is_file($notifyCss) ? (string) filemtime($notifyCss) : '1';
+    @endphp
+    <link href="{{ asset('css/hirevo-candidate-notifications.css') }}?v={{ $notifyCssVer }}" rel="stylesheet">
+    @php
+        $candidateFeaturesCss = public_path('css/hirevo-candidate-features.css');
+        $candidateFeaturesCssVer = is_file($candidateFeaturesCss) ? (string) filemtime($candidateFeaturesCss) : '1';
+    @endphp
+    <link href="{{ asset('css/hirevo-candidate-features.css') }}?v={{ $candidateFeaturesCssVer }}" rel="stylesheet">
     @stack('styles')
     <title>@yield('title', 'Dashboard') — Hirevoo</title>
 </head>
@@ -41,18 +51,18 @@
             <nav class="cp-sidebar-nav">
                 @php
                     $navItems = [
-                        ['route' => 'candidate.dashboard', 'icon' => 'mdi-view-dashboard-outline', 'label' => 'Dashboard', 'active' => false],
+                        ['route' => 'candidate.dashboard', 'icon' => 'mdi-view-dashboard-outline', 'label' => 'Dashboard', 'active' => request()->routeIs('candidate.dashboard')],
                         ['href' => route('candidate.dashboard').'#hiring-score', 'icon' => 'mdi-gauge', 'label' => 'My Hiring Score', 'active' => false],
                         ['href' => route('candidate.dashboard').'#career-report', 'icon' => 'mdi-chart-box-outline', 'label' => 'Career Report', 'active' => false],
                         ['href' => route('candidate.dashboard').'#roadmap', 'icon' => 'mdi-map-marker-path', 'label' => 'Roadmap', 'active' => false],
-                        ['route' => 'job-list', 'icon' => 'mdi-clipboard-check-outline', 'label' => 'Assessments', 'active' => request()->routeIs('job-list')],
+                        ['route' => 'candidate.assessments', 'icon' => 'mdi-clipboard-check-outline', 'label' => 'Assessments', 'active' => request()->routeIs('candidate.assessments')],
                         ['route' => 'candidate.resume.review', 'icon' => 'mdi-file-document-edit-outline', 'label' => 'Resume Review', 'active' => request()->routeIs('candidate.resume.review', 'resume.results')],
-                        ['route' => 'help', 'icon' => 'mdi-microphone-outline', 'label' => 'Mock Interviews', 'active' => request()->routeIs('help')],
+                        ['route' => 'candidate.mock-interviews', 'icon' => 'mdi-microphone-outline', 'label' => 'Mock Interviews', 'active' => request()->routeIs('candidate.mock-interviews')],
                         ['href' => route('candidate.dashboard').'#applications', 'icon' => 'mdi-briefcase-check-outline', 'label' => 'Applications Tracker', 'active' => false],
-                        ['href' => route('candidate.dashboard').'#skill-gaps', 'icon' => 'mdi-chart-timeline-variant', 'label' => 'Skill Gap Analysis', 'active' => false],
+                        ['route' => 'candidate.skill-gaps', 'icon' => 'mdi-chart-timeline-variant', 'label' => 'Skill Gap Analysis', 'active' => request()->routeIs('candidate.skill-gaps')],
                         ['route' => 'pricing', 'icon' => 'mdi-school-outline', 'label' => 'Learning Hub', 'active' => request()->routeIs('pricing')],
-                        ['href' => route('candidate.dashboard').'#job-matches', 'icon' => 'mdi-briefcase-search-outline', 'label' => 'Job Matches', 'active' => false],
-                        ['route' => 'help', 'icon' => 'mdi-currency-inr', 'label' => 'Salary Insights', 'active' => false],
+                        ['route' => 'candidate.job-matches', 'icon' => 'mdi-briefcase-search-outline', 'label' => 'Job Matches', 'active' => request()->routeIs('candidate.job-matches')],
+                        ['route' => 'candidate.salary-insights', 'icon' => 'mdi-currency-inr', 'label' => 'Salary Insights', 'active' => request()->routeIs('candidate.salary-insights')],
                         ['route' => 'profile', 'icon' => 'mdi-account-circle-outline', 'label' => 'Profile & Resume', 'active' => request()->routeIs('profile')],
                         ['route' => 'profile', 'icon' => 'mdi-cog-outline', 'label' => 'Settings', 'active' => false],
                     ];
@@ -76,6 +86,16 @@
                 <p class="cp-sidebar-upgrade-sub">Unlock premium tools to boost your hiring score.</p>
                 <a href="{{ route('pricing') }}" class="cp-sidebar-upgrade-btn">Explore Premium</a>
             </div>
+
+            <div class="cp-sidebar-footer">
+                <form action="{{ route('logout') }}" method="POST" class="mb-0">
+                    @csrf
+                    <button type="submit" class="cp-nav-link cp-nav-link--logout w-100 border-0 bg-transparent text-start">
+                        <i class="mdi mdi-logout"></i>
+                        <span>Log out</span>
+                    </button>
+                </form>
+            </div>
         </aside>
 
         <div class="cp-main">
@@ -87,6 +107,11 @@
                     @yield('header_greeting')
                 </div>
                 <div class="cp-topbar-actions">
+                    @auth
+                        @if(auth()->user()->isCandidate())
+                            @include('hirevo.partials._candidate-notifications', ['variant' => 'topbar'])
+                        @endif
+                    @endauth
                     @yield('header_actions')
                 </div>
             </header>

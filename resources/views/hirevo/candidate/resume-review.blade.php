@@ -23,32 +23,6 @@
         <span>Upload New</span>
     </a>
 
-    <div class="dropdown cp-notify-wrap">
-        <button type="button" class="cp-icon-btn" data-bs-toggle="dropdown" aria-label="Notifications">
-            <i class="mdi mdi-bell-outline"></i>
-            @if(($navUnreadCount ?? 0) > 0)
-                <span class="cp-notify-badge">{{ ($navUnreadCount ?? 0) > 9 ? '9+' : $navUnreadCount }}</span>
-            @endif
-        </button>
-        <div class="dropdown-menu dropdown-menu-end cp-notify-menu shadow border-0">
-            <div class="cp-notify-head"><strong>Notifications</strong></div>
-            <div class="cp-notify-list">
-                @forelse($navNotifications ?? [] as $note)
-                    @php $payload = is_array($note->data) ? $note->data : []; @endphp
-                    <form action="{{ route('notifications.read', $note->id) }}" method="post" class="mb-0">
-                        @csrf
-                        <button type="submit" class="cp-notify-item {{ $note->read_at ? 'is-read' : '' }}">
-                            <strong>{{ $payload['title'] ?? 'Update' }}</strong>
-                            <span>{{ \Illuminate\Support\Str::limit($payload['body'] ?? '', 120) }}</span>
-                        </button>
-                    </form>
-                @empty
-                    <div class="cp-notify-empty">No notifications yet.</div>
-                @endforelse
-            </div>
-        </div>
-    </div>
-
     <a href="{{ route('profile') }}" class="cp-user-chip">
         <span class="cp-user-avatar">{{ $user->initials() }}</span>
         <span class="cp-user-meta">

@@ -40,6 +40,15 @@
         $themeCssVer = is_file($themeCssPath) ? (string) filemtime($themeCssPath) : '1';
     @endphp
     <link href="{{ asset('css/hirevo-theme.css') }}?v={{ $themeCssVer }}" rel="stylesheet">
+    @auth
+        @if(auth()->user()->isCandidate())
+            @php
+                $notifyCss = public_path('css/hirevo-candidate-notifications.css');
+                $notifyCssVer = is_file($notifyCss) ? (string) filemtime($notifyCss) : '1';
+            @endphp
+            <link href="{{ asset('css/hirevo-candidate-notifications.css') }}?v={{ $notifyCssVer }}" rel="stylesheet">
+        @endif
+    @endauth
     <link href="{{ asset('css/hirevo-sponsored-ads.css') }}" rel="stylesheet">
     @if(request()->routeIs('candidate.dashboard'))
         @php
@@ -141,60 +150,21 @@
                         </li>
 
                         @else
-                        <li class="nav-item">
-                            <a href="javascript:void(0)" class="nav-link hirevo-nav-icon position-relative" id="notification" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
-                                <i class="mdi mdi-bell fs-20"></i>
-                                @if(($navUnreadCount ?? 0) > 0)
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">{{ $navUnreadCount > 9 ? '9+' : $navUnreadCount }}</span>
-                                @endif
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 p-0 hirevo-notify-dropdown" style="min-width: 320px; max-width: 380px;">
-                                <div class="px-3 py-3 border-bottom bg-light d-flex align-items-center justify-content-between gap-2">
-                                    <div>
+                        <li class="nav-item dropdown">
+                            @if(auth()->user()->isCandidate())
+                                @include('hirevo.partials._candidate-notifications', ['variant' => 'navbar'])
+                            @else
+                                <a href="javascript:void(0)" class="nav-link hirevo-nav-icon position-relative" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+                                    <i class="mdi mdi-bell fs-20"></i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 p-0" style="min-width: 320px;">
+                                    <div class="px-3 py-3 border-bottom bg-light">
                                         <h6 class="mb-0">Notifications</h6>
-                                        <p class="text-muted small mb-0">
-                                            @if(auth()->user()->isCandidate())
-                                                @if(($navUnreadCount ?? 0) > 0)
-                                                    {{ $navUnreadCount }} unread
-                                                @else
-                                                    You’re all caught up
-                                                @endif
-                                            @else
-                                                Account updates appear here when relevant
-                                            @endif
-                                        </p>
+                                        <p class="text-muted small mb-0">Account updates appear here when relevant</p>
                                     </div>
-                                    @if(auth()->user()->isCandidate() && ($navUnreadCount ?? 0) > 0)
-                                        <form action="{{ route('notifications.read-all') }}" method="post" class="mb-0">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-link text-decoration-none p-0 small">Mark all read</button>
-                                        </form>
-                                    @endif
+                                    <div class="text-muted small text-center py-4 px-3">Application and account alerts will show here.</div>
                                 </div>
-                                <div class="hirevo-notify-list" style="max-height: 320px; overflow-y: auto;">
-                                    @if(auth()->user()->isCandidate())
-                                        @forelse($navNotifications ?? [] as $note)
-                                            @php
-                                                $payload = is_array($note->data) ? $note->data : [];
-                                                $title = $payload['title'] ?? 'Update';
-                                                $body = $payload['body'] ?? '';
-                                            @endphp
-                                            <form action="{{ route('notifications.read', $note->id) }}" method="post" class="mb-0">
-                                                @csrf
-                                                <button type="submit" class="dropdown-item text-start border-0 border-bottom rounded-0 py-3 px-3 w-100 {{ $note->read_at ? 'bg-transparent opacity-75' : 'bg-light bg-opacity-50' }}">
-                                                    <div class="fw-600 small text-dark">{{ $title }}</div>
-                                                    <div class="text-muted small mt-1" style="line-height: 1.35;">{{ \Illuminate\Support\Str::limit($body, 140) }}</div>
-                                                    <div class="text-muted mt-1" style="font-size: 0.7rem;">{{ $note->created_at->diffForHumans() }}</div>
-                                                </button>
-                                            </form>
-                                        @empty
-                                            <div class="text-muted small text-center py-4 px-3">No notifications yet. When an employer updates your application stage, you’ll see it here.</div>
-                                        @endforelse
-                                    @else
-                                        <div class="text-muted small text-center py-4 px-3">Candidate application alerts appear when you apply to jobs on Hirevoo.</div>
-                                    @endif
-                                </div>
-                            </div>
+                            @endif
                         </li>
                         <li class="nav-item dropdown ms-2">
                             @php

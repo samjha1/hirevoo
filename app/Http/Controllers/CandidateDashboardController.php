@@ -7,6 +7,7 @@ use App\Models\CareerConsultationRequest;
 use App\Models\EmployerJob;
 use App\Models\EmployerJobApplication;
 use App\Models\JobRole;
+use App\Services\CandidateCareerInsightsService;
 use App\Services\ResumeAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -19,7 +20,7 @@ class CandidateDashboardController extends Controller
     /**
      * Candidate dashboard: list all applications (employer jobs + job goals) with status and company.
      */
-    public function index(ResumeAnalysisService $resumeAnalysis): View|RedirectResponse
+    public function index(ResumeAnalysisService $resumeAnalysis, CandidateCareerInsightsService $insights): View|RedirectResponse
     {
         $user = auth()->user();
         if (! $user->isCandidate()) {
@@ -91,64 +92,23 @@ class CandidateDashboardController extends Controller
         $hiredCount = $user->employerJobApplications()->where('status', 'hired')->count();
         $avgMatch = $user->employerJobApplications()->whereNotNull('job_match_score')->avg('job_match_score');
 
-        $primaryResume = $user->resumes()->where('is_primary', true)->first()
-            ?? $user->resumes()->orderByDesc('created_at')->first();
-
-        $skillFocusRole = null;
-        $dashboardSkillMatched = [];
-        $dashboardSkillGaps = [];
-        $dashboardSkillMatchPct = null;
-        $dashboardSkillMatchLayer = null;
-        $skillFocusSource = null;
-        $consultGapPayload = [
-            'display_gaps' => [],
-            'suggested_only' => [],
-            'actual_gaps' => [],
-        ];
-
-        if ($primaryResume) {
-            $latestGoalApp = $user->jobApplications()
-                ->with(['jobRole.requiredSkills'])
-                ->orderByDesc('created_at')
-                ->first();
-            if ($latestGoalApp?->jobRole) {
-                $latestGoalApp->jobRole->loadMissing('requiredSkills');
-                if ($latestGoalApp->jobRole->requiredSkills->isNotEmpty()) {
-                    $skillFocusRole = $latestGoalApp->jobRole;
-                    $skillFocusSource = 'applied_goal';
-                }
-            }
-            if (! $skillFocusRole) {
-                $topGoals = $resumeAnalysis->getMatchingJobGoalsForResume($primaryResume, 1);
-                if (! empty($topGoals[0]['job_role']) && $topGoals[0]['job_role'] instanceof JobRole) {
-                    $skillFocusRole = $topGoals[0]['job_role'];
-                    $skillFocusRole->loadMissing('requiredSkills');
-                    if ($skillFocusRole->requiredSkills->isNotEmpty()) {
-                        $skillFocusSource = 'resume_top';
-                    } else {
-                        $skillFocusRole = null;
-                    }
-                }
-            }
-
-            if ($skillFocusRole && $skillFocusRole->requiredSkills->isNotEmpty()) {
-                $requiredOrdered = $resumeAnalysis->orderedRequiredSkillLabels($skillFocusRole);
-                $coverage = $resumeAnalysis->matchResumeToRequiredSkillNames(
-                    $primaryResume,
-                    $requiredOrdered,
-                    $user->candidateProfile?->skills
-                );
-                $dashboardSkillMatched = $coverage['matched_display'];
-                $dashboardSkillGaps = $coverage['gaps_display'];
-                $dashboardSkillMatchPct = $coverage['match_pct'];
-                $dashboardSkillMatchLayer = $coverage['match_layer'];
-                $consultGapPayload = CareerConsultationRequest::buildConsultGapPayload(
-                    $skillFocusRole,
-                    $dashboardSkillGaps,
-                    $dashboardSkillMatched
-                );
-            }
+        $snapshot = $insights->snapshot($user);
+        $primaryResume = $snapshot['resume'];
+        $skillFocusRole = $snapshot['target_role'];
+        if ($skillFocusRole) {
+            $skillFocusRole->loadMissing('requiredSkills');
         }
+        $skillGapData = $snapshot['skill_gaps'];
+        $dashboardSkillMatched = $skillGapData['matched'] ?? [];
+        $dashboardSkillGaps = $skillGapData['gaps'] ?? [];
+        $dashboardSkillMatchPct = $skillGapData['match_pct'] ?? null;
+        $dashboardSkillMatchLayer = $dashboardSkillMatchPct !== null ? 'cached' : null;
+        $skillFocusSource = $this->resolveSkillFocusSource($user, $skillFocusRole);
+        $consultGapPayload = CareerConsultationRequest::buildConsultGapPayload(
+            $skillFocusRole,
+            $dashboardSkillGaps,
+            $dashboardSkillMatched
+        );
 
         $candidateProfile = $user->candidateProfile;
         $dashboardRecommendMasters = false;
@@ -237,11 +197,7 @@ class CandidateDashboardController extends Controller
 
         $scoreTrend = $this->buildScoreTrend($hiringScore, $sorted);
 
-        $skillGapChart = $this->buildSkillGapChart(
-            $dashboardSkillGaps,
-            $dashboardSkillMatched,
-            $skillFocusRole
-        );
+        $skillGapChart = $insights->skillGapChartFromAnalysis($skillGapData);
 
         $roadmapSteps = $this->buildRoadmapSteps(
             $primaryResume !== null,
@@ -252,7 +208,12 @@ class CandidateDashboardController extends Controller
             $hiredCount > 0
         );
 
-        $jobMatches = $this->buildJobMatches($user, $primaryResume, $resumeAnalysis);
+        $strongMinPct = (int) config('hirevo_candidate_features.job_match_min_pct', 45);
+        $jobMatches = array_values(array_filter(
+            $snapshot['job_matches'],
+            static fn (array $job): bool => (int) ($job['match'] ?? 0) >= $strongMinPct
+        ));
+        $jobMatches = array_slice($jobMatches, 0, 4);
 
         $percentile = min(95, max(35, (int) round($hiringScore * 0.85 + ($profileCompletion['percent'] ?? 0) * 0.1)));
 
@@ -446,6 +407,19 @@ class CandidateDashboardController extends Controller
         };
     }
 
+    protected function resolveSkillFocusSource($user, ?JobRole $role): ?string
+    {
+        if (! $role) {
+            return null;
+        }
+
+        $latestGoalApp = $user->jobApplications()
+            ->where('job_role_id', $role->id)
+            ->exists();
+
+        return $latestGoalApp ? 'applied_goal' : 'resume_top';
+    }
+
     /** @return list<array{label: string, score: int, icon: string}> */
     private function buildScoreBreakdown(
         int $hiringScore,
@@ -558,16 +532,16 @@ class CandidateDashboardController extends Controller
             [
                 'label' => 'Complete Assessments',
                 'status' => $assessmentsDone ? 'completed' : ($hasResume ? 'in_progress' : 'pending'),
-                'description' => 'Take skill assessments and explore job goals to benchmark your readiness.',
-                'action_label' => 'Browse assessments',
-                'action_url' => route('job-list'),
+                'description' => 'Take skill assessments based on your resume and target role.',
+                'action_label' => 'Take assessments',
+                'action_url' => route('candidate.assessments'),
             ],
             [
                 'label' => 'Improve Weak Areas',
                 'status' => $hasGaps ? 'in_progress' : ($assessmentsDone ? 'completed' : 'pending'),
                 'description' => 'Close skill gaps identified from your resume and target roles.',
                 'action_label' => 'View skill gaps',
-                'action_url' => route('candidate.dashboard').'#hiring-score',
+                'action_url' => route('candidate.skill-gaps'),
             ],
             [
                 'label' => 'Build Profile',
@@ -701,8 +675,8 @@ class CandidateDashboardController extends Controller
             return [
                 'title' => 'Apply to Matched Jobs',
                 'description' => 'You have strong matches waiting — start applying to move your pipeline forward.',
-                'url' => route('job-openings'),
-                'label' => 'Browse Jobs',
+                'url' => route('candidate.job-matches'),
+                'label' => 'View matches',
             ];
         }
 

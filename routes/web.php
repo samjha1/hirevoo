@@ -16,6 +16,7 @@ use App\Http\Controllers\GuestResumeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\CandidateDashboardController;
+use App\Http\Controllers\CandidateFeaturesController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LeadController;
@@ -71,6 +72,11 @@ Route::get('/auth/microsoft/callback', [SocialAuthController::class, 'handleMicr
 
 Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
     Route::get('/dashboard', [CandidateDashboardController::class, 'index'])->name('candidate.dashboard');
+    Route::get('/assessments', [CandidateFeaturesController::class, 'assessments'])->name('candidate.assessments');
+    Route::get('/mock-interviews', [CandidateFeaturesController::class, 'mockInterviews'])->name('candidate.mock-interviews');
+    Route::get('/skill-gaps', [CandidateFeaturesController::class, 'skillGaps'])->name('candidate.skill-gaps');
+    Route::get('/job-matches', [CandidateFeaturesController::class, 'jobMatches'])->name('candidate.job-matches');
+    Route::get('/salary-insights', [CandidateFeaturesController::class, 'salaryInsights'])->name('candidate.salary-insights');
     Route::get('/resume/review', [ResumeController::class, 'review'])->name('candidate.resume.review');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');

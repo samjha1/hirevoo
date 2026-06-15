@@ -9,6 +9,7 @@ use App\Models\JobRole;
 use App\Models\Lead;
 use App\Models\Resume;
 use App\Models\SkillAnalysis;
+use App\Services\CandidateCareerInsightsService;
 use App\Services\CandidateLeadService;
 use App\Services\CandidateProfileFillerFromResume;
 use App\Services\GptService;
@@ -28,6 +29,7 @@ class ResumeController extends Controller
         protected GptService $gptService,
         protected CandidateProfileFillerFromResume $profileFiller,
         protected CandidateLeadService $candidateLeads,
+        protected CandidateCareerInsightsService $careerInsights,
     ) {}
 
     public function showUploadForm(): View|RedirectResponse
@@ -108,6 +110,7 @@ class ResumeController extends Controller
         $user->syncCandidateProfileCompletion();
 
         $this->candidateLeads->ensureCandidateLeadFromActivity($user->id, $resume, 'resume_upload');
+        $this->careerInsights->forget($user);
 
         if ($request->input('return_to') === 'profile') {
             return redirect()->route('profile')

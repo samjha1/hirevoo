@@ -99,7 +99,7 @@
     <div class="cd-card cd-card--compact" id="job-matches">
         <div class="cd-card-head">
             <h2 class="cd-card-title">Job Matches</h2>
-            <a href="{{ route('job-openings') }}" class="cd-link cd-link--sm">View all</a>
+            <a href="{{ route('candidate.job-matches') }}" class="cd-link cd-link--sm">View all</a>
         </div>
         <div class="cd-jobs-list">
             @forelse(array_slice($jobMatches, 0, 2) as $job)
