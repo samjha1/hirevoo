@@ -31,10 +31,13 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\Admin\PlanCouponController as AdminPlanCouponController;
 use App\Http\Controllers\Admin\PlanPaymentController as AdminPlanPaymentController;
 use App\Http\Controllers\SeoController;
+use App\Http\Controllers\HirevoAssetController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/assets/hirevo-candidate.css', [HirevoAssetController::class, 'candidateCss'])
+    ->name('assets.hirevo-candidate-css');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/csrf-token', function () {
