@@ -26,6 +26,14 @@ class ReindexJobOpeningsSearchCommand extends Command
             return self::FAILURE;
         }
 
+        if (! $talentPool->canUseElasticsearch()) {
+            $hosts = implode(', ', config('elasticsearch.hosts', ['http://127.0.0.1:9200']));
+            $this->error('Cannot connect to Elasticsearch at '.$hosts.'.');
+            $this->line('Start Elasticsearch/OpenSearch, or set ELASTICSEARCH_ENABLED=false in .env to use SQL search locally.');
+
+            return self::FAILURE;
+        }
+
         $talentOnly = (bool) $this->option('talent-only');
 
         if (! $talentOnly) {

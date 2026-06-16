@@ -57,16 +57,20 @@ class TalentPoolController extends Controller
             $filters,
             $perPage,
             (int) $request->input('page', 1),
-            withFacets: false,
-            includeTotal: false,
+            withFacets: true,
+            includeTotal: true,
         );
 
         $items = $result['items']->map(fn (array $row) => $this->planService->maskCandidateRow($row, $user, true));
+        $facetFilters = $this->searchService->filtersForFacetComputation($filters);
+        $facets = TalentPoolDisplay::applyFacetCounts(
+            $result['facets'] ?? $this->searchService->filterFacets($facetFilters)
+        );
 
         return view('hirevo.employer.talent-pool.results', [
             'filters' => $filters,
             'selectedLocations' => $this->searchService->selectedLocations($filters),
-            'facets' => TalentPoolDisplay::applyFacetCounts(['locations' => [], 'education' => [], 'experience' => []]),
+            'facets' => $facets,
             'activeFilterCount' => $result['active_filter_count'],
             'educationOptions' => CandidateProfile::educationDegreeValues(),
             'candidates' => $items,

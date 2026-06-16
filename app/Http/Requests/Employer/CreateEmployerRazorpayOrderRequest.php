@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Employer;
 
+use App\Services\EmployerPlanCheckoutService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use InvalidArgumentException;
 
 class CreateEmployerRazorpayOrderRequest extends FormRequest
 {
@@ -20,7 +22,13 @@ class CreateEmployerRazorpayOrderRequest extends FormRequest
                 'required',
                 'string',
                 'max:32',
-                Rule::exists('employer_plans', 'slug')->where(fn ($q) => $q->where('is_active', true)->where('is_custom_price', false)),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    try {
+                        app(EmployerPlanCheckoutService::class)->resolvePurchasablePlan((string) $value);
+                    } catch (InvalidArgumentException $e) {
+                        $fail($e->getMessage());
+                    }
+                },
             ],
             'coupon_code' => ['nullable', 'string', 'max:64'],
             'billing_months' => ['nullable', 'integer', Rule::in(config('hirevo_plans.billing_duration_options', [1, 3, 6, 12]))],

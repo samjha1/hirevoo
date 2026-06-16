@@ -253,7 +253,13 @@ class TalentPoolElasticsearchService
     {
         $client = $this->client();
         if ($client === null) {
-            throw new \RuntimeException('Elasticsearch client is not available.');
+            $hosts = implode(', ', config('elasticsearch.hosts', ['http://127.0.0.1:9200']));
+
+            throw new \RuntimeException(
+                'Elasticsearch is not reachable at '.$hosts.'. '
+                .'Start Elasticsearch/OpenSearch on that host, then run this command again. '
+                .'For local dev without ES, set ELASTICSEARCH_ENABLED=false in .env (SQL search fallback).'
+            );
         }
 
         $index = $this->indexName();
@@ -584,17 +590,71 @@ class TalentPoolElasticsearchService
             ];
         }
 
-        $searchText = $this->buildSearchText($filters);
-        if ($searchText === '') {
+        $mustClauses = $this->buildKeywordMustClauses($filters);
+        if ($mustClauses === []) {
             return ['bool' => ['filter' => $boolFilter]];
         }
 
         return [
             'bool' => [
                 'filter' => $boolFilter,
-                'must' => [$this->buildTextQuery($searchText)],
+                'must' => $mustClauses,
             ],
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array<string, mixed>>
+     */
+    protected function buildKeywordMustClauses(array $filters): array
+    {
+        $must = [];
+
+        $queryTerms = $this->parseQueryTerms(trim((string) ($filters['q'] ?? '')));
+        if (count($queryTerms) > 1) {
+            $must[] = [
+                'bool' => [
+                    'should' => array_map(fn (string $term) => $this->buildTextQuery($term), $queryTerms),
+                    'minimum_should_match' => 1,
+                ],
+            ];
+        } elseif (count($queryTerms) === 1) {
+            $must[] = $this->buildTextQuery($queryTerms[0]);
+        }
+
+        $skills = $this->parseSkills($filters['skills'] ?? '');
+        if ($skills !== []) {
+            $must[] = [
+                'bool' => [
+                    'should' => array_map(fn (string $skill) => $this->buildTextQuery($skill), $skills),
+                    'minimum_should_match' => 1,
+                ],
+            ];
+        }
+
+        return $must;
+    }
+
+    /**
+     * Comma/semicolon-separated terms are OR keywords; a single term uses space-separated AND matching.
+     *
+     * @return list<string>
+     */
+    public function parseQueryTerms(string $q): array
+    {
+        $q = trim($q);
+        if ($q === '') {
+            return [];
+        }
+
+        $segments = preg_split('/[,;]+/u', $q) ?: [];
+        $segments = array_values(array_filter(array_map(
+            static fn (string $segment): string => trim($segment),
+            $segments
+        ), static fn (string $segment): bool => $segment !== ''));
+
+        return $segments !== [] ? $segments : [$q];
     }
 
     protected function buildTextQuery(string $searchText): array

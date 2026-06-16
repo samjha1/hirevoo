@@ -11,6 +11,7 @@
     var shortlistUrl = @json(route('employer.talent-pool.shortlist'));
     var plansUrl = @json(route('employer.plans.index'));
     var highlightTerms = @json($tpHighlightTerms ?? []);
+    var skipInitialFetch = @json(!empty($tpSkipInitialFetch));
     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     var debounceResultsTimer;
     var debounceFacetsTimer;
@@ -127,25 +128,26 @@
 
     function debouncedFetch() {
         clearTimeout(debounceResultsTimer);
-        debounceResultsTimer = setTimeout(function () { fetchResults(1, { skipTotal: true }); }, 500);
+        debounceResultsTimer = setTimeout(function () {
+            fetchResults(1, { skipTotal: true, withFacets: true });
+        }, 400);
     }
 
     function debouncedKeywordResults() {
         clearTimeout(debounceKeywordResultsTimer);
         debounceKeywordResultsTimer = setTimeout(function () {
-            fetchResults(1, { skipTotal: true });
-            debouncedFacets();
-        }, 1100);
+            fetchResults(1, { skipTotal: true, withFacets: true });
+        }, 550);
     }
 
     function debouncedFacets() {
         clearTimeout(debounceFacetsTimer);
-        debounceFacetsTimer = setTimeout(fetchFacets, 900);
+        debounceFacetsTimer = setTimeout(fetchFacets, 700);
     }
 
     function debouncedCount() {
         clearTimeout(debounceCountTimer);
-        debounceCountTimer = setTimeout(fetchTotalCount, 800);
+        debounceCountTimer = setTimeout(fetchTotalCount, 600);
     }
 
     function isKeywordField(el) {
@@ -155,8 +157,6 @@
     form?.addEventListener('submit', function (e) {
         e.preventDefault();
         fetchResults(1, { withFacets: true });
-        fetchFacets();
-        fetchTotalCount();
     });
 
     function bindLocationSelect() {
@@ -165,7 +165,6 @@
         locSelect.dataset.tpBound = '1';
         locSelect.onchange = function () {
             debouncedFetch();
-            debouncedFacets();
             debouncedCount();
         };
     }
@@ -179,7 +178,6 @@
                 if (minEl) minEl.value = this.dataset.min ?? '';
                 if (maxEl) maxEl.value = this.dataset.max ?? '';
                 debouncedFetch();
-                debouncedFacets();
                 debouncedCount();
             };
         });
@@ -191,7 +189,6 @@
                 var edu = document.getElementById('tp-education');
                 if (edu) edu.value = this.value;
                 debouncedFetch();
-                debouncedFacets();
                 debouncedCount();
             };
         });
@@ -207,7 +204,6 @@
                 }
                 debouncedFetch();
                 debouncedCount();
-                debouncedFacets();
             };
             if (el.type === 'text' || el.type === 'number' || el.type === 'search') {
                 el.oninput = function () {
@@ -219,7 +215,6 @@
                     }
                     debouncedFetch();
                     debouncedCount();
-                    debouncedFacets();
                 };
             }
         });
@@ -497,7 +492,9 @@
 
     showCachedCount();
     bindAll();
-    if (filtersEl) fetchFacets();
-    if (totalCountEl) fetchTotalCount();
+    if (!skipInitialFetch) {
+        if (filtersEl) fetchFacets();
+        if (totalCountEl && totalCountEl.textContent.indexOf('Loading') >= 0) fetchTotalCount();
+    }
 })();
 </script>

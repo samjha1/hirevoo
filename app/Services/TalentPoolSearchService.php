@@ -976,16 +976,14 @@ class TalentPoolSearchService
             $outer->where('users.name', 'like', $like)
                 ->orWhere('users.email', 'like', $like)
                 ->orWhere('users.phone', 'like', $like)
-                ->orWhereHas('candidateProfile', function (Builder $profile) use ($like) {
-                    $profile->where('headline', 'like', $like)
-                        ->orWhere('location', 'like', $like)
-                        ->orWhere('preferred_job_location', 'like', $like)
-                        ->orWhere('education', 'like', $like)
-                        ->orWhere('skills', 'like', $like)
-                        ->orWhere('bio_summary', 'like', $like)
-                        ->orWhere('career_objective', 'like', $like)
-                        ->orWhere('current_company', 'like', $like);
-                });
+                ->orWhere('candidate_profiles.headline', 'like', $like)
+                ->orWhere('candidate_profiles.location', 'like', $like)
+                ->orWhere('candidate_profiles.preferred_job_location', 'like', $like)
+                ->orWhere('candidate_profiles.education', 'like', $like)
+                ->orWhere('candidate_profiles.skills', 'like', $like)
+                ->orWhere('candidate_profiles.bio_summary', 'like', $like)
+                ->orWhere('candidate_profiles.career_objective', 'like', $like)
+                ->orWhere('candidate_profiles.current_company', 'like', $like);
         });
     }
 
@@ -1004,11 +1002,58 @@ class TalentPoolSearchService
     }
 
     /**
+     * Comma/semicolon-separated terms are OR keywords; a single term uses space-separated AND matching.
+     *
+     * @return list<string>
+     */
+    public function parseQueryTerms(string $q): array
+    {
+        $q = trim($q);
+        if ($q === '') {
+            return [];
+        }
+
+        $segments = preg_split('/[,;]+/u', $q) ?: [];
+        $segments = array_values(array_filter(array_map(
+            static fn (string $segment): string => trim($segment),
+            $segments
+        ), static fn (string $segment): bool => $segment !== ''));
+
+        return $segments !== [] ? $segments : [$q];
+    }
+
+    /**
      * Match the full phrase or require every word to appear somewhere in searchable fields.
+     * Comma-separated values match any listed keyword (OR).
      *
      * @param  callable(Builder, string): void  $matchLike
      */
     protected function applyKeywordSearch(Builder $query, string $q, callable $matchLike): void
+    {
+        $terms = $this->parseQueryTerms($q);
+        if ($terms === []) {
+            return;
+        }
+
+        if (count($terms) > 1) {
+            $query->where(function (Builder $outer) use ($terms, $matchLike) {
+                foreach ($terms as $term) {
+                    $outer->orWhere(function (Builder $inner) use ($term, $matchLike) {
+                        $this->applySingleKeywordSearch($inner, $term, $matchLike);
+                    });
+                }
+            });
+
+            return;
+        }
+
+        $this->applySingleKeywordSearch($query, $terms[0], $matchLike);
+    }
+
+    /**
+     * @param  callable(Builder, string): void  $matchLike
+     */
+    protected function applySingleKeywordSearch(Builder $query, string $q, callable $matchLike): void
     {
         $q = trim($q);
         if ($q === '') {
@@ -1084,16 +1129,14 @@ class TalentPoolSearchService
         $query->where('users.name', 'like', $like)
             ->orWhere('users.email', 'like', $like)
             ->orWhere('users.phone', 'like', $like)
-            ->orWhereHas('candidateProfile', function (Builder $profile) use ($like) {
-                $profile->where('headline', 'like', $like)
-                    ->orWhere('location', 'like', $like)
-                    ->orWhere('preferred_job_location', 'like', $like)
-                    ->orWhere('education', 'like', $like)
-                    ->orWhere('skills', 'like', $like)
-                    ->orWhere('bio_summary', 'like', $like)
-                    ->orWhere('career_objective', 'like', $like)
-                    ->orWhere('current_company', 'like', $like);
-            });
+            ->orWhere('candidate_profiles.headline', 'like', $like)
+            ->orWhere('candidate_profiles.location', 'like', $like)
+            ->orWhere('candidate_profiles.preferred_job_location', 'like', $like)
+            ->orWhere('candidate_profiles.education', 'like', $like)
+            ->orWhere('candidate_profiles.skills', 'like', $like)
+            ->orWhere('candidate_profiles.bio_summary', 'like', $like)
+            ->orWhere('candidate_profiles.career_objective', 'like', $like)
+            ->orWhere('candidate_profiles.current_company', 'like', $like);
     }
 
     protected function applyTalentLikeMatch(Builder $query, string $like): void
@@ -1114,9 +1157,9 @@ class TalentPoolSearchService
     protected function verifiedCandidatesQuery(array $filters): Builder
     {
         $query = User::query()
-            ->where('role', 'candidate')
-            ->where('status', 'active')
-            ->whereHas('candidateProfile');
+            ->where('users.role', 'candidate')
+            ->where('users.status', 'active')
+            ->join('candidate_profiles', 'candidate_profiles.user_id', '=', 'users.id');
 
         $q = trim((string) ($filters['q'] ?? ''));
         $relatedTerms = $this->relatedTerms($filters);
@@ -1128,12 +1171,10 @@ class TalentPoolSearchService
 
         $skills = $this->parseListFilter($filters['skills'] ?? '');
         if ($skills !== []) {
-            $query->whereHas('candidateProfile', function (Builder $profile) use ($skills) {
-                $profile->where(function (Builder $skillQuery) use ($skills) {
-                    foreach ($skills as $skill) {
-                        $skillQuery->orWhere('skills', 'like', '%'.$skill.'%');
-                    }
-                });
+            $query->where(function (Builder $skillQuery) use ($skills) {
+                foreach ($skills as $skill) {
+                    $skillQuery->orWhere('candidate_profiles.skills', 'like', '%'.$skill.'%');
+                }
             });
         }
 
@@ -1141,9 +1182,7 @@ class TalentPoolSearchService
 
         $education = trim((string) ($filters['education'] ?? ''));
         if ($education !== '') {
-            $query->whereHas('candidateProfile', function (Builder $profile) use ($education) {
-                $profile->where('education', 'like', '%'.$education.'%');
-            });
+            $query->where('candidate_profiles.education', 'like', '%'.$education.'%');
         }
 
         $this->applyVerifiedExperienceFilter($query, $filters);
@@ -1225,14 +1264,12 @@ class TalentPoolSearchService
             return;
         }
 
-        $query->whereHas('candidateProfile', function (Builder $profile) use ($locations) {
-            $profile->where(function (Builder $locQuery) use ($locations) {
-                foreach ($locations as $location) {
-                    $like = '%'.$location.'%';
-                    $locQuery->orWhere('location', 'like', $like)
-                        ->orWhere('preferred_job_location', 'like', $like);
-                }
-            });
+        $query->where(function (Builder $locQuery) use ($locations) {
+            foreach ($locations as $location) {
+                $like = '%'.$location.'%';
+                $locQuery->orWhere('candidate_profiles.location', 'like', $like)
+                    ->orWhere('candidate_profiles.preferred_job_location', 'like', $like);
+            }
         });
     }
 
@@ -1264,12 +1301,12 @@ class TalentPoolSearchService
             return;
         }
 
-        $query->whereHas('candidateProfile', function (Builder $profile) use ($expMin, $expMax) {
+        $query->where(function (Builder $expQuery) use ($expMin, $expMax) {
             if ($expMin !== null && $expMin !== '') {
-                $profile->where('experience_years', '>=', (int) $expMin);
+                $expQuery->where('candidate_profiles.experience_years', '>=', (int) $expMin);
             }
             if ($expMax !== null && $expMax !== '') {
-                $profile->where('experience_years', '<=', (int) $expMax);
+                $expQuery->where('candidate_profiles.experience_years', '<=', (int) $expMax);
             }
         });
     }

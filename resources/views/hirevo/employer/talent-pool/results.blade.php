@@ -381,5 +381,8 @@
     ), fn ($t) => strlen($t) >= 2)));
 @endphp
 @push('scripts')
-@include('hirevo.employer.talent-pool._results-scripts', ['tpHighlightTerms' => $tpHighlightTerms])
+        @include('hirevo.employer.talent-pool._results-scripts', [
+            'tpHighlightTerms' => $tpHighlightTerms,
+            'tpSkipInitialFetch' => !empty($facets) || isset($totalCount),
+        ])
 @endpush

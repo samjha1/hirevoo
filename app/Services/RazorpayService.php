@@ -33,7 +33,12 @@ class RazorpayService
                 'notes' => $notes,
             ]);
         } catch (\Throwable $e) {
-            Log::error('Razorpay order creation failed', ['error' => $e->getMessage()]);
+            Log::error('Razorpay order creation failed', [
+                'error' => $e->getMessage(),
+                'amount_paise' => $amountPaise,
+                'currency' => $currency,
+                'receipt' => $receipt,
+            ]);
 
             throw new InvalidArgumentException('Unable to create payment order. Please try again.');
         }

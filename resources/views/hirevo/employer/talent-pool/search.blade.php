@@ -53,14 +53,14 @@
                 <label class="form-label" for="tp-q">Role / keywords</label>
                 <input type="search" class="form-control form-control-lg" id="tp-q" name="q"
                        value="{{ old('q', request('q')) }}"
-                       placeholder="e.g. Flutter Developer, PHP, Product Manager"
+                       placeholder="e.g. Flutter Developer, PHP, Product Manager (comma = any match)"
                        autofocus autocomplete="off">
             </div>
             <div class="mb-3">
                 <label class="form-label" for="tp-skills">Skills</label>
                 <input type="text" class="form-control" id="tp-skills" name="skills"
                        value="{{ old('skills', request('skills')) }}"
-                       placeholder="e.g. Flutter, Dart, Laravel">
+                       placeholder="e.g. Flutter, Dart, Laravel (comma = any skill)">
             </div>
             <div class="mb-3">
                 <label class="form-label" for="tp-location">City</label>
