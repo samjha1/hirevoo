@@ -113,6 +113,9 @@ class CandidateProfile extends Model
         'expected_salary_currency',
         'expected_salary_period',
         'is_premium',
+        'subscription_plan',
+        'subscription_started_at',
+        'renewal_plan',
         'premium_expires_at',
         'referral_requests_used',
         'referral_requests_limit',
@@ -120,6 +123,7 @@ class CandidateProfile extends Model
 
     protected $casts = [
         'is_premium' => 'boolean',
+        'subscription_started_at' => 'datetime',
         'premium_expires_at' => 'datetime',
         'date_of_birth' => 'date',
         'work_experience' => 'array',

@@ -12,6 +12,7 @@ use App\Observers\CandidateUserSearchObserver;
 use App\Observers\EmployerJobSearchObserver;
 use App\Observers\JobRoleSearchObserver;
 use App\Observers\TalentPoolCandidateSearchObserver;
+use App\Services\CandidatePremiumService;
 use App\Services\EmployerPlanService;
 use App\Services\LeadsmanagerAdService;
 use App\Support\SeoMetaResolver;
@@ -63,6 +64,25 @@ class AppServiceProvider extends ServiceProvider
             $view->with('navUnreadCount', $navUnreadCount)->with('navNotifications', $navNotifications);
         });
 
+        View::composer(['layouts.app', 'layouts.candidate'], function ($view) {
+            $user = Auth::user();
+            $premium = app(CandidatePremiumService::class);
+            $activePlan = ($user && $user->isCandidate())
+                ? $premium->activeSubscriptionSummary($user)
+                : null;
+
+            $view->with([
+                'candidateHasPremium' => $user && $user->isCandidate() ? $premium->hasAccess($user) : false,
+                'candidateHasAiTools' => $user && $user->isCandidate() ? $premium->hasAiCareerToolsAccess($user) : false,
+                'candidatePlanUrl' => $premium->planUrl(),
+                'candidateActivePlan' => $activePlan,
+                'candidateActivePlanName' => $activePlan['name'] ?? null,
+                'candidateActivePlanKey' => $activePlan['key'] ?? null,
+                'candidatePlanExpiresAt' => $activePlan['expires_at'] ?? null,
+                'candidateRenewalPlanKey' => $activePlan['renewal_plan'] ?? ($user?->candidateProfile?->renewal_plan ?? null),
+            ]);
+        });
+
         $sponsoredViews = array_keys(config('hirevo_sponsored_ads.views', []));
         if ($sponsoredViews === []) {
             $sponsoredViews = [
@@ -99,7 +119,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer(
-            ['layouts.employer', 'hirevo.employer.*'],
+            ['layouts.app', 'layouts.employer', 'hirevo.employer.*'],
             function ($view) {
                 $credits = 0;
                 $profilePhotoUrl = null;

@@ -21,6 +21,12 @@ return [
     'job_match_employer_scan' => max(20, (int) env('CANDIDATE_JOB_MATCH_EMPLOYER_SCAN', 150)),
     'job_match_employer_take' => max(5, (int) env('CANDIDATE_JOB_MATCH_EMPLOYER_TAKE', 25)),
 
+    /** Lighter limits for dashboard first paint (full scan runs on Job Matches page). */
+    'job_match_dashboard_goal_scan' => max(5, (int) env('CANDIDATE_JOB_MATCH_DASHBOARD_GOAL_SCAN', 12)),
+    'job_match_dashboard_employer_scan' => max(10, (int) env('CANDIDATE_JOB_MATCH_DASHBOARD_EMPLOYER_SCAN', 40)),
+    'job_match_dashboard_employer_take' => max(4, (int) env('CANDIDATE_JOB_MATCH_DASHBOARD_EMPLOYER_TAKE', 8)),
+    'job_match_dashboard_page_limit' => max(4, (int) env('CANDIDATE_JOB_MATCH_DASHBOARD_PAGE_LIMIT', 8)),
+
     /**
      * Annual CTC bands (₹ LPA) by role keyword — used for salary insights heuristics.
      *

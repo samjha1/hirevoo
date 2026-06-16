@@ -95,7 +95,10 @@
     </div>
 </div>
 
+@include('hirevo.candidate.partials.dashboard._ai-tools')
+
 <div class="cd-grid cd-grid--bottom">
+    <x-candidate-premium-gate feature="Job Matches" compact>
     <div class="cd-card cd-card--compact" id="job-matches">
         <div class="cd-card-head">
             <h2 class="cd-card-title">Job Matches</h2>
@@ -114,6 +117,7 @@
             @endforelse
         </div>
     </div>
+    </x-candidate-premium-gate>
 
     <div class="cd-card cd-card--compact">
         <div class="cd-card-head">

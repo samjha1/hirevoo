@@ -638,3 +638,121 @@
 .cf-job-row:last-of-type {
     border-bottom: none;
 }
+
+/* ─── Premium paywall gate ─── */
+.cf-premium-gate {
+    position: relative;
+}
+
+.cf-premium-gate--locked .cf-premium-gate__content {
+    filter: blur(6px);
+    user-select: none;
+    pointer-events: none;
+}
+
+.cf-premium-gate__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    padding: 1.25rem;
+    border: none;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+    text-align: center;
+    border-radius: inherit;
+    transition: background .2s ease;
+}
+
+.cf-premium-gate__overlay:hover {
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.cf-premium-gate__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #b45309;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 999px;
+    padding: .2rem .55rem;
+}
+
+.cf-premium-gate__title {
+    font-size: .95rem;
+    color: #0f172a;
+}
+
+.cf-premium-gate__sub,
+.cf-premium-gate__tap {
+    font-size: .75rem;
+    color: #64748b;
+    max-width: 16rem;
+    line-height: 1.35;
+}
+
+.cf-premium-gate__tap {
+    margin-top: .15rem;
+    font-weight: 600;
+    color: #4f46e5;
+}
+
+.cf-premium-gate--compact .cf-premium-gate__overlay {
+    padding: .75rem;
+}
+
+.cf-premium-gate--compact .cf-premium-gate__title {
+    font-size: .8125rem;
+}
+
+.cf-premium-gate--compact .cf-premium-gate__sub,
+.cf-premium-gate--compact .cf-premium-gate__tap {
+    display: none;
+}
+
+.cf-premium-gate--compact .cf-premium-gate__badge {
+    font-size: .65rem;
+}
+
+.cf-premium-modal__icon {
+    width: 3.25rem;
+    height: 3.25rem;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #b45309;
+    font-size: 1.6rem;
+}
+
+.cf-premium-modal__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: .45rem;
+}
+
+.cf-premium-modal__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+}
+
+.cf-premium-modal__list .mdi {
+    margin-top: .1rem;
+    flex-shrink: 0;
+}
+

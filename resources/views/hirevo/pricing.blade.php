@@ -276,74 +276,8 @@
             <div class="section-block">
                 <span class="section-eyebrow">Plans</span>
                 <h2 class="h4 fw-bold mb-3 section-title">Hiring Advantage Plans</h2>
-                <p class="text-muted mb-3">Choose your level of advantage.</p>
-                <div class="row g-3">
-                    <div class="col-lg-3 col-md-6">
-                        <div class="pricing-card p-4">
-                            <h3 class="h6 fw-bold mb-1">Access</h3>
-                            <div class="h3 fw-bold mb-2">₹149</div>
-                            <p class="text-muted small mb-3">Your first step in</p>
-                            <ul class="text-muted ps-3 mb-4">
-                                <li>1 Referral Request</li>
-                                <li>Basic Match Score</li>
-                                <li>Job Insights</li>
-                                <li>Application Tracker</li>
-                            </ul>
-                            <a href="{{ route('register') }}?role=candidate" class="btn btn-outline-primary w-100">Choose Access</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6">
-                        <div class="pricing-card pricing-popular p-4">
-                            <span class="pricing-badge">Most Popular</span>
-                            <h3 class="h6 fw-bold mb-1">Advantage</h3>
-                            <div class="h3 fw-bold mb-2">₹499</div>
-                            <p class="text-muted small mb-3">Most job seekers choose this</p>
-                            <ul class="text-muted ps-3 mb-4">
-                                <li>5 Referral Requests</li>
-                                <li>Detailed Match Score</li>
-                                <li>LinkedIn Profile Analysis</li>
-                                <li>Priority Profile Visibility</li>
-                                <li>Smart Job Recommendations</li>
-                                <li>Skill Gap Report</li>
-                            </ul>
-                            <a href="{{ route('register') }}?role=candidate" class="btn btn-primary w-100">Choose Advantage</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6">
-                        <div class="pricing-card p-4">
-                            <h3 class="h6 fw-bold mb-1">Accelerator</h3>
-                            <div class="h3 fw-bold mb-2">₹999</div>
-                            <p class="text-muted small mb-3">Serious about getting hired</p>
-                            <ul class="text-muted ps-3 mb-4">
-                                <li>15 Referral Requests</li>
-                                <li>Advanced Insights</li>
-                                <li>LinkedIn Profile Analysis</li>
-                                <li>Priority Processing</li>
-                                <li>High-Quality Job Access</li>
-                                <li>Resume Analysis</li>
-                            </ul>
-                            <a href="{{ route('register') }}?role=candidate" class="btn btn-outline-primary w-100">Choose Accelerator</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6">
-                        <div class="pricing-card p-4">
-                            <h3 class="h6 fw-bold mb-1">Elite</h3>
-                            <div class="h3 fw-bold mb-2">₹2,499</div>
-                            <p class="text-muted small mb-3">For top-tier career moves</p>
-                            <ul class="text-muted ps-3 mb-4">
-                                <li>Unlimited Referrals*</li>
-                                <li>Dedicated Support</li>
-                                <li>LinkedIn Deep Analysis</li>
-                                <li>Priority Auto Apply</li>
-                                <li>Profile Optimisation</li>
-                                <li>Interview Guidance</li>
-                                <li>All Premium Features</li>
-                            </ul>
-                            <a href="{{ route('register') }}?role=candidate" class="btn btn-outline-primary w-100">Choose Elite</a>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-muted small mt-3 mb-0">* Unlimited referrals subject to fair usage policy. All plans provide access to tools and features  Hirevoo does not guarantee job placement, interviews, or referral responses.</p>
+                <p class="text-muted mb-3">Choose your level of advantage. GST is calculated at checkout.</p>
+                @include('hirevo.pricing._plan-cards')
             </div>
 
 <div class="mb-4 mb-lg-5">
@@ -360,10 +294,9 @@
             <thead>
                 <tr>
                     <th>Feature Access</th>
-                    <th>₹149 Access</th>
-                    <th>₹499 Advantage</th>
-                    <th>₹999 Accelerator</th>
-                    <th>₹2,499 Elite</th>
+                    @foreach($candidatePlans ?? [] as $plan)
+                        <th>₹{{ number_format((float) ($plan['price_inr'] ?? 0), 0) }} {{ $plan['name'] ?? '' }}</th>
+                    @endforeach
                 </tr>
             </thead>
 
@@ -662,4 +595,24 @@
             </div>
         </div>
     </section>
+
+    @auth
+        @if(auth()->user()->isCandidate() && !($candidateHasPremium ?? false))
+            @include('hirevo.pricing._checkout-modal')
+        @endif
+    @endauth
 @endsection
+
+@auth
+    @if(auth()->user()->isCandidate())
+        @if(!($candidateHasPremium ?? false))
+            @push('scripts')
+                @include('hirevo.pricing._checkout-scripts')
+            @endpush
+        @else
+            @push('scripts')
+                @include('hirevo.pricing._renewal-switch-scripts')
+            @endpush
+        @endif
+    @endif
+@endauth

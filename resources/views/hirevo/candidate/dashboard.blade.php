@@ -52,6 +52,13 @@
 @endsection
 
 @section('header_actions')
+    @if($candidateHasPremium ?? false)
+        @include('hirevo.candidate.partials._active-plan-pill')
+    @endif
+    <a href="{{ route('job-openings') }}" class="cp-btn cp-btn--primary">
+        <i class="mdi mdi-briefcase-search-outline"></i>
+        <span>Apply jobs</span>
+    </a>
     <button type="button" class="cp-btn cp-btn--outline" data-bs-toggle="modal" data-bs-target="#referralSignupModal">
         <i class="mdi mdi-gift-outline"></i>
         <span>Refer & Earn</span>
@@ -78,6 +85,28 @@
 @section('content')
 <div class="cd-dashboard" id="cd-dashboard">
 
+    @if($candidateHasPremium ?? false)
+        <div class="cd-plan-banner">
+            <div class="cd-plan-banner__icon"><i class="mdi mdi-crown"></i></div>
+            <div class="cd-plan-banner__body">
+                <strong>{{ $candidateActivePlanName ?? 'Premium plan' }} is active</strong>
+                <span>
+                    @if(!empty($candidatePlanExpiresAt))
+                        Valid until {{ $candidatePlanExpiresAt->format('d M Y') }}
+                    @else
+                        Your subscription is active.
+                    @endif
+                    @if($candidateHasAiTools ?? false)
+                        · AI career tools unlocked
+                    @else
+                        · Upgrade above Access to unlock AI career tools
+                    @endif
+                </span>
+            </div>
+            <a href="{{ route('pricing') }}" class="cd-btn cd-btn--outline cd-btn--sm">{{ ($candidateHasAiTools ?? false) ? 'Plan details' : 'Upgrade plan' }}</a>
+        </div>
+    @endif
+
     <div class="cd-page is-active" data-page="overview" id="dashboard-overview">
         @include('hirevo.candidate.partials.dashboard._overview')
     </div>
@@ -102,18 +131,42 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 (function () {
     var trend = @json($scoreTrend);
     var charts = {};
+    var chartJsLoading = false;
+    var chartJsQueue = [];
+
+    function whenChartJsReady(callback) {
+        if (typeof Chart !== 'undefined') {
+            callback();
+            return;
+        }
+        chartJsQueue.push(callback);
+        if (chartJsLoading) {
+            return;
+        }
+        chartJsLoading = true;
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+        s.async = true;
+        s.onload = function () {
+            chartJsLoading = false;
+            var queue = chartJsQueue.slice();
+            chartJsQueue = [];
+            queue.forEach(function (fn) { fn(); });
+        };
+        document.head.appendChild(s);
+    }
 
     function buildChart(canvasId) {
-        var canvas = document.getElementById(canvasId);
-        if (!canvas || typeof Chart === 'undefined' || charts[canvasId]) return;
-        var labels = trend.map(function (d) { return d.month; });
-        var data = trend.map(function (d) { return d.score; });
-        charts[canvasId] = new Chart(canvas, {
+        whenChartJsReady(function () {
+            var canvas = document.getElementById(canvasId);
+            if (!canvas || typeof Chart === 'undefined' || charts[canvasId]) return;
+            var labels = trend.map(function (d) { return d.month; });
+            var data = trend.map(function (d) { return d.score; });
+            charts[canvasId] = new Chart(canvas, {
             type: 'line',
             data: {
                 labels: labels,
@@ -139,6 +192,7 @@
                     y: { min: 0, max: 100, grid: { color: 'rgba(148,163,184,0.12)' }, ticks: { color: '#94a3b8', font: { size: 10 }, stepSize: 25 } }
                 }
             }
+        });
         });
     }
 

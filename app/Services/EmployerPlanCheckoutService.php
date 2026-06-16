@@ -19,11 +19,34 @@ class EmployerPlanCheckoutService
     public function __construct(
         protected EmployerPlanService $planService,
         protected PlanCouponService $couponService,
+        protected RazorpayService $razorpay,
     ) {}
 
     public function isChequeMode(): bool
     {
-        return config('hirevo_plans.checkout.mode', 'cheque') === 'cheque';
+        return config('hirevo_plans.checkout.mode', 'razorpay') === 'cheque';
+    }
+
+    public function isRazorpayMode(): bool
+    {
+        if ($this->isChequeMode()) {
+            return false;
+        }
+
+        return $this->razorpay->isConfigured();
+    }
+
+    public function checkoutMode(): ?string
+    {
+        if ($this->isRazorpayMode()) {
+            return 'razorpay';
+        }
+
+        if ($this->isChequeMode()) {
+            return 'cheque';
+        }
+
+        return null;
     }
 
     /**
@@ -116,7 +139,7 @@ class EmployerPlanCheckoutService
             throw new InvalidArgumentException('Add your company name in profile before purchasing a plan.');
         }
 
-        if (! $profile->is_approved) {
+        if (! $this->isRazorpayMode() && ! $profile->is_approved) {
             throw new InvalidArgumentException('Your employer account must be approved before purchasing a plan.');
         }
 
@@ -136,7 +159,7 @@ class EmployerPlanCheckoutService
             ->where('user_id', $user->id)
             ->where('type', self::PAYMENT_TYPE)
             ->where('status', Payment::STATUS_PENDING)
-            ->whereIn('payment_gateway', [Payment::GATEWAY_CHEQUE, Payment::GATEWAY_NETBANKING])
+            ->whereIn('payment_gateway', [Payment::GATEWAY_CHEQUE, Payment::GATEWAY_NETBANKING, Payment::GATEWAY_RAZORPAY])
             ->where('created_at', '>=', now()->subDays(7))
             ->where('meta->plan_key', strtolower(trim($planKey)))
             ->exists();
@@ -257,6 +280,174 @@ class EmployerPlanCheckoutService
                     'error' => $e->getMessage(),
                 ]);
             }
+        }
+
+        return $payment;
+    }
+
+    /**
+     * @return array{order_id: string, amount: int, currency: string, key_id: string, payment_id: int}
+     */
+    public function createRazorpayOrder(User $user, string $planKey, ?string $couponCode = null): array
+    {
+        if (! $this->isRazorpayMode()) {
+            throw new InvalidArgumentException('Online payment is not available right now.');
+        }
+
+        $this->assertCanPurchase($user, $planKey);
+
+        $profile = $user->referrerProfile;
+        $plan = $this->resolvePurchasablePlan($planKey);
+        $coupon = $this->resolveOptionalCoupon($couponCode, $plan['key']);
+        $amounts = $this->calculateAmounts((float) $plan['price_inr'], $coupon);
+        $amountPaise = (int) round($amounts['total_amount'] * 100);
+
+        if ($amountPaise < 100) {
+            throw new InvalidArgumentException('Order amount is too low.');
+        }
+
+        $receipt = Str::limit('empl_'.$user->id.'_'.time(), 40, '');
+
+        $meta = [
+            'plan_key' => $plan['key'],
+            'plan_name' => $plan['name'],
+            'original_base_amount' => $amounts['original_base_amount'],
+            'base_amount' => $amounts['base_amount'],
+            'discount_percent' => $amounts['discount_percent'],
+            'discount_amount' => $amounts['discount_amount'],
+            'gst_rate' => $amounts['gst_rate'],
+            'gst_amount' => $amounts['gst_amount'],
+            'job_credits_included' => $plan['job_credits_included'] ?? $plan['database_credits_included'] ?? 0,
+            'company_name' => $profile->company_name,
+            'company_email' => $profile->company_email,
+            'billing_period' => $plan['billing_period'] ?? 'monthly',
+        ];
+
+        if ($coupon !== null) {
+            $meta['coupon_code'] = $coupon->code;
+            $meta['coupon_id'] = $coupon->id;
+        }
+
+        $payment = Payment::create([
+            'user_id' => $user->id,
+            'type' => self::PAYMENT_TYPE,
+            'amount' => $amounts['total_amount'],
+            'currency' => 'INR',
+            'payment_gateway' => Payment::GATEWAY_RAZORPAY,
+            'status' => Payment::STATUS_PENDING,
+            'meta' => $meta,
+        ]);
+
+        if ($coupon !== null) {
+            $coupon->incrementUsage();
+        }
+
+        $order = $this->razorpay->createOrder(
+            amountPaise: $amountPaise,
+            currency: 'INR',
+            receipt: $receipt,
+            notes: [
+                'payment_id' => (string) $payment->id,
+                'user_id' => (string) $user->id,
+                'plan_key' => $plan['key'],
+                'payment_type' => self::PAYMENT_TYPE,
+            ],
+        );
+
+        $payment->update([
+            'payment_reference' => $order['order_id'],
+            'meta' => array_merge($payment->meta ?? [], [
+                'razorpay_order_id' => $order['order_id'],
+            ]),
+        ]);
+
+        return [
+            'order_id' => $order['order_id'],
+            'amount' => $order['amount'],
+            'currency' => $order['currency'],
+            'key_id' => (string) config('razorpay.key_id'),
+            'payment_id' => $payment->id,
+        ];
+    }
+
+    public function verifyAndComplete(
+        User $user,
+        string $razorpayOrderId,
+        string $razorpayPaymentId,
+        string $razorpaySignature,
+    ): Payment {
+        if (! $this->razorpay->verifyCheckoutSignature($razorpayOrderId, $razorpayPaymentId, $razorpaySignature)) {
+            return $this->syncOrderFromGateway($user, $razorpayOrderId, $razorpayPaymentId);
+        }
+
+        $payment = $this->findPendingRazorpayPayment($user, $razorpayOrderId);
+
+        return $this->completeFromGateway($payment, $razorpayPaymentId, $razorpaySignature);
+    }
+
+    public function syncOrderFromGateway(User $user, string $razorpayOrderId, ?string $expectedPaymentId = null): Payment
+    {
+        $payment = $this->findPendingRazorpayPayment($user, $razorpayOrderId);
+
+        if ($payment->status === Payment::STATUS_COMPLETED) {
+            return $payment;
+        }
+
+        $successful = $this->razorpay->findSuccessfulPaymentForOrder($razorpayOrderId);
+
+        if ($successful === null) {
+            $failed = $this->razorpay->findLatestFailedPaymentForOrder($razorpayOrderId);
+            if ($failed !== null) {
+                $payment->update([
+                    'status' => Payment::STATUS_FAILED,
+                    'meta' => array_merge($payment->meta ?? [], [
+                        'razorpay_payment_id' => $failed['id'],
+                        'gateway_error' => $failed['error_description'],
+                        'failed_at' => now()->toIso8601String(),
+                    ]),
+                ]);
+
+                throw new InvalidArgumentException($failed['error_description']);
+            }
+
+            throw new InvalidArgumentException('Payment is not completed yet. If you were charged, wait a moment and refresh this page.');
+        }
+
+        if ($expectedPaymentId !== null && $successful['id'] !== $expectedPaymentId) {
+            throw new InvalidArgumentException('Payment verification mismatch. Please contact support.');
+        }
+
+        return $this->completeFromGateway($payment, $successful['id'], 'gateway-sync');
+    }
+
+    public function completeFromGateway(Payment $payment, string $razorpayPaymentId, string $verificationSource): Payment
+    {
+        if ($payment->status === Payment::STATUS_COMPLETED) {
+            return $payment;
+        }
+
+        $payment->update([
+            'meta' => array_merge($payment->meta ?? [], [
+                'razorpay_payment_id' => $razorpayPaymentId,
+                'verification_source' => $verificationSource,
+                'completed_at' => now()->toIso8601String(),
+            ]),
+        ]);
+
+        return $this->completePayment($payment->fresh());
+    }
+
+    protected function findPendingRazorpayPayment(User $user, string $razorpayOrderId): Payment
+    {
+        $payment = Payment::query()
+            ->where('user_id', $user->id)
+            ->where('type', self::PAYMENT_TYPE)
+            ->where('payment_gateway', Payment::GATEWAY_RAZORPAY)
+            ->where('payment_reference', $razorpayOrderId)
+            ->first();
+
+        if ($payment === null) {
+            throw new InvalidArgumentException('Payment record not found for this order.');
         }
 
         return $payment;

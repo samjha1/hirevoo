@@ -14,6 +14,7 @@
 @endsection
 
 @section('content')
+<x-candidate-premium-gate feature="Mock Interviews">
 @php $mock = $mockInterviews ?? []; @endphp
 <div class="cf-page">
     <div class="cf-readiness">
@@ -63,6 +64,7 @@
         </div>
     @endif
 </div>
+</x-candidate-premium-gate>
 @endsection
 
 @push('scripts')

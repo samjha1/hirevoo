@@ -17,6 +17,7 @@ class JobCatalogService
 
     public function __construct(
         protected JobOpeningsSearchService $jobSearch,
+        protected EmployerPlanService $employerPlans,
     ) {}
 
     /**
@@ -52,7 +53,11 @@ class JobCatalogService
 
         $cache = session(self::OPENINGS_SESSION_KEY);
         if (! is_array($cache) || ($cache['filter_hash'] ?? '') !== $filterHash) {
-            $cache = $this->buildOpeningsCatalogCache($employerQuery, $goalBase);
+            $cache = $this->buildOpeningsCatalogCache(
+                $employerQuery,
+                $goalBase,
+                $request->filled('q'),
+            );
             $cache['filter_hash'] = $filterHash;
             $cache['last_synthetic_id'] = 0;
             $cache['last_loaded_page'] = 0;
@@ -149,21 +154,34 @@ class JobCatalogService
     /**
      * @return array{filter_hash?: string, priority_entries: list<array{type: string, id: int}>, synthetic_count: int, last_synthetic_id?: int, last_loaded_page?: int}
      */
-    protected function buildOpeningsCatalogCache(Builder $employerQuery, Builder $goalBase): array
-    {
+    protected function buildOpeningsCatalogCache(
+        Builder $employerQuery,
+        Builder $goalBase,
+        bool $preserveSearchOrder = false,
+    ): array {
         $seed = $this->dailySeed();
 
-        $employerIds = (clone $employerQuery)->orderByDesc('created_at')->pluck('id')->all();
+        $employerIdsQuery = clone $employerQuery;
+        if (! $preserveSearchOrder) {
+            $employerIdsQuery->orderByDesc('created_at');
+        }
+        $employerIds = $this->prioritizeEmployerJobIds(
+            $employerIdsQuery->pluck('id')->map(fn ($id) => (int) $id)->all(),
+            $preserveSearchOrder,
+        );
+
         $realGoalIds = (clone $goalBase)->real()->orderByRaw('RAND('.($seed + 1).')')->pluck('id')->all();
 
         $priorityEntries = [];
         foreach ($employerIds as $id) {
             $priorityEntries[] = ['type' => 'employer', 'id' => (int) $id];
         }
+        $goalEntries = [];
         foreach ($realGoalIds as $id) {
-            $priorityEntries[] = ['type' => 'goal', 'id' => (int) $id];
+            $goalEntries[] = ['type' => 'goal', 'id' => (int) $id];
         }
-        shuffle($priorityEntries);
+        shuffle($goalEntries);
+        $priorityEntries = array_merge($priorityEntries, $goalEntries);
 
         $filterKey = $this->builderFingerprint($goalBase);
 
@@ -177,6 +195,64 @@ class JobCatalogService
             'last_synthetic_id' => 0,
             'last_loaded_page' => 0,
         ];
+    }
+
+    /**
+     * Paid-plan employer jobs first; optional stable merge keeps search relevance within each tier.
+     *
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    protected function prioritizeEmployerJobIds(array $ids, bool $preserveRelativeOrder): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $jobs = EmployerJob::query()
+            ->whereIn('id', $ids)
+            ->with('user.referrerProfile')
+            ->get()
+            ->keyBy('id');
+
+        $positions = array_flip($ids);
+        $subscribed = [];
+        $regular = [];
+
+        foreach ($ids as $id) {
+            $job = $jobs->get($id);
+            if ($job === null) {
+                continue;
+            }
+
+            $profile = $job->user?->referrerProfile;
+            if ($this->employerPlans->hasActiveSubscription($profile)) {
+                $subscribed[] = $id;
+            } else {
+                $regular[] = $id;
+            }
+        }
+
+        if ($subscribed !== []) {
+            usort($subscribed, function (int $a, int $b) use ($jobs, $positions, $preserveRelativeOrder): int {
+                $profileA = $jobs->get($a)?->user?->referrerProfile;
+                $profileB = $jobs->get($b)?->user?->referrerProfile;
+                $rankA = $this->employerPlans->planPriceRank($this->employerPlans->planKey($profileA));
+                $rankB = $this->employerPlans->planPriceRank($this->employerPlans->planKey($profileB));
+
+                if ($rankA !== $rankB) {
+                    return $rankB <=> $rankA;
+                }
+
+                if ($preserveRelativeOrder) {
+                    return ($positions[$a] ?? 0) <=> ($positions[$b] ?? 0);
+                }
+
+                return $b <=> $a;
+            });
+        }
+
+        return array_merge($subscribed, $regular);
     }
 
     /**

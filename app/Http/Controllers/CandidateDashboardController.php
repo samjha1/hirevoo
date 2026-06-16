@@ -88,11 +88,11 @@ class CandidateDashboardController extends Controller
         $allApplications->appends(['status' => $statusFilter])->fragment('applications');
         $allApplications->withQueryString();
 
-        $activeApps = $user->employerJobApplications()->whereIn('status', ['shortlisted', 'interviewed', 'offered'])->count();
-        $hiredCount = $user->employerJobApplications()->where('status', 'hired')->count();
-        $avgMatch = $user->employerJobApplications()->whereNotNull('job_match_score')->avg('job_match_score');
+        $activeApps = $employerAll->whereIn('status', ['shortlisted', 'interviewed', 'offered'])->count();
+        $hiredCount = $employerAll->where('status', 'hired')->count();
+        $avgMatch = $employerAll->whereNotNull('job_match_score')->avg('job_match_score');
 
-        $snapshot = $insights->snapshot($user);
+        $snapshot = $insights->dashboardSnapshot($user);
         $primaryResume = $snapshot['resume'];
         $skillFocusRole = $snapshot['target_role'];
         if ($skillFocusRole) {
@@ -162,18 +162,15 @@ class CandidateDashboardController extends Controller
 
         $profileCompletion = CandidateProfile::completionStats($candidateProfile, $user);
 
-        $employerApps = $user->employerJobApplications()->get();
-        $goalApps = $user->jobApplications()->get();
-
         $trackerCounts = [
-            'applied' => $employerApps->where('status', EmployerJobApplication::STATUS_APPLIED)->count()
-                + $goalApps->where('status', 'applied')->count(),
-            'shortlisted' => $employerApps->where('status', EmployerJobApplication::STATUS_SHORTLISTED)->count()
-                + $goalApps->where('status', 'shortlisted')->count(),
-            'interview' => $employerApps->where('status', EmployerJobApplication::STATUS_INTERVIEWED)->count()
-                + $goalApps->where('status', 'interviewed')->count(),
-            'offer' => $employerApps->where('status', EmployerJobApplication::STATUS_OFFERED)->count()
-                + $goalApps->where('status', 'offered')->count(),
+            'applied' => $employerAll->where('status', EmployerJobApplication::STATUS_APPLIED)->count()
+                + $goalAll->where('status', 'applied')->count(),
+            'shortlisted' => $employerAll->where('status', EmployerJobApplication::STATUS_SHORTLISTED)->count()
+                + $goalAll->where('status', 'shortlisted')->count(),
+            'interview' => $employerAll->where('status', EmployerJobApplication::STATUS_INTERVIEWED)->count()
+                + $goalAll->where('status', 'interviewed')->count(),
+            'offer' => $employerAll->where('status', EmployerJobApplication::STATUS_OFFERED)->count()
+                + $goalAll->where('status', 'offered')->count(),
         ];
 
         $hiringScore = $this->computeHiringScore(
@@ -201,7 +198,7 @@ class CandidateDashboardController extends Controller
 
         $roadmapSteps = $this->buildRoadmapSteps(
             $primaryResume !== null,
-            $goalApps->isNotEmpty(),
+            $goalAll->isNotEmpty(),
             count($dashboardSkillGaps) > 0,
             $profileCompletion['percent'] ?? 0,
             $totalApps,
@@ -229,7 +226,7 @@ class CandidateDashboardController extends Controller
             $dashboardSkillMatched,
             $dashboardSkillGaps,
             $trackerCounts['interview'],
-            $employerApps->whereNotNull('job_match_score')->avg('job_match_score'),
+            $employerAll->whereNotNull('job_match_score')->avg('job_match_score'),
             $profileCompletion['percent'] ?? 0
         );
 
@@ -674,9 +671,9 @@ class CandidateDashboardController extends Controller
         if ($totalApps === 0) {
             return [
                 'title' => 'Apply to Matched Jobs',
-                'description' => 'You have strong matches waiting — start applying to move your pipeline forward.',
-                'url' => route('candidate.job-matches'),
-                'label' => 'View matches',
+                'description' => 'Browse open roles from top employers and start your application pipeline.',
+                'url' => route('job-openings'),
+                'label' => 'Apply jobs',
             ];
         }
 

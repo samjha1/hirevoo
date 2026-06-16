@@ -40,6 +40,8 @@ class PlansController extends Controller
             'subscriptionExpiresAt' => $profile?->subscription_expires_at,
             'pendingPayment' => $pendingPayment,
             'isApproved' => (bool) ($profile?->is_approved),
+            'employerCheckoutMode' => $this->checkoutService->checkoutMode(),
+            'razorpayKeyId' => config('razorpay.key_id'),
         ]);
     }
 }

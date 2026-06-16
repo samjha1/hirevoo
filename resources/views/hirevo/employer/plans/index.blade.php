@@ -20,9 +20,13 @@
             'subscriptionExpiresAt' => $subscriptionExpiresAt ?? null,
             'pendingPayment' => $pendingPayment ?? null,
             'isApproved' => $isApproved ?? true,
+            'employerCheckoutMode' => $employerCheckoutMode ?? null,
         ])
     </div>
-    @if(config('hirevo_plans.checkout.mode', 'cheque') === 'cheque')
+    @if(($employerCheckoutMode ?? null) === 'razorpay')
+        @include('hirevo.employer.plans._checkout-razorpay-modal')
+        @include('hirevo.employer.plans._checkout-razorpay-scripts')
+    @elseif(($employerCheckoutMode ?? null) === 'cheque')
         @include('hirevo.employer.plans._checkout-modal')
         @include('hirevo.employer.plans._checkout-scripts')
     @endif

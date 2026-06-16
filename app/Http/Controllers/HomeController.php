@@ -11,6 +11,8 @@ use App\Models\JobRole;
 use App\Models\Resume;
 use App\Models\UpskillOpportunity;
 use App\Services\CandidateLeadService;
+use App\Services\CandidatePlanService;
+use App\Services\CandidatePremiumService;
 use App\Services\GptService;
 use App\Services\JobCatalogService;
 use App\Services\JobOpeningsSearchService;
@@ -162,7 +164,21 @@ class HomeController extends Controller
 
     public function pricing(): View
     {
-        return view('hirevo.pricing');
+        $user = auth()->user();
+        $planService = app(CandidatePlanService::class);
+        $premium = app(CandidatePremiumService::class);
+        $activePlan = $premium->activeSubscriptionSummary($user);
+
+        return view('hirevo.pricing', [
+            'candidatePlans' => $planService->allPlansKeyed(),
+            'razorpayKeyId' => config('razorpay.key_id'),
+            'gstRate' => (float) config('hirevo_candidate_plans.checkout.gst_rate', 18),
+            'candidateHasPremium' => $premium->hasAccess($user),
+            'candidateActivePlanKey' => $activePlan['key'] ?? null,
+            'candidateRenewalPlanKey' => $activePlan['renewal_plan'] ?? ($user?->candidateProfile?->renewal_plan ?? null),
+            'candidatePlanExpiresAt' => $activePlan['expires_at'] ?? null,
+            'isCandidate' => $user?->isCandidate() ?? false,
+        ]);
     }
 
     public function jobOpenings(Request $request, ResumeAnalysisService $resumeAnalysis, GptService $gptService, JobCatalogService $jobCatalog, JobOpeningsSearchService $jobSearch): View|JsonResponse|RedirectResponse
@@ -353,14 +369,36 @@ class HomeController extends Controller
                 ->all();
         }
 
+        $countryLabels = config('hirevo.job_openings_country_labels', []);
+        $hasActiveFilters = ($searchQuery !== '')
+            || ($searchLocation !== '')
+            || ($filterJobType !== '')
+            || ($filterWorkType !== '')
+            || ($countryFilter !== '');
+        $showLaunchingSoon = $jobs->total() === 0 && $hasActiveFilters;
+
         if ($request->ajax()) {
+            $cardsHtml = view('hirevo.partials.openings-catalog-cards', [
+                'jobs' => $jobs,
+                'appliedIds' => $appliedIds,
+                'appliedGoalIds' => $appliedGoalIds ?? [],
+                'jobMatchScores' => $jobMatchScores,
+            ])->render();
+
+            if (trim($cardsHtml) === '' && $showLaunchingSoon) {
+                $cardsHtml = view('hirevo.partials.job-openings-empty', compact(
+                    'jobs',
+                    'countryFilter',
+                    'countryLabels',
+                    'searchQuery',
+                    'searchLocation',
+                    'hasActiveFilters',
+                    'showLaunchingSoon',
+                ))->render();
+            }
+
             return response()->json([
-                'html' => view('hirevo.partials.openings-catalog-cards', [
-                    'jobs' => $jobs,
-                    'appliedIds' => $appliedIds,
-                    'appliedGoalIds' => $appliedGoalIds ?? [],
-                    'jobMatchScores' => $jobMatchScores,
-                ])->render(),
+                'html' => $cardsHtml,
                 'next_page_url' => $jobs->nextPageUrl(),
                 'has_more' => $jobs->hasMorePages(),
                 'from' => $jobs->firstItem(),
@@ -371,13 +409,11 @@ class HomeController extends Controller
             ]);
         }
 
-        $countryLabels = config('hirevo.job_openings_country_labels', []);
-
         return view('hirevo.job-openings', compact(
             'jobs', 'appliedIds', 'appliedGoalIds', 'searchQuery', 'searchLocation',
             'filterJobType', 'filterWorkType', 'locationOptions',
             'jobMatchScores', 'jobMatchAiRanked', 'jobsPersonalized', 'personalizeResumeId',
-            'countryFilter', 'countryLabels'
+            'countryFilter', 'countryLabels', 'hasActiveFilters', 'showLaunchingSoon',
         ));
     }
 

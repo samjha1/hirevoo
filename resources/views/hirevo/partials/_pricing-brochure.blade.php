@@ -36,7 +36,7 @@
 <div class="bp-page">
 
     @if($context === 'employer')
-        @if(empty($isApproved))
+        @if(empty($isApproved) && ($employerCheckoutMode ?? 'cheque') === 'cheque')
             <div class="bp-alert bp-alert--warning">
                 <i class="mdi mdi-shield-alert-outline"></i>
                 <div>
@@ -171,8 +171,8 @@
                                         <button type="button" class="bp-btn bp-btn--disabled" disabled><i class="mdi mdi-check"></i> Current plan</button>
                                     @elseif($launchPending)
                                         <button type="button" class="bp-btn bp-btn--pending" disabled><i class="mdi mdi-clock-outline"></i> Payment pending</button>
-                                    @elseif($context === 'employer' && config('hirevo_plans.checkout.mode', 'cheque') === 'cheque')
-                                        <button type="button" class="bp-btn bp-btn--launch js-plan-checkout" data-plan-key="{{ $launchPlanKey }}" @if(empty($isApproved)) disabled title="Available after account approval" @endif>
+                                    @elseif($context === 'employer' && empty($plan['custom_price']) && in_array($employerCheckoutMode ?? null, ['cheque', 'razorpay'], true))
+                                        <button type="button" class="bp-btn bp-btn--launch js-plan-checkout" data-plan-key="{{ $launchPlanKey }}" @if(($employerCheckoutMode ?? '') === 'cheque' && empty($isApproved)) disabled title="Available after account approval" @endif>
                                             {{ $launchPlan['cta'] ?? 'Launch Now' }} <i class="mdi mdi-arrow-right"></i>
                                         </button>
                                     @else
@@ -269,8 +269,8 @@
                                     <button type="button" class="bp-btn bp-btn--disabled" disabled><i class="mdi mdi-check"></i> Current plan</button>
                                 @elseif($hasPendingForPlan)
                                     <button type="button" class="bp-btn bp-btn--pending" disabled><i class="mdi mdi-clock-outline"></i> Payment pending</button>
-                                @elseif($context === 'employer' && empty($plan['custom_price']) && config('hirevo_plans.checkout.mode', 'cheque') === 'cheque')
-                                    <button type="button" class="bp-btn bp-btn--primary js-plan-checkout" data-plan-key="{{ $key }}" @if(empty($isApproved)) disabled title="Available after account approval" @endif>
+                                @elseif($context === 'employer' && empty($plan['custom_price']) && in_array($employerCheckoutMode ?? null, ['cheque', 'razorpay'], true))
+                                    <button type="button" class="bp-btn bp-btn--primary js-plan-checkout" data-plan-key="{{ $key }}" @if(($employerCheckoutMode ?? '') === 'cheque' && empty($isApproved)) disabled title="Available after account approval" @endif>
                                         Buy now <i class="mdi mdi-arrow-right"></i>
                                     </button>
                                 @else

@@ -17,6 +17,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\CandidateDashboardController;
 use App\Http\Controllers\CandidateFeaturesController;
+use App\Http\Controllers\CandidatePlanCheckoutController;
+use App\Http\Controllers\RazorpayWebhookController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LeadController;
@@ -69,6 +71,17 @@ Route::get('/auth/google/redirect', [SocialAuthController::class, 'redirectToGoo
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 Route::get('/auth/microsoft/redirect', [SocialAuthController::class, 'redirectToMicrosoft'])->name('auth.microsoft.redirect');
 Route::get('/auth/microsoft/callback', [SocialAuthController::class, 'handleMicrosoftCallback'])->name('auth.microsoft.callback');
+
+Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle'])->name('webhooks.razorpay');
+
+Route::middleware(['auth'])->prefix('api/candidate')->name('candidate.api.')->group(function () {
+    Route::get('/plans/{planKey}/quote', [CandidatePlanCheckoutController::class, 'quote'])->name('plans.quote');
+    Route::post('/create-order', [CandidatePlanCheckoutController::class, 'createOrder'])->name('create-order');
+    Route::post('/verify-payment', [CandidatePlanCheckoutController::class, 'verifyPayment'])->name('verify-payment');
+    Route::post('/sync-payment', [CandidatePlanCheckoutController::class, 'syncPayment'])->name('sync-payment');
+    Route::post('/schedule-renewal-plan', [CandidatePlanCheckoutController::class, 'scheduleRenewalPlan'])->name('schedule-renewal-plan');
+    Route::post('/clear-renewal-plan', [CandidatePlanCheckoutController::class, 'clearRenewalPlan'])->name('clear-renewal-plan');
+});
 
 Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
     Route::get('/dashboard', [CandidateDashboardController::class, 'index'])->name('candidate.dashboard');
@@ -129,6 +142,9 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
         Route::redirect('credits', 'plans', 301)->name('credits.index');
         Route::get('/plans', [EmployerPlansController::class, 'index'])->name('plans.index');
         Route::get('/plans/{planKey}/quote', [EmployerPlanCheckoutController::class, 'quote'])->name('plans.quote');
+        Route::post('/plans/create-order', [EmployerPlanCheckoutController::class, 'createOrder'])->name('plans.create-order');
+        Route::post('/plans/verify-payment', [EmployerPlanCheckoutController::class, 'verifyPayment'])->name('plans.verify-payment');
+        Route::post('/plans/sync-payment', [EmployerPlanCheckoutController::class, 'syncPayment'])->name('plans.sync-payment');
         Route::post('/plans/checkout/cheque', [EmployerPlanCheckoutController::class, 'storeCheque'])->name('plans.checkout.cheque');
         Route::get('/talent-pool', [EmployerTalentPoolController::class, 'index'])->name('talent-pool.index');
         Route::get('/talent-pool/results', [EmployerTalentPoolController::class, 'results'])->name('talent-pool.results');

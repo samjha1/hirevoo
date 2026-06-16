@@ -767,6 +767,16 @@
         }
     </style>
     @stack('styles')
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXYNKF2NHW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-BXYNKF2NHW');
+    </script>
 </head>
 <body>
     <!-- Mobile backdrop -->

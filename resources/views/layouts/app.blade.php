@@ -67,6 +67,16 @@
         @include('hirevo.legal.partials._legal-styles-inline')
     @endif
     @stack('styles')
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXYNKF2NHW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-BXYNKF2NHW');
+    </script>
 </head>
 <body class="@yield('body_class')">
     <a class="visually-hidden-focusable position-absolute top-0 start-0 z-3 btn btn-sm btn-primary m-2" href="#main-content">Skip to main content</a>
@@ -150,6 +160,25 @@
                         </li>
 
                         @else
+                        @php
+                            $showNavPlanPill = (auth()->user()->isCandidate() && ($candidateHasPremium ?? false) && !empty($candidateActivePlanName))
+                                || (auth()->user()->isReferrer() && !empty($employerActivePlanName) && ($employerHasActivePlan ?? false));
+                        @endphp
+                        @if($showNavPlanPill)
+                        <li class="nav-item d-flex align-items-center me-1 me-lg-2">
+                            @if(auth()->user()->isCandidate())
+                                @include('hirevo.candidate.partials._active-plan-pill')
+                            @elseif(auth()->user()->isReferrer())
+                                <a href="{{ route('employer.plans.index') }}" class="cp-plan-pill cp-plan-pill--employer" title="Your active plan">
+                                    <i class="mdi mdi-shield-check"></i>
+                                    <span class="cp-plan-pill__name">{{ $employerActivePlanName }}</span>
+                                    @if(!empty($employerPlanExpiresAt))
+                                        <span class="cp-plan-pill__meta">until {{ $employerPlanExpiresAt->format('d M Y') }}</span>
+                                    @endif
+                                </a>
+                            @endif
+                        </li>
+                        @endif
                         <li class="nav-item dropdown">
                             @if(auth()->user()->isCandidate())
                                 @include('hirevo.partials._candidate-notifications', ['variant' => 'navbar'])

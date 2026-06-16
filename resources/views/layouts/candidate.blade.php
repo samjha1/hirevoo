@@ -31,6 +31,16 @@
     @endphp
     <link href="{{ asset('css/hirevo-candidate-features.css') }}?v={{ $candidateFeaturesCssVer }}" rel="stylesheet">
     @stack('styles')
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXYNKF2NHW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-BXYNKF2NHW');
+    </script>
     <title>@yield('title', 'Dashboard') — Hirevoo</title>
 </head>
 <body class="cp-body @yield('body_class')">
@@ -55,13 +65,13 @@
                         ['href' => route('candidate.dashboard').'#hiring-score', 'icon' => 'mdi-gauge', 'label' => 'My Hiring Score', 'active' => false],
                         ['href' => route('candidate.dashboard').'#career-report', 'icon' => 'mdi-chart-box-outline', 'label' => 'Career Report', 'active' => false],
                         ['href' => route('candidate.dashboard').'#roadmap', 'icon' => 'mdi-map-marker-path', 'label' => 'Roadmap', 'active' => false],
-                        ['route' => 'candidate.assessments', 'icon' => 'mdi-clipboard-check-outline', 'label' => 'Assessments', 'active' => request()->routeIs('candidate.assessments')],
+                        ['route' => 'candidate.assessments', 'icon' => 'mdi-clipboard-check-outline', 'label' => 'Assessments', 'active' => request()->routeIs('candidate.assessments'), 'premium' => true],
                         ['route' => 'candidate.resume.review', 'icon' => 'mdi-file-document-edit-outline', 'label' => 'Resume Review', 'active' => request()->routeIs('candidate.resume.review', 'resume.results')],
-                        ['route' => 'candidate.mock-interviews', 'icon' => 'mdi-microphone-outline', 'label' => 'Mock Interviews', 'active' => request()->routeIs('candidate.mock-interviews')],
+                        ['route' => 'candidate.mock-interviews', 'icon' => 'mdi-microphone-outline', 'label' => 'Mock Interviews', 'active' => request()->routeIs('candidate.mock-interviews'), 'premium' => true],
                         ['href' => route('candidate.dashboard').'#applications', 'icon' => 'mdi-briefcase-check-outline', 'label' => 'Applications Tracker', 'active' => false],
-                        ['route' => 'candidate.skill-gaps', 'icon' => 'mdi-chart-timeline-variant', 'label' => 'Skill Gap Analysis', 'active' => request()->routeIs('candidate.skill-gaps')],
-                        ['route' => 'pricing', 'icon' => 'mdi-school-outline', 'label' => 'Learning Hub', 'active' => request()->routeIs('pricing')],
-                        ['route' => 'candidate.job-matches', 'icon' => 'mdi-briefcase-search-outline', 'label' => 'Job Matches', 'active' => request()->routeIs('candidate.job-matches')],
+                        ['route' => 'candidate.skill-gaps', 'icon' => 'mdi-chart-timeline-variant', 'label' => 'Skill Gap Analysis', 'active' => request()->routeIs('candidate.skill-gaps'), 'premium' => true],
+                        ['route' => 'pricing', 'icon' => 'mdi-school-outline', 'label' => 'Learning Hub', 'active' => request()->routeIs('pricing'), 'premium' => true],
+                        ['route' => 'candidate.job-matches', 'icon' => 'mdi-briefcase-search-outline', 'label' => 'Job Matches', 'active' => request()->routeIs('candidate.job-matches'), 'premium' => true],
                         ['route' => 'candidate.salary-insights', 'icon' => 'mdi-currency-inr', 'label' => 'Salary Insights', 'active' => request()->routeIs('candidate.salary-insights')],
                         ['route' => 'profile', 'icon' => 'mdi-account-circle-outline', 'label' => 'Profile & Resume', 'active' => request()->routeIs('profile')],
                         ['route' => 'profile', 'icon' => 'mdi-cog-outline', 'label' => 'Settings', 'active' => false],
@@ -74,6 +84,9 @@
                                href="{{ isset($item['route']) ? route($item['route']) : ($item['href'] ?? '#') }}">
                                 <i class="mdi {{ $item['icon'] }}"></i>
                                 <span>{{ $item['label'] }}</span>
+                                @if(($item['premium'] ?? false) && !($candidateHasAiTools ?? false))
+                                    <i class="mdi mdi-crown cp-nav-premium" title="Premium"></i>
+                                @endif
                             </a>
                         </li>
                     @endforeach
@@ -81,10 +94,26 @@
             </nav>
 
             <div class="cp-sidebar-upgrade">
-                <div class="cp-sidebar-upgrade-icon" aria-hidden="true">👑</div>
-                <p class="cp-sidebar-upgrade-title">Upgrade Your Career</p>
-                <p class="cp-sidebar-upgrade-sub">Unlock premium tools to boost your hiring score.</p>
-                <a href="{{ route('pricing') }}" class="cp-sidebar-upgrade-btn">Explore Premium</a>
+                @if($candidateHasPremium ?? false)
+                    <div class="cp-sidebar-upgrade-icon" aria-hidden="true">✓</div>
+                    <p class="cp-sidebar-upgrade-title">{{ $candidateActivePlanName ?? 'Premium active' }}</p>
+                    <p class="cp-sidebar-upgrade-sub">
+                        @if(!empty($candidatePlanExpiresAt))
+                            Active until {{ $candidatePlanExpiresAt->format('d M Y') }}
+                        @else
+                            Your plan is active.
+                        @endif
+                        @unless($candidateHasAiTools ?? false)
+                            <span class="d-block mt-1">Upgrade above Access to unlock AI career tools.</span>
+                        @endunless
+                    </p>
+                    <a href="{{ route('pricing') }}" class="cp-sidebar-upgrade-btn">View plan</a>
+                @else
+                    <div class="cp-sidebar-upgrade-icon" aria-hidden="true">👑</div>
+                    <p class="cp-sidebar-upgrade-title">Upgrade Your Career</p>
+                    <p class="cp-sidebar-upgrade-sub">Unlock premium tools to boost your hiring score.</p>
+                    <a href="{{ route('pricing') }}" class="cp-sidebar-upgrade-btn">Explore Premium</a>
+                @endif
             </div>
 
             <div class="cp-sidebar-footer">
@@ -109,6 +138,7 @@
                 <div class="cp-topbar-actions">
                     @auth
                         @if(auth()->user()->isCandidate())
+                            @include('hirevo.candidate.partials._active-plan-pill')
                             @include('hirevo.partials._candidate-notifications', ['variant' => 'topbar'])
                         @endif
                     @endauth
@@ -222,5 +252,43 @@
     </script>
     @stack('scripts')
     @include('partials.flash-auto-dismiss')
+
+    @auth
+        @if(auth()->user()->isCandidate())
+            @include('hirevo.candidate.partials._premium-upgrade-modal')
+        @endif
+    @endauth
+
+    <script>
+        (function () {
+            var modalEl = document.getElementById('candidatePremiumModal');
+            var modalText = document.getElementById('candidatePremiumModalText');
+
+            function openPremiumModal(feature) {
+                if (!modalEl || typeof bootstrap === 'undefined') return;
+                if (modalText && feature) {
+                    modalText.textContent = 'Upgrade to unlock ' + feature + ' and other AI-powered career tools — assessments, mock interviews, skill gaps, learning hub, and job matches.';
+                }
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+
+            document.querySelectorAll('[data-premium-trigger]').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var gate = btn.closest('[data-premium-gate]');
+                    openPremiumModal(gate ? gate.dataset.feature : '');
+                });
+            });
+
+            document.querySelectorAll('[data-premium-gate] a').forEach(function (link) {
+                link.addEventListener('click', function (e) {
+                    if (link.closest('[data-premium-gate]')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        })();
+    </script>
 </body>
 </html>

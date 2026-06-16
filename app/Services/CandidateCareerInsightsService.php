@@ -27,9 +27,23 @@ class CandidateCareerInsightsService
         return Cache::remember($this->cacheKey($user), $ttl, fn () => $this->buildSnapshot($user));
     }
 
+    /**
+     * Lighter snapshot for dashboard — skips salary, assessments, and mock interviews.
+     *
+     * @return array<string, mixed>
+     */
+    public function dashboardSnapshot(User $user): array
+    {
+        $ttl = (int) config('hirevo_candidate_features.insights_cache_ttl', 1800);
+
+        return Cache::remember($this->dashboardCacheKey($user), $ttl, fn () => $this->buildDashboardSnapshot($user));
+    }
+
     public function forget(User $user): void
     {
-        Cache::forget($this->cacheKey($user));
+        $stamp = $this->cacheStamp($user);
+        Cache::forget('candidate_insights:'.$user->id.':'.$stamp);
+        Cache::forget('candidate_insights_dash:'.$user->id.':'.$stamp);
     }
 
     /**
@@ -58,19 +72,52 @@ class CandidateCareerInsightsService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildDashboardSnapshot(User $user): array
+    {
+        $resume = $this->primaryResume($user);
+        $targetRole = $this->resolveTargetRole($user, $resume);
+        $skillGaps = $this->buildSkillGapAnalysis($user, $resume, $targetRole);
+        $jobMatches = $this->buildPersonalizedJobMatches($user, $resume, [
+            'goal_scan' => (int) config('hirevo_candidate_features.job_match_dashboard_goal_scan', 12),
+            'employer_scan' => (int) config('hirevo_candidate_features.job_match_dashboard_employer_scan', 40),
+            'employer_take' => (int) config('hirevo_candidate_features.job_match_dashboard_employer_take', 8),
+            'page_limit' => (int) config('hirevo_candidate_features.job_match_dashboard_page_limit', 8),
+        ]);
+
+        return [
+            'resume' => $resume,
+            'target_role' => $targetRole,
+            'skill_gaps' => $skillGaps,
+            'job_matches' => $jobMatches,
+        ];
+    }
+
     public function primaryResume(User $user): ?Resume
     {
         return $user->resumes()->where('is_primary', true)->first()
             ?? $user->resumes()->orderByDesc('created_at')->first();
     }
 
-    protected function cacheKey(User $user): string
+    protected function cacheStamp(User $user): int
     {
         $resume = $this->primaryResume($user);
         $resumeStamp = $resume?->updated_at?->timestamp ?? 0;
         $profileStamp = $user->candidateProfile?->updated_at?->timestamp ?? 0;
 
-        return 'candidate_insights:'.$user->id.':'.max($resumeStamp, $profileStamp);
+        return max($resumeStamp, $profileStamp);
+    }
+
+    protected function cacheKey(User $user): string
+    {
+        return 'candidate_insights:'.$user->id.':'.$this->cacheStamp($user);
+    }
+
+    protected function dashboardCacheKey(User $user): string
+    {
+        return 'candidate_insights_dash:'.$user->id.':'.$this->cacheStamp($user);
     }
 
     protected function resolveTargetRole(User $user, ?Resume $resume): ?JobRole
@@ -364,7 +411,11 @@ class CandidateCareerInsightsService
     /**
      * @return list<array<string, mixed>>
      */
-    public function buildPersonalizedJobMatches(User $user, ?Resume $resume): array
+    /**
+     * @param  array<string, int>|null  $limits  Optional overrides: goal_scan, employer_scan, employer_take, page_limit
+     * @return list<array<string, mixed>>
+     */
+    public function buildPersonalizedJobMatches(User $user, ?Resume $resume, ?array $limits = null): array
     {
         if (! $resume) {
             return [];
@@ -372,10 +423,10 @@ class CandidateCareerInsightsService
 
         $strongMinPct = (int) config('hirevo_candidate_features.job_match_min_pct', 45);
         $includeMinPct = (int) config('hirevo_candidate_features.job_match_include_min_pct', 15);
-        $pageLimit = (int) config('hirevo_candidate_features.job_match_page_limit', 30);
-        $goalScan = (int) config('hirevo_candidate_features.job_match_goal_scan', 35);
-        $employerScan = (int) config('hirevo_candidate_features.job_match_employer_scan', 150);
-        $employerTake = (int) config('hirevo_candidate_features.job_match_employer_take', 25);
+        $pageLimit = (int) ($limits['page_limit'] ?? config('hirevo_candidate_features.job_match_page_limit', 30));
+        $goalScan = (int) ($limits['goal_scan'] ?? config('hirevo_candidate_features.job_match_goal_scan', 35));
+        $employerScan = (int) ($limits['employer_scan'] ?? config('hirevo_candidate_features.job_match_employer_scan', 150));
+        $employerTake = (int) ($limits['employer_take'] ?? config('hirevo_candidate_features.job_match_employer_take', 25));
 
         $profileSkills = $user->candidateProfile?->skills;
         $appliedJobIds = $user->employerJobApplications()->pluck('employer_job_id')->all();

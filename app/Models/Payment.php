@@ -9,6 +9,8 @@ class Payment extends Model
 {
     public const TYPE_EMPLOYER_SUBSCRIPTION = 'employer_subscription';
 
+    public const TYPE_PREMIUM_SUBSCRIPTION = 'premium_subscription';
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_COMPLETED = 'completed';
@@ -20,6 +22,8 @@ class Payment extends Model
     public const GATEWAY_CHEQUE = 'cheque';
 
     public const GATEWAY_NETBANKING = 'netbanking';
+
+    public const GATEWAY_RAZORPAY = 'razorpay';
 
     protected $fillable = [
         'user_id',

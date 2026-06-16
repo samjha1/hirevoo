@@ -1322,6 +1322,36 @@
         background: linear-gradient(145deg, #e0e7ff, #d1fae5);
         border: 1px solid rgba(99, 102, 241, 0.15);
     }
+    .jo-launching-soon {
+        border: 1px solid rgba(13, 148, 136, 0.2) !important;
+        background: linear-gradient(180deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98)) !important;
+    }
+    .jo-launching-soon__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.35rem 0.9rem 0.35rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #0f766e;
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .jo-launching-soon__pulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+        animation: joLaunchPulse 2s ease-in-out infinite;
+    }
+    @keyframes joLaunchPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+        50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    }
 
     @keyframes joFadeUp {
         from { opacity: 0; transform: translateY(16px); }
@@ -1623,7 +1653,13 @@
                                     <span class="text-muted">· filtered</span>
                                 @endif
                             @else
-                                <span class="fw-800" style="color: var(--jo-ink);">No roles in this view</span>
+                                <span class="fw-800" style="color: var(--jo-ink);">
+                                    @if(!empty($showLaunchingSoon))
+                                        Launching soon
+                                    @else
+                                        No roles in this view
+                                    @endif
+                                </span>
                             @endif
                         </div>
                         <div class="jo-results-bar__right">
@@ -1649,24 +1685,28 @@
                                 @endif
                             </div>
                         @empty
+                            @if(!empty($showLaunchingSoon))
+                                @include('hirevo.partials.job-openings-empty', compact(
+                                    'jobs',
+                                    'countryFilter',
+                                    'countryLabels',
+                                    'searchQuery',
+                                    'searchLocation',
+                                    'hasActiveFilters',
+                                    'showLaunchingSoon',
+                                ))
+                            @else
                             <div class="card border-0 jo-filters-card jo-empty-state text-center py-5 px-3">
                                 <div class="card-body py-5">
                                     <div class="jo-empty-icon d-inline-flex align-items-center justify-content-center mb-4">
                                         <i class="mdi mdi-rocket" style="font-size: 2rem; color: #4f46e5;" aria-hidden="true"></i>
                                     </div>
                                     <h2 class="h5 fw-bold mb-2" style="color: var(--jo-ink); letter-spacing:-0.02em;">Nothing in frame</h2>
-                                    @if($hasActiveFilters)
-                                        <p class="text-muted mb-4 mx-auto" style="max-width: 420px;">Try widening keywords or reset filters — great roles might be one click away.</p>
-                                        <div class="d-flex flex-wrap justify-content-center gap-2">
-                                            <a href="{{ route('job-openings') }}" class="btn btn-primary rounded-pill px-4 jo-apply-btn">View all openings</a>
-                                            <a href="{{ route('home') }}" class="btn btn-outline-secondary rounded-pill px-4 fw-700">Home</a>
-                                        </div>
-                                    @else
-                                        <p class="text-muted mb-4">Fresh posts land often — bookmark this page or upload a resume for alerts elsewhere in Hirevo.</p>
-                                        <a href="{{ route('home') }}" class="btn btn-primary rounded-pill px-4 jo-apply-btn">Explore Hirevo</a>
-                                    @endif
+                                    <p class="text-muted mb-4">Fresh posts land often — bookmark this page or upload a resume for alerts elsewhere in Hirevo.</p>
+                                    <a href="{{ route('home') }}" class="btn btn-primary rounded-pill px-4 jo-apply-btn">Explore Hirevo</a>
                                 </div>
                             </div>
+                            @endif
                         @endforelse
                     </div>
 

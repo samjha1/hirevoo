@@ -229,10 +229,11 @@ return [
     'min_search_length' => 2,
 
     'checkout' => [
-        'mode' => env('PLAN_CHECKOUT_MODE', 'cheque'),
+        'mode' => env('PLAN_CHECKOUT_MODE', 'razorpay'),
         'gst_rate' => (float) env('PLAN_GST_RATE', 18),
         'payment_notice' => 'Pay by net banking (NEFT / RTGS / IMPS). Transfer to our bank account and submit your UTR and payment date below.',
         'pending_message' => 'Your plan request is received. We will activate your subscription after payment verification.',
+        'success_message' => 'Payment successful! Your plan is now active.',
         'bank_account' => [
             'bank_name' => 'IDFC FIRST Bank',
             'account_name' => 'HIREVOO MARKETING AND Consultancy pvt. Ltd.',

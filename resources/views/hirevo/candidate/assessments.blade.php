@@ -14,6 +14,7 @@
 @endsection
 
 @section('content')
+<x-candidate-premium-gate feature="Skill Assessments">
 <div class="cf-page">
     @if(empty($resume))
         <div class="cf-alert cf-alert--warn">Upload your resume to get personalized assessments. <a href="{{ route('resume.upload') }}" class="fw-600">Upload</a></div>
@@ -51,6 +52,7 @@
         @endforeach
     @endif
 </div>
+</x-candidate-premium-gate>
 @endsection
 
 @push('scripts')
