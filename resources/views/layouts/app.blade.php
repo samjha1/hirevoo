@@ -42,22 +42,10 @@
     <link href="{{ asset('css/hirevo-theme.css') }}?v={{ $themeCssVer }}" rel="stylesheet">
     @auth
         @if(auth()->user()->isCandidate())
-            @php
-                $notifyCss = public_path('css/hirevo-candidate-notifications.css');
-                $notifyCssVer = is_file($notifyCss) ? (string) filemtime($notifyCss) : '1';
-            @endphp
-            <link href="{{ asset('css/hirevo-candidate-notifications.css') }}?v={{ $notifyCssVer }}" rel="stylesheet">
+            @include('partials._hirevo-candidate-css')
         @endif
     @endauth
     <link href="{{ asset('css/hirevo-sponsored-ads.css') }}" rel="stylesheet">
-    @if(request()->routeIs('candidate.dashboard'))
-        @php
-            $candidateDashCss = public_path('css/hirevo-candidate-dashboard.css');
-            $candidateDashCssVer = is_file($candidateDashCss) ? (string) filemtime($candidateDashCss) : '1';
-        @endphp
-        <link href="{{ asset('css/hirevo-candidate-dashboard.css') }}?v={{ $candidateDashCssVer }}" rel="stylesheet">
-        @include('hirevo.candidate.partials._dashboard-styles-inline')
-    @endif
     @if(request()->routeIs('terms', 'privacy'))
         @php
             $legalTermsCss = public_path('css/hirevo-legal-terms.css');

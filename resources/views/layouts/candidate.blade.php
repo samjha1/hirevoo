@@ -15,21 +15,7 @@
     <link rel="stylesheet" href="{{ asset($theme.'/assets/css/bootstrap.min.css') }}">
     <link href="{{ asset($theme.'/assets/css/icons.min.css') }}" rel="stylesheet">
     <link href="{{ asset('css/hirevo-theme.css') }}" rel="stylesheet">
-    @php
-        $candidateDashCss = public_path('css/hirevo-candidate-dashboard.css');
-        $candidateDashCssVer = is_file($candidateDashCss) ? (string) filemtime($candidateDashCss) : '1';
-    @endphp
-    <link href="{{ asset('css/hirevo-candidate-dashboard.css') }}?v={{ $candidateDashCssVer }}" rel="stylesheet">
-    @php
-        $notifyCss = public_path('css/hirevo-candidate-notifications.css');
-        $notifyCssVer = is_file($notifyCss) ? (string) filemtime($notifyCss) : '1';
-    @endphp
-    <link href="{{ asset('css/hirevo-candidate-notifications.css') }}?v={{ $notifyCssVer }}" rel="stylesheet">
-    @php
-        $candidateFeaturesCss = public_path('css/hirevo-candidate-features.css');
-        $candidateFeaturesCssVer = is_file($candidateFeaturesCss) ? (string) filemtime($candidateFeaturesCss) : '1';
-    @endphp
-    <link href="{{ asset('css/hirevo-candidate-features.css') }}?v={{ $candidateFeaturesCssVer }}" rel="stylesheet">
+    @include('partials._hirevo-candidate-css')
     @stack('styles')
 
     <!-- Google tag (gtag.js) -->
