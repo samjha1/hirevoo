@@ -76,18 +76,54 @@ class EmployerPlanCheckoutService
     /**
      * @return array<string, mixed>
      */
-    public function quote(string $planKey, ?string $couponCode = null): array
+    public function quote(string $planKey, ?string $couponCode = null, ?int $billingMonths = null): array
     {
         $plan = $this->resolvePurchasablePlan($planKey);
+        $months = $this->planService->resolveBillingMonths($billingMonths, $plan);
         $coupon = $this->resolveOptionalCoupon($couponCode, $plan['key']);
-        $amounts = $this->calculateAmounts((float) $plan['price_inr'], $coupon);
+        $listPrice = $this->listPriceForMonths($plan, $months);
+        $amounts = $this->calculateAmounts($listPrice, $coupon);
 
         return array_merge([
             'plan_key' => $plan['key'],
             'plan_name' => $plan['name'],
-            'price_sub' => $plan['price_sub'] ?? '',
+            'price_sub' => $this->priceSubLabel($plan, $months),
+            'billing_months' => $months,
+            'billing_duration_options' => $this->planService->billingDurationOptions($plan),
+            'monthly_price_inr' => (int) ($plan['price_inr'] ?? 0),
             'job_credits_included' => $plan['job_credits_included'] ?? $plan['database_credits_included'] ?? 0,
         ], $amounts);
+    }
+
+    /**
+     * @param  array<string, mixed>  $plan
+     */
+    protected function listPriceForMonths(array $plan, int $billingMonths): float
+    {
+        if ($this->planService->isLaunchPlan($plan)) {
+            return (float) $plan['price_inr'];
+        }
+
+        return (float) $plan['price_inr'] * $billingMonths;
+    }
+
+    /**
+     * @param  array<string, mixed>  $plan
+     */
+    protected function priceSubLabel(array $plan, int $billingMonths): string
+    {
+        if ($this->planService->isLaunchPlan($plan)) {
+            return (string) ($plan['price_sub'] ?? 'one-time');
+        }
+
+        $monthly = number_format((int) $plan['price_inr']);
+        if ($billingMonths === 1) {
+            return "₹{$monthly} per month, billed monthly";
+        }
+
+        $total = number_format((int) $plan['price_inr'] * $billingMonths);
+
+        return "₹{$monthly}/mo × {$billingMonths} months = ₹{$total} upfront";
     }
 
     /**
@@ -128,7 +164,7 @@ class EmployerPlanCheckoutService
         return $this->couponService->resolveForPlan($couponCode, $planKey);
     }
 
-    public function assertCanPurchase(User $user, string $planKey): void
+    public function assertCanPurchase(User $user, string $planKey, ?int $billingMonths = null): void
     {
         $profile = $user->referrerProfile;
         if ($profile === null) {
@@ -143,7 +179,8 @@ class EmployerPlanCheckoutService
             throw new InvalidArgumentException('Your employer account must be approved before purchasing a plan.');
         }
 
-        $this->resolvePurchasablePlan($planKey);
+        $plan = $this->resolvePurchasablePlan($planKey);
+        $months = $this->planService->resolveBillingMonths($billingMonths, $plan);
 
         if ($this->planService->hasActiveSubscription($profile)) {
             $currentKey = $this->planService->planKey($profile);
@@ -155,18 +192,115 @@ class EmployerPlanCheckoutService
             }
         }
 
-        $hasPending = Payment::query()
+        $this->reconcileBlockingPendingPayments($user, $planKey, $months);
+
+        $pending = $this->matchingPendingPayment($user, $planKey, $months);
+
+        if ($pending !== null) {
+            if ($pending->payment_gateway === Payment::GATEWAY_RAZORPAY) {
+                throw new InvalidArgumentException('Your previous checkout is still processing. Wait a moment, refresh this page, and try again.');
+            }
+
+            throw new InvalidArgumentException('You already have a pending payment for this plan. We will activate it after verification.');
+        }
+    }
+
+    public function reconcileBlockingPendingPayments(User $user, string $planKey, int $months): void
+    {
+        $pendings = $this->matchingPendingPaymentQuery($user, $planKey, $months)->get();
+
+        foreach ($pendings as $payment) {
+            if ($payment->payment_gateway === Payment::GATEWAY_RAZORPAY) {
+                $this->reconcileRazorpayPendingPayment($payment);
+            }
+        }
+    }
+
+    protected function reconcileRazorpayPendingPayment(Payment $payment): void
+    {
+        if ($payment->status !== Payment::STATUS_PENDING) {
+            return;
+        }
+
+        $orderId = (string) ($payment->payment_reference ?: ($payment->meta['razorpay_order_id'] ?? ''));
+        if ($orderId === '') {
+            return;
+        }
+
+        $successful = $this->razorpay->findSuccessfulPaymentForOrder($orderId);
+        if ($successful !== null) {
+            $this->completeFromGateway($payment, $successful['id'], 'reconcile');
+
+            return;
+        }
+
+        $failed = $this->razorpay->findLatestFailedPaymentForOrder($orderId);
+        if ($failed !== null) {
+            $payment->update([
+                'status' => Payment::STATUS_FAILED,
+                'meta' => array_merge($payment->meta ?? [], [
+                    'razorpay_payment_id' => $failed['id'],
+                    'gateway_error' => $failed['error_description'],
+                    'failed_at' => now()->toIso8601String(),
+                ]),
+            ]);
+
+            return;
+        }
+
+        $gatewayPayments = $this->razorpay->paymentsForOrder($orderId);
+        if ($gatewayPayments === []) {
+            $payment->update([
+                'status' => Payment::STATUS_FAILED,
+                'meta' => array_merge($payment->meta ?? [], [
+                    'abandoned' => true,
+                    'released_for_retry' => true,
+                    'failed_at' => now()->toIso8601String(),
+                    'gateway_error' => 'Checkout was not completed.',
+                ]),
+            ]);
+
+            return;
+        }
+
+        $staleMinutes = max(5, (int) config('hirevo_plans.checkout.stale_razorpay_minutes', 60));
+        if ($payment->created_at->lte(now()->subMinutes($staleMinutes))) {
+            $payment->update([
+                'status' => Payment::STATUS_FAILED,
+                'meta' => array_merge($payment->meta ?? [], [
+                    'stale' => true,
+                    'failed_at' => now()->toIso8601String(),
+                    'gateway_error' => 'Checkout expired. Please try again.',
+                ]),
+            ]);
+        }
+    }
+
+    protected function matchingPendingPayment(User $user, string $planKey, int $months): ?Payment
+    {
+        return $this->matchingPendingPaymentQuery($user, $planKey, $months)
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Builder<Payment>
+     */
+    protected function matchingPendingPaymentQuery(User $user, string $planKey, int $months)
+    {
+        return Payment::query()
             ->where('user_id', $user->id)
             ->where('type', self::PAYMENT_TYPE)
             ->where('status', Payment::STATUS_PENDING)
             ->whereIn('payment_gateway', [Payment::GATEWAY_CHEQUE, Payment::GATEWAY_NETBANKING, Payment::GATEWAY_RAZORPAY])
             ->where('created_at', '>=', now()->subDays(7))
             ->where('meta->plan_key', strtolower(trim($planKey)))
-            ->exists();
-
-        if ($hasPending) {
-            throw new InvalidArgumentException('You already have a pending payment for this plan. We will activate it after verification.');
-        }
+            ->where(function ($query) use ($months) {
+                $query->where('meta->billing_months', $months);
+                if ($months === 1) {
+                    $query->orWhereNull('meta->billing_months');
+                }
+            });
     }
 
     public function createChequePayment(
@@ -174,6 +308,7 @@ class EmployerPlanCheckoutService
         string $planKey,
         string $chequeNumber,
         string $chequeDate,
+        ?int $billingMonths = null,
     ): Payment {
         return $this->createOfflinePayment(
             user: $user,
@@ -182,6 +317,7 @@ class EmployerPlanCheckoutService
             paymentReference: $chequeNumber,
             paymentDate: $chequeDate,
             paymentDateMetaKey: 'cheque_date',
+            billingMonths: $billingMonths,
         );
     }
 
@@ -191,6 +327,7 @@ class EmployerPlanCheckoutService
         string $utrReference,
         string $paymentDate,
         ?string $couponCode = null,
+        ?int $billingMonths = null,
     ): Payment {
         return $this->createOfflinePayment(
             user: $user,
@@ -200,6 +337,7 @@ class EmployerPlanCheckoutService
             paymentDate: $paymentDate,
             paymentDateMetaKey: 'payment_date',
             couponCode: $couponCode,
+            billingMonths: $billingMonths,
         );
     }
 
@@ -211,13 +349,15 @@ class EmployerPlanCheckoutService
         string $paymentDate,
         string $paymentDateMetaKey,
         ?string $couponCode = null,
+        ?int $billingMonths = null,
     ): Payment {
-        $this->assertCanPurchase($user, $planKey);
+        $this->assertCanPurchase($user, $planKey, $billingMonths);
 
         $profile = $user->referrerProfile;
         $plan = $this->resolvePurchasablePlan($planKey);
+        $months = $this->planService->resolveBillingMonths($billingMonths, $plan);
         $coupon = $this->resolveOptionalCoupon($couponCode, $plan['key']);
-        $amounts = $this->calculateAmounts((float) $plan['price_inr'], $coupon);
+        $amounts = $this->calculateAmounts($this->listPriceForMonths($plan, $months), $coupon);
         $acceptedAt = now()->toIso8601String();
         $reference = Str::limit(trim($paymentReference), 191);
 
@@ -236,6 +376,7 @@ class EmployerPlanCheckoutService
             'company_email' => $profile->company_email,
             'agreement_accepted_at' => $acceptedAt,
             'billing_period' => $plan['billing_period'] ?? 'monthly',
+            'billing_months' => $months,
         ];
 
         if ($coupon !== null) {
@@ -288,18 +429,19 @@ class EmployerPlanCheckoutService
     /**
      * @return array{order_id: string, amount: int, currency: string, key_id: string, payment_id: int}
      */
-    public function createRazorpayOrder(User $user, string $planKey, ?string $couponCode = null): array
+    public function createRazorpayOrder(User $user, string $planKey, ?string $couponCode = null, ?int $billingMonths = null): array
     {
         if (! $this->isRazorpayMode()) {
             throw new InvalidArgumentException('Online payment is not available right now.');
         }
 
-        $this->assertCanPurchase($user, $planKey);
+        $this->assertCanPurchase($user, $planKey, $billingMonths);
 
         $profile = $user->referrerProfile;
         $plan = $this->resolvePurchasablePlan($planKey);
+        $months = $this->planService->resolveBillingMonths($billingMonths, $plan);
         $coupon = $this->resolveOptionalCoupon($couponCode, $plan['key']);
-        $amounts = $this->calculateAmounts((float) $plan['price_inr'], $coupon);
+        $amounts = $this->calculateAmounts($this->listPriceForMonths($plan, $months), $coupon);
         $amountPaise = (int) round($amounts['total_amount'] * 100);
 
         if ($amountPaise < 100) {
@@ -321,6 +463,7 @@ class EmployerPlanCheckoutService
             'company_name' => $profile->company_name,
             'company_email' => $profile->company_email,
             'billing_period' => $plan['billing_period'] ?? 'monthly',
+            'billing_months' => $months,
         ];
 
         if ($coupon !== null) {
@@ -477,7 +620,11 @@ class EmployerPlanCheckoutService
 
         $payment->update(['status' => Payment::STATUS_COMPLETED]);
 
-        $this->planService->activateSubscription($profile, $planKey);
+        $billingMonths = isset($payment->meta['billing_months'])
+            ? (int) $payment->meta['billing_months']
+            : null;
+
+        $this->planService->activateSubscription($profile, $planKey, billingMonths: $billingMonths);
         $creditsGranted = $this->planService->grantPlanJobCredits($profile->fresh(), $planKey);
 
         Log::info('Employer subscription activated', [

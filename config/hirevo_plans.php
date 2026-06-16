@@ -228,12 +228,18 @@ return [
     'employer_approval_credits' => max(0, (int) env('EMPLOYER_APPROVAL_CREDITS', 1)),
     'min_search_length' => 2,
 
+    /** Months employers can prepay for subscription plans (price = monthly rate × months). */
+    'billing_duration_options' => [1, 3, 6, 12],
+    'default_billing_months' => 1,
+
     'checkout' => [
         'mode' => env('PLAN_CHECKOUT_MODE', 'razorpay'),
         'gst_rate' => (float) env('PLAN_GST_RATE', 18),
         'payment_notice' => 'Pay by net banking (NEFT / RTGS / IMPS). Transfer to our bank account and submit your UTR and payment date below.',
         'pending_message' => 'Your plan request is received. We will activate your subscription after payment verification.',
         'success_message' => 'Payment successful! Your plan is now active.',
+        /** Abandoned Razorpay checkouts with gateway attempts older than this are released. */
+        'stale_razorpay_minutes' => (int) env('PLAN_STALE_RAZORPAY_MINUTES', 60),
         'bank_account' => [
             'bank_name' => 'IDFC FIRST Bank',
             'account_name' => 'HIREVOO MARKETING AND Consultancy pvt. Ltd.',

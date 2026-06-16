@@ -42,6 +42,8 @@ class PlansController extends Controller
             'isApproved' => (bool) ($profile?->is_approved),
             'employerCheckoutMode' => $this->checkoutService->checkoutMode(),
             'razorpayKeyId' => config('razorpay.key_id'),
+            'billingDurationOptions' => config('hirevo_plans.billing_duration_options', [1, 3, 6, 12]),
+            'defaultBillingMonths' => (int) config('hirevo_plans.default_billing_months', 1),
         ]);
     }
 }

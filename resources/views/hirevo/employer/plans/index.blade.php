@@ -21,6 +21,8 @@
             'pendingPayment' => $pendingPayment ?? null,
             'isApproved' => $isApproved ?? true,
             'employerCheckoutMode' => $employerCheckoutMode ?? null,
+            'billingDurationOptions' => $billingDurationOptions ?? config('hirevo_plans.billing_duration_options', [1, 3, 6, 12]),
+            'defaultBillingMonths' => $defaultBillingMonths ?? (int) config('hirevo_plans.default_billing_months', 1),
         ])
     </div>
     @if(($employerCheckoutMode ?? null) === 'razorpay')

@@ -605,6 +605,44 @@
     color: var(--ink-300);
     margin-top: 5px;
 }
+.bp-plan__duration {
+    margin-bottom: 14px;
+}
+.bp-plan__duration-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-400, #9ca3af);
+    margin-bottom: 8px;
+}
+.bp-plan__duration-options {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+.bp-plan__duration-btn {
+    border: 1px solid var(--border-soft, #e5e7eb);
+    background: #fff;
+    border-radius: 8px;
+    padding: 7px 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--ink-500);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.bp-plan__duration-btn:hover {
+    border-color: #93c5fd;
+    color: #2563eb;
+}
+.bp-plan__duration-btn.is-active {
+    border-color: #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
 .bp-plan__feat-head {
     display: flex;
     align-items: center;

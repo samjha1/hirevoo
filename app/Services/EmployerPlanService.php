@@ -136,22 +136,74 @@ class EmployerPlanService
         return (int) ($configPlan['price_inr'] ?? 0);
     }
 
-    public function activateSubscription(ReferrerProfile $profile, string $planKey, ?Carbon $expiresAt = null): void
+    /**
+     * @return list<int>
+     */
+    public function billingDurationOptions(?array $planConfig = null): array
     {
+        if ($planConfig !== null && $this->isLaunchPlan($planConfig)) {
+            return [1];
+        }
+
+        $options = config('hirevo_plans.billing_duration_options', [1, 3, 6, 12]);
+
+        return array_values(array_filter(
+            array_map('intval', is_array($options) ? $options : []),
+            fn (int $months) => $months > 0,
+        ));
+    }
+
+    public function defaultBillingMonths(?array $planConfig = null): int
+    {
+        $options = $this->billingDurationOptions($planConfig);
+        $default = (int) config('hirevo_plans.default_billing_months', 1);
+
+        return in_array($default, $options, true) ? $default : ($options[0] ?? 1);
+    }
+
+    /**
+     * @param  array<string, mixed>  $planConfig
+     */
+    public function isLaunchPlan(array $planConfig): bool
+    {
+        return ! empty($planConfig['extras']['is_launch_offer'])
+            || in_array($planConfig['billing_period'] ?? '', ['one_time_7d', 'launch_7d'], true);
+    }
+
+    public function resolveBillingMonths(?int $billingMonths, ?array $planConfig = null): int
+    {
+        $options = $this->billingDurationOptions($planConfig);
+        $months = $billingMonths ?? $this->defaultBillingMonths($planConfig);
+
+        if (! in_array($months, $options, true)) {
+            throw new InvalidArgumentException('Please choose a valid subscription duration.');
+        }
+
+        return $months;
+    }
+
+    public function activateSubscription(
+        ReferrerProfile $profile,
+        string $planKey,
+        ?Carbon $expiresAt = null,
+        ?int $billingMonths = null,
+    ): void {
         $planKey = strtolower(trim($planKey));
         $plan = $this->findPlan($planKey);
+        $planConfig = $plan?->toDisplayArray() ?? $this->planConfig($planKey);
 
-        if ($plan === null && $this->planConfig($planKey) === null) {
+        if ($plan === null && $planConfig === null) {
             throw new InvalidArgumentException("Unknown plan: {$planKey}");
         }
 
         $startsAt = now();
         if ($expiresAt === null) {
-            $period = $plan?->billing_period ?? 'monthly';
+            $period = $plan?->billing_period ?? ($planConfig['billing_period'] ?? 'monthly');
+            $months = $this->resolveBillingMonths($billingMonths, is_array($planConfig) ? $planConfig : null);
             $expiresAt = match ($period) {
                 'yearly', 'annual' => $startsAt->copy()->addYear(),
                 'one_time_7d', 'launch_7d' => $startsAt->copy()->addDays(7),
-                default => $startsAt->copy()->addMonth(),
+                default => $startsAt->copy()->addMonths($months),
             };
         }
 

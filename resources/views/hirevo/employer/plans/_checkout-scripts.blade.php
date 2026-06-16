@@ -10,7 +10,7 @@
     var userName = @json(auth()->user()->name);
     var userEmail = @json(auth()->user()->email);
     var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    var state = { planKey: null, step: 1, quote: null, appliedCoupon: null };
+    var state = { planKey: null, step: 1, quote: null, appliedCoupon: null, billingMonths: null };
 
     var els = {
         notice: document.getElementById('plan-checkout-notice'),
@@ -36,6 +36,8 @@
         gst: document.getElementById('plan-checkout-gst'),
         total: document.getElementById('plan-checkout-total'),
         priceSub: document.getElementById('plan-checkout-price-sub'),
+        durationWrap: document.getElementById('plan-checkout-duration-wrap'),
+        durationOptions: document.getElementById('plan-checkout-duration-options'),
         utr: document.getElementById('plan-checkout-utr'),
         paymentDate: document.getElementById('plan-checkout-payment-date'),
         agreementBox: document.getElementById('plan-checkout-agreement-body'),
@@ -101,6 +103,7 @@
         state.planKey = null;
         state.quote = null;
         state.appliedCoupon = null;
+        state.billingMonths = null;
         state.step = 1;
         hideError();
         hideSuccess();
@@ -120,8 +123,43 @@
         els.closeBtn.textContent = 'Close';
     }
 
+    function renderDurationOptions(options, selectedMonths) {
+        if (!els.durationOptions || !els.durationWrap) return;
+        if (!options || options.length <= 1) {
+            els.durationWrap.hidden = true;
+            els.durationOptions.innerHTML = '';
+            return;
+        }
+
+        els.durationWrap.hidden = false;
+        els.durationOptions.innerHTML = options.map(function (months) {
+            var active = Number(months) === Number(selectedMonths);
+            return '<button type="button" class="btn btn-outline-secondary' + (active ? ' active' : '') + '" data-billing-months="' + months + '">' + months + ' month' + (months > 1 ? 's' : '') + '</button>';
+        }).join('');
+
+        els.durationOptions.querySelectorAll('[data-billing-months]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var months = parseInt(btn.getAttribute('data-billing-months') || '1', 10);
+                state.billingMonths = months;
+                setLoading(true);
+                hideError();
+                fetchQuote(state.planKey, state.appliedCoupon, months)
+                    .then(function (data) {
+                        populateQuote(data);
+                        setLoading(false);
+                    })
+                    .catch(function (err) {
+                        setLoading(false);
+                        showError(err.message);
+                    });
+            });
+        });
+    }
+
     function populateQuote(data) {
         state.quote = data;
+        state.billingMonths = data.billing_months || state.billingMonths || 1;
+        renderDurationOptions(data.billing_duration_options, state.billingMonths);
         if (data.payment_notice) {
             els.notice.querySelector('span').textContent = data.payment_notice;
         }
@@ -233,15 +271,19 @@
         if (state.appliedCoupon) {
             payload.coupon_code = state.appliedCoupon;
         }
+        if (state.billingMonths) {
+            payload.billing_months = state.billingMonths;
+        }
 
         return payload;
     }
 
-    function fetchQuote(planKey, couponCode) {
+    function fetchQuote(planKey, couponCode, billingMonths) {
         var url = quoteUrlTemplate.replace('__PLAN__', encodeURIComponent(planKey));
-        if (couponCode) {
-            url += (url.indexOf('?') >= 0 ? '&' : '?') + 'coupon_code=' + encodeURIComponent(couponCode);
-        }
+        var params = [];
+        if (couponCode) params.push('coupon_code=' + encodeURIComponent(couponCode));
+        if (billingMonths) params.push('billing_months=' + encodeURIComponent(billingMonths));
+        if (params.length) url += (url.indexOf('?') >= 0 ? '&' : '?') + params.join('&');
 
         return fetch(url, {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -254,14 +296,15 @@
         });
     }
 
-    function openCheckout(planKey) {
+    function openCheckout(planKey, billingMonths) {
         resetModal();
         state.planKey = planKey;
+        state.billingMonths = billingMonths || null;
         hideError();
         setLoading(true);
         modal.show();
 
-        fetchQuote(planKey, null)
+        fetchQuote(planKey, null, state.billingMonths)
             .then(function (data) {
                 populateQuote(data);
                 setLoading(false);
@@ -285,7 +328,7 @@
         }
 
         setLoading(true);
-        fetchQuote(state.planKey, code)
+        fetchQuote(state.planKey, code, state.billingMonths)
             .then(function (data) {
                 populateQuote(data);
                 setLoading(false);
@@ -318,7 +361,8 @@
     document.querySelectorAll('.js-plan-checkout').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var planKey = btn.getAttribute('data-plan-key');
-            if (planKey) openCheckout(planKey);
+            var billingMonths = parseInt(btn.getAttribute('data-billing-months') || '0', 10) || null;
+            if (planKey) openCheckout(planKey, billingMonths);
         });
     });
 

@@ -23,6 +23,7 @@ class CreateEmployerRazorpayOrderRequest extends FormRequest
                 Rule::exists('employer_plans', 'slug')->where(fn ($q) => $q->where('is_active', true)->where('is_custom_price', false)),
             ],
             'coupon_code' => ['nullable', 'string', 'max:64'],
+            'billing_months' => ['nullable', 'integer', Rule::in(config('hirevo_plans.billing_duration_options', [1, 3, 6, 12]))],
         ];
     }
 }

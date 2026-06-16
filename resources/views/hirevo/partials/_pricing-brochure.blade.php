@@ -6,6 +6,8 @@
     $addons = $addons ?? config('hirevo_plans.addons', []);
     $cta = $cta ?? config('hirevo_plans.cta', []);
     $contactUrl = route('contact');
+    $billingDurationOptions = $billingDurationOptions ?? config('hirevo_plans.billing_duration_options', [1, 3, 6, 12]);
+    $defaultBillingMonths = (int) ($defaultBillingMonths ?? config('hirevo_plans.default_billing_months', 1));
 
     $planMeta = [
         'hiring-launch' => ['icon' => 'mdi-rocket-launch',       'accent' => 'bp-plan--launch'],
@@ -121,7 +123,7 @@
                 <div class="bp-panel-head">
                     <div>
                         <h2 class="bp-panel-title">Choose your hiring plan</h2>
-                        <p class="bp-panel-desc">Start with the 7-day Launch Program or pick a monthly subscription. Job posting credits are shown in the top bar.</p>
+                        <p class="bp-panel-desc">Start with the 7-day Launch Program or pick a subscription plan for 1, 3, 6, or 12 months. Job posting credits are shown in the top bar.</p>
                     </div>
                     <button type="button" class="bp-link-btn" data-bp-goto="compare">
                         <i class="mdi mdi-table-large"></i> Full comparison
@@ -207,7 +209,7 @@
                     </div>
 
                     <div class="bp-plans-divider">
-                        <span>Monthly subscription plans</span>
+                        <span>Subscription plans · 1, 3, 6 or 12 months</span>
                     </div>
                 @endif
 
@@ -245,11 +247,28 @@
                                 @else
                                     <div class="bp-plan__price-row">
                                         <span class="bp-plan__currency">₹</span>
-                                        <span class="bp-plan__amount">{{ number_format($plan['price_inr']) }}</span>
+                                        <span class="bp-plan__amount js-plan-total-price" data-monthly-price="{{ (int) $plan['price_inr'] }}">{{ number_format($plan['price_inr']) }}</span>
                                     </div>
-                                    <span class="bp-plan__period">{{ $plan['price_sub'] ?? 'per month' }}</span>
+                                    <span class="bp-plan__period js-plan-price-sub" data-monthly-sub="{{ $plan['price_sub'] ?? 'per month' }}">{{ $plan['price_sub'] ?? 'per month' }}</span>
                                 @endif
                             </div>
+
+                            @if(empty($plan['custom_price']) && $context === 'employer')
+                                <div class="bp-plan__duration" role="group" aria-label="Subscription duration for {{ $plan['name'] }}">
+                                    <span class="bp-plan__duration-label">Duration</span>
+                                    <div class="bp-plan__duration-options">
+                                        @foreach($billingDurationOptions as $months)
+                                            <button type="button"
+                                                class="bp-plan__duration-btn {{ $months === $defaultBillingMonths ? 'is-active' : '' }}"
+                                                data-plan-duration="{{ $months }}"
+                                                data-plan-key="{{ $key }}"
+                                                aria-pressed="{{ $months === $defaultBillingMonths ? 'true' : 'false' }}">
+                                                {{ $months }} mo
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
 
                             <div class="bp-plan__feat-head">
                                 <span>What's included</span>
@@ -270,7 +289,7 @@
                                 @elseif($hasPendingForPlan)
                                     <button type="button" class="bp-btn bp-btn--pending" disabled><i class="mdi mdi-clock-outline"></i> Payment pending</button>
                                 @elseif($context === 'employer' && empty($plan['custom_price']) && in_array($employerCheckoutMode ?? null, ['cheque', 'razorpay'], true))
-                                    <button type="button" class="bp-btn bp-btn--primary js-plan-checkout" data-plan-key="{{ $key }}" @if(($employerCheckoutMode ?? '') === 'cheque' && empty($isApproved)) disabled title="Available after account approval" @endif>
+                                    <button type="button" class="bp-btn bp-btn--primary js-plan-checkout" data-plan-key="{{ $key }}" data-billing-months="{{ $defaultBillingMonths }}" @if(($employerCheckoutMode ?? '') === 'cheque' && empty($isApproved)) disabled title="Available after account approval" @endif>
                                         Buy now <i class="mdi mdi-arrow-right"></i>
                                     </button>
                                 @else
@@ -458,6 +477,50 @@
         btn.addEventListener('click', function () {
             activateTab(btn.getAttribute('data-bp-goto'));
             document.querySelector('.bp-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    });
+
+    function formatPlanInr(amount) {
+        return Number(amount).toLocaleString('en-IN');
+    }
+
+    function updatePlanCardPricing(card, months) {
+        var totalEl = card.querySelector('.js-plan-total-price');
+        var subEl = card.querySelector('.js-plan-price-sub');
+        var buyBtn = card.querySelector('.js-plan-checkout');
+        if (!totalEl) return;
+
+        var monthly = parseInt(totalEl.getAttribute('data-monthly-price') || '0', 10);
+        var total = monthly * months;
+        totalEl.textContent = formatPlanInr(total);
+
+        if (subEl) {
+            if (months === 1) {
+                subEl.textContent = subEl.getAttribute('data-monthly-sub') || 'per month';
+            } else {
+                subEl.textContent = '₹' + formatPlanInr(monthly) + '/mo × ' + months + ' months · billed upfront';
+            }
+        }
+
+        if (buyBtn) {
+            buyBtn.setAttribute('data-billing-months', String(months));
+        }
+    }
+
+    document.querySelectorAll('.bp-plan').forEach(function (card) {
+        var durationBtns = card.querySelectorAll('.bp-plan__duration-btn');
+        if (!durationBtns.length) return;
+
+        durationBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var months = parseInt(btn.getAttribute('data-plan-duration') || '1', 10);
+                durationBtns.forEach(function (other) {
+                    var active = other === btn;
+                    other.classList.toggle('is-active', active);
+                    other.setAttribute('aria-pressed', active ? 'true' : 'false');
+                });
+                updatePlanCardPricing(card, months);
+            });
         });
     });
 })();

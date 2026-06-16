@@ -38,6 +38,11 @@
                         </div>
                     </div>
 
+                    <div class="mb-3" id="plan-checkout-duration-wrap" hidden>
+                        <label class="form-label fw-500 mb-2">Subscription duration</label>
+                        <div class="btn-group w-100" role="group" aria-label="Subscription duration" id="plan-checkout-duration-options"></div>
+                    </div>
+
                     <div class="plan-checkout-coupon mb-3">
                         <label for="plan-checkout-coupon-code" class="form-label fw-500 mb-2">Coupon code</label>
                         <div class="input-group">

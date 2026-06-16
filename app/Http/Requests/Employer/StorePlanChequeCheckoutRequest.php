@@ -36,6 +36,7 @@ class StorePlanChequeCheckoutRequest extends FormRequest
             'payment_date' => ['required', 'date', 'before_or_equal:today'],
             'agreement_accepted' => ['required', 'accepted'],
             'coupon_code' => ['nullable', 'string', 'max:64'],
+            'billing_months' => ['nullable', 'integer', Rule::in(config('hirevo_plans.billing_duration_options', [1, 3, 6, 12]))],
         ];
     }
 

@@ -29,9 +29,13 @@ class PlanCheckoutController extends Controller
         }
 
         try {
-            $this->checkoutService->assertCanPurchase($user, $planKey);
+            $this->checkoutService->assertCanPurchase($user, $planKey, $this->billingMonthsFromRequest());
             $couponCode = request()->query('coupon_code');
-            $quote = $this->checkoutService->quote($planKey, is_string($couponCode) ? $couponCode : null);
+            $quote = $this->checkoutService->quote(
+                $planKey,
+                is_string($couponCode) ? $couponCode : null,
+                $this->billingMonthsFromRequest(),
+            );
             $profile = $user->referrerProfile;
 
             return response()->json(array_merge($quote, [
@@ -56,6 +60,9 @@ class PlanCheckoutController extends Controller
                 $user,
                 $request->validated('plan_key'),
                 $request->validated('coupon_code'),
+                isset($request->validated()['billing_months'])
+                    ? (int) $request->validated('billing_months')
+                    : null,
             );
 
             return response()->json($order);
@@ -136,6 +143,9 @@ class PlanCheckoutController extends Controller
                 utrReference: $request->validated('utr_reference'),
                 paymentDate: $request->validated('payment_date'),
                 couponCode: $request->validated('coupon_code'),
+                billingMonths: isset($request->validated()['billing_months'])
+                    ? (int) $request->validated('billing_months')
+                    : null,
             );
 
             return response()->json([
@@ -145,5 +155,16 @@ class PlanCheckoutController extends Controller
         } catch (InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+    }
+
+    protected function billingMonthsFromRequest(): ?int
+    {
+        $value = request()->query('billing_months', request()->input('billing_months'));
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value;
     }
 }
