@@ -1,7 +1,8 @@
 @php
     $assetController = app(\App\Http\Controllers\HirevoAssetController::class);
-    $candidateCss = $assetController->candidateCssContents();
+    $candidateCssVer = $assetController->candidateCssVersion();
+    $hasCandidateCss = $assetController->candidateCssContents() !== null;
 @endphp
-@if($candidateCss)
-    <style id="hirevo-candidate-styles">{!! $candidateCss !!}</style>
+@if($hasCandidateCss)
+    <link rel="stylesheet" href="{{ route('assets.hirevo-candidate-css') }}?v={{ $candidateCssVer }}">
 @endif

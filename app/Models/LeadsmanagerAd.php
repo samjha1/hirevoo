@@ -30,12 +30,15 @@ class LeadsmanagerAd extends Model
 
     public function publicImageUrl(): ?string
     {
-        if ($this->image_path) {
-            $base = rtrim((string) config('leadsmanager.api_base_url'), '/');
-
-            return "{$base}/storage/".str_replace('\\', '/', $this->image_path);
+        if (! filled($this->image_path) && ! filled($this->image_url)) {
+            return null;
         }
 
-        return $this->image_url;
+        $base = rtrim((string) config('leadsmanager.api_base_url'), '/');
+        if ($base === '') {
+            return $this->image_url;
+        }
+
+        return "{$base}/api/ads/image/{$this->public_key}";
     }
 }
