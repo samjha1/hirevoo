@@ -14,6 +14,9 @@ return [
 
     'enabled' => env('ELASTICSEARCH_ENABLED', false),
 
+    /** Allow OpenSearch / AWS OpenSearch (elasticsearch-php 8.x product check). */
+    'allow_opensearch' => filter_var(env('ELASTICSEARCH_ALLOW_OPENSEARCH', true), FILTER_VALIDATE_BOOLEAN),
+
     'hosts' => array_values(array_filter(array_map(
         'trim',
         explode(',', (string) env('ELASTICSEARCH_HOSTS', 'http://127.0.0.1:9200'))

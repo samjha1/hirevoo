@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Support\ElasticsearchClientFactory;
 use App\Models\TalentPoolCandidate;
 use App\Models\User;
 use Elastic\Elasticsearch\Client;
-use Elastic\Elasticsearch\ClientBuilder;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -1053,9 +1053,7 @@ class TalentPoolElasticsearchService
         }
 
         try {
-            $this->client = ClientBuilder::create()
-                ->setHosts(config('elasticsearch.hosts'))
-                ->build();
+            $this->client = ElasticsearchClientFactory::make();
             $this->client->ping();
             $this->clientAvailable = true;
 

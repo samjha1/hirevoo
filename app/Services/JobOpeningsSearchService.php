@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Support\ElasticsearchClientFactory;
 use App\Models\EmployerJob;
 use App\Models\JobRole;
 use Elastic\Elasticsearch\Client;
-use Elastic\Elasticsearch\ClientBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -294,9 +294,7 @@ class JobOpeningsSearchService
         }
 
         try {
-            $this->client = ClientBuilder::create()
-                ->setHosts(config('elasticsearch.hosts'))
-                ->build();
+            $this->client = ElasticsearchClientFactory::make();
             $this->client->ping();
             $this->clientAvailable = true;
 
