@@ -323,6 +323,9 @@
 
     function bindFilters() {
         document.querySelectorAll('.tp-filter').forEach(function (el) {
+            if (el.classList.contains('tp-exp-radio') || el.classList.contains('tp-edu-radio')) {
+                return;
+            }
             el.onchange = function () {
                 if (isKeywordField(el)) {
                     debouncedCount();
@@ -667,9 +670,9 @@
 
     function bindAll() {
         bindLocationSelect();
+        bindFilters();
         bindExperienceRadios();
         bindEducationRadios();
-        bindFilters();
         bindPagination();
         bindActions();
     }

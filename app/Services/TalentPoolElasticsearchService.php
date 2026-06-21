@@ -1045,7 +1045,7 @@ class TalentPoolElasticsearchService
             ['label' => 'Fresher (0 yr)', 'min' => 0, 'max' => 0],
             ['label' => '1 – 2 years', 'min' => 1, 'max' => 2],
             ['label' => '3 – 5 years', 'min' => 3, 'max' => 5],
-            ['label' => '5 – 10 years', 'min' => 5, 'max' => 10],
+            ['label' => '6 – 10 years', 'min' => 6, 'max' => 10],
             ['label' => '10+ years', 'min' => 10, 'max' => null],
         ];
 

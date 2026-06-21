@@ -323,6 +323,20 @@
             @if(!empty($filters['education']))
                 <span class="tp-chip">{{ $filters['education'] }}</span>
             @endif
+            @if(($filters['experience_min'] ?? '') !== '' || ($filters['experience_max'] ?? '') !== '')
+                @php
+                    $expMin = $filters['experience_min'] ?? '';
+                    $expMax = $filters['experience_max'] ?? '';
+                    if ($expMin !== '' && $expMax !== '') {
+                        $expChip = $expMin === $expMax ? "{$expMin} yr" : "{$expMin}–{$expMax} yrs";
+                    } elseif ($expMin !== '') {
+                        $expChip = "{$expMin}+ yrs";
+                    } else {
+                        $expChip = "Up to {$expMax} yrs";
+                    }
+                @endphp
+                <span class="tp-chip">{{ $expChip }}</span>
+            @endif
             @if(empty($requiresSearch))
                 <span class="tp-results-count" id="tp-total-count">
                     @if(isset($totalCount))
