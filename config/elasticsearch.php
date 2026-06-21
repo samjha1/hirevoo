@@ -39,4 +39,14 @@ return [
 
     'talent_pool_reindex_chunk' => (int) env('ELASTICSEARCH_TALENT_POOL_REINDEX_CHUNK', 500),
 
+    /** Cap bool/ids clauses to stay under OpenSearch indices.query.bool.max_clause_count (default 1024). */
+    'talent_pool_max_query_terms' => max(1, min(16, (int) env('ELASTICSEARCH_TALENT_POOL_MAX_QUERY_TERMS', 8))),
+
+    'talent_pool_max_skill_terms' => max(1, min(16, (int) env('ELASTICSEARCH_TALENT_POOL_MAX_SKILL_TERMS', 8))),
+
+    'talent_pool_max_related_terms' => max(1, min(12, (int) env('ELASTICSEARCH_TALENT_POOL_MAX_RELATED_TERMS', 6))),
+
+    /** ids filter above this count falls back to SQL (each id ≈ one Lucene clause). */
+    'talent_pool_max_ids_values' => max(64, min(4096, (int) env('ELASTICSEARCH_TALENT_POOL_MAX_IDS_VALUES', 512))),
+
 ];

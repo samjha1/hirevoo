@@ -27,5 +27,5 @@
     @endif
 </select>
 @if(empty($locationFacets) && ($selectedCity === ''))
-    <p class="small text-muted mb-0 mt-1">Loading cities from candidate profiles…</p>
+    <p class="small text-muted mb-0 mt-1">Main metro cities (Mumbai, Delhi NCR, Bangalore, etc.).</p>
 @endif

@@ -42,6 +42,12 @@ class TalentPoolElasticsearchService
             return ['hits' => [], 'total' => 0];
         }
 
+        if ($this->employerDocIdClauseLimitExceeded($filters)) {
+            Log::info('Talent pool Elasticsearch search skipped: employer doc id filter exceeds clause budget.');
+
+            return null;
+        }
+
         $client = $this->client();
         if ($client === null) {
             return null;
@@ -75,6 +81,7 @@ class TalentPoolElasticsearchService
         } catch (Throwable $e) {
             Log::warning('Talent pool Elasticsearch search failed.', [
                 'message' => $e->getMessage(),
+                'query' => $this->buildSearchText($filters),
             ]);
 
             return null;
@@ -88,6 +95,12 @@ class TalentPoolElasticsearchService
     {
         if ($this->isEmployerActionFilterEmpty($filters)) {
             return 0;
+        }
+
+        if ($this->employerDocIdClauseLimitExceeded($filters)) {
+            Log::info('Talent pool Elasticsearch count skipped: employer doc id filter exceeds clause budget.');
+
+            return null;
         }
 
         $client = $this->client();
@@ -615,7 +628,10 @@ class TalentPoolElasticsearchService
         if (count($queryTerms) > 1) {
             $must[] = [
                 'bool' => [
-                    'should' => array_map(fn (string $term) => $this->buildTextQuery($term), $queryTerms),
+                    'should' => array_map(
+                        fn (string $term) => $this->buildTextQuery($term),
+                        $this->capTerms($queryTerms, $this->maxQueryTerms())
+                    ),
                     'minimum_should_match' => 1,
                 ],
             ];
@@ -623,14 +639,21 @@ class TalentPoolElasticsearchService
             $must[] = $this->buildTextQuery($queryTerms[0]);
         }
 
-        $skills = $this->parseSkills($filters['skills'] ?? '');
+        $skills = $this->capTerms(
+            $this->parseSkills($filters['skills'] ?? ''),
+            $this->maxSkillTerms()
+        );
         if ($skills !== []) {
-            $must[] = [
-                'bool' => [
-                    'should' => array_map(fn (string $skill) => $this->buildTextQuery($skill), $skills),
-                    'minimum_should_match' => 1,
-                ],
-            ];
+            if (count($skills) === 1) {
+                $must[] = $this->buildTextQuery($skills[0]);
+            } else {
+                $must[] = [
+                    'bool' => [
+                        'should' => array_map(fn (string $skill) => $this->buildTextQuery($skill), $skills),
+                        'minimum_should_match' => 1,
+                    ],
+                ];
+            }
         }
 
         return $must;
@@ -669,6 +692,11 @@ class TalentPoolElasticsearchService
             'email',
         ];
 
+        $searchText = trim($searchText);
+        if ($searchText === '') {
+            return ['match_none' => (object) []];
+        }
+
         $tokens = $this->tokenize($searchText);
         if (count($tokens) <= 1) {
             return [
@@ -676,32 +704,16 @@ class TalentPoolElasticsearchService
                     'query' => $searchText,
                     'fields' => $fields,
                     'type' => 'best_fields',
-                    'fuzziness' => 'AUTO',
                 ],
             ];
         }
 
         return [
-            'bool' => [
-                'should' => [
-                    [
-                        'multi_match' => [
-                            'query' => $searchText,
-                            'fields' => $fields,
-                            'type' => 'phrase',
-                            'slop' => 2,
-                        ],
-                    ],
-                    [
-                        'multi_match' => [
-                            'query' => $searchText,
-                            'fields' => $fields,
-                            'type' => 'cross_fields',
-                            'operator' => 'and',
-                        ],
-                    ],
-                ],
-                'minimum_should_match' => 1,
+            'multi_match' => [
+                'query' => $searchText,
+                'fields' => $fields,
+                'type' => 'cross_fields',
+                'operator' => 'and',
             ],
         ];
     }
@@ -721,27 +733,32 @@ class TalentPoolElasticsearchService
             'email',
         ];
 
-        $should = [];
-        foreach ($terms as $term) {
-            $term = trim($term);
-            if ($term === '') {
-                continue;
-            }
+        $terms = $this->capTerms($terms, $this->maxRelatedTerms());
+        $terms = array_values(array_filter(array_map(
+            static fn ($term) => trim((string) $term),
+            $terms
+        ), static fn (string $term): bool => $term !== ''));
 
-            $should[] = [
+        if ($terms === []) {
+            return ['match_none' => (object) []];
+        }
+
+        if (count($terms) === 1) {
+            return [
                 'multi_match' => [
-                    'query' => $term,
+                    'query' => $terms[0],
                     'fields' => $fields,
                     'type' => 'best_fields',
-                    'fuzziness' => 'AUTO',
                 ],
             ];
         }
 
         return [
-            'bool' => [
-                'should' => $should,
-                'minimum_should_match' => 1,
+            'multi_match' => [
+                'query' => implode(' ', $terms),
+                'fields' => $fields,
+                'type' => 'cross_fields',
+                'operator' => 'or',
             ],
         ];
     }
@@ -757,10 +774,10 @@ class TalentPoolElasticsearchService
             return [];
         }
 
-        return array_values(array_filter(array_map(
+        return $this->capTerms(array_values(array_filter(array_map(
             static fn ($term) => trim((string) $term),
             $terms
-        ), static fn (string $term): bool => $term !== ''));
+        ), static fn (string $term): bool => $term !== '')), $this->maxRelatedTerms());
     }
 
     /**
@@ -773,40 +790,19 @@ class TalentPoolElasticsearchService
 
         $locations = $this->parseLocations($filters);
         if ($locations !== []) {
-            $should = [];
-            foreach ($locations as $location) {
-                $city = $this->extractCity($location);
-                if ($city !== '') {
-                    $should[] = ['term' => ['location_city' => mb_strtolower($city)]];
-                }
-                $should[] = [
-                    'wildcard' => [
-                        'location' => [
-                            'value' => '*'.mb_strtolower($location).'*',
-                            'case_insensitive' => true,
-                        ],
-                    ],
-                ];
+            $cities = $this->expandLocationCities($locations);
+            if ($cities !== []) {
+                $clauses[] = ['terms' => ['location_city' => $cities]];
             }
-            $clauses[] = ['bool' => ['should' => $should, 'minimum_should_match' => 1]];
         }
 
         $education = trim((string) ($filters['education'] ?? ''));
         if ($education !== '') {
             $clauses[] = [
-                'bool' => [
-                    'should' => [
-                        ['term' => ['education_raw' => mb_substr($education, 0, 256)]],
-                        [
-                            'wildcard' => [
-                                'education' => [
-                                    'value' => '*'.mb_strtolower($education).'*',
-                                    'case_insensitive' => true,
-                                ],
-                            ],
-                        ],
-                    ],
-                    'minimum_should_match' => 1,
+                'multi_match' => [
+                    'query' => $education,
+                    'fields' => ['education^2', 'education_raw'],
+                    'type' => 'best_fields',
                 ],
             ];
         }
@@ -842,7 +838,142 @@ class TalentPoolElasticsearchService
             return [['match_none' => (object) []]];
         }
 
-        return [['ids' => ['values' => array_values($docIds)]]];
+        $docIds = array_values(array_unique($docIds));
+        $maxIds = $this->maxEmployerDocIds();
+
+        return [['ids' => ['values' => array_slice($docIds, 0, $maxIds)]]];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    protected function employerDocIdClauseLimitExceeded(array $filters): bool
+    {
+        $docIds = $filters['_employer_doc_ids'] ?? null;
+        if (! is_array($docIds)) {
+            return false;
+        }
+
+        return count($docIds) > $this->maxEmployerDocIds();
+    }
+
+    protected function maxQueryTerms(): int
+    {
+        return (int) config('elasticsearch.talent_pool_max_query_terms', 8);
+    }
+
+    protected function maxSkillTerms(): int
+    {
+        return (int) config('elasticsearch.talent_pool_max_skill_terms', 8);
+    }
+
+    protected function maxRelatedTerms(): int
+    {
+        return (int) config('elasticsearch.talent_pool_max_related_terms', 6);
+    }
+
+    protected function maxEmployerDocIds(): int
+    {
+        return (int) config('elasticsearch.talent_pool_max_ids_values', 512);
+    }
+
+    /**
+     * @param  list<string>  $terms
+     * @return list<string>
+     */
+    protected function capTerms(array $terms, int $max): array
+    {
+        if (count($terms) <= $max) {
+            return $terms;
+        }
+
+        return array_values(array_slice($terms, 0, $max));
+    }
+
+    /**
+     * @param  list<string>  $locations
+     * @return list<string>
+     */
+    protected function expandLocationCities(array $locations): array
+    {
+        $lookup = $this->mainCityLookup();
+        $cities = [];
+
+        foreach ($locations as $location) {
+            $location = trim((string) $location);
+            if ($location === '') {
+                continue;
+            }
+
+            $aliases = $lookup['canonical_to_aliases'][$location] ?? null;
+            if (is_array($aliases) && $aliases !== []) {
+                array_push($cities, ...$aliases);
+
+                continue;
+            }
+
+            $canonical = $lookup['alias_to_canonical'][mb_strtolower($location)] ?? null;
+            if ($canonical !== null) {
+                array_push($cities, ...($lookup['canonical_to_aliases'][$canonical] ?? [$canonical]));
+
+                continue;
+            }
+
+            $city = $this->extractCity($location);
+            if ($city !== '') {
+                $cities[] = $city;
+            }
+        }
+
+        return array_values(array_unique(array_filter($cities)));
+    }
+
+    /**
+     * @return array{alias_to_canonical: array<string, string>, canonical_to_aliases: array<string, list<string>>}
+     */
+    protected function mainCityLookup(): array
+    {
+        static $lookup = null;
+
+        if (is_array($lookup)) {
+            return $lookup;
+        }
+
+        $aliasToCanonical = [];
+        $canonicalToAliases = [];
+
+        foreach (config('hirevo.talent_pool_main_cities', []) as $city) {
+            if (! is_array($city)) {
+                continue;
+            }
+
+            $canonical = trim((string) ($city['label'] ?? ''));
+            if ($canonical === '') {
+                continue;
+            }
+
+            $aliases = array_values(array_filter(array_map(
+                fn ($alias) => mb_strtolower(trim((string) $alias)),
+                $city['aliases'] ?? [$canonical]
+            )));
+
+            if ($aliases === []) {
+                $aliases = [mb_strtolower($canonical)];
+            }
+
+            $canonicalToAliases[$canonical] = $aliases;
+
+            foreach ($aliases as $alias) {
+                $aliasToCanonical[$alias] = $canonical;
+            }
+        }
+
+        $lookup = [
+            'alias_to_canonical' => $aliasToCanonical,
+            'canonical_to_aliases' => $canonicalToAliases,
+        ];
+
+        return $lookup;
     }
 
     /**
