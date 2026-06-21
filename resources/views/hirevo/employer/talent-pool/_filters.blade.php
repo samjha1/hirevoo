@@ -20,7 +20,7 @@
         </button>
         <div class="collapse show" id="tp-loc-panel">
             @include('hirevo.employer.talent-pool._location-city-select', [
-                'locationFacets' => $facets['locations'] ?? [],
+                'locationFacets' => $locationFacets ?? ($facets['locations'] ?? []),
                 'filters' => $filters,
                 'selectedLocations' => $selectedLocations,
                 'onchangeFilter' => true,

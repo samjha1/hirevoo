@@ -331,6 +331,7 @@
                         'filters' => $filters,
                         'selectedLocations' => $selectedLocations,
                         'facets' => $facets,
+                        'locationFacets' => $locationFacets ?? [],
                         'activeFilterCount' => $activeFilterCount,
                         'educationOptions' => $educationOptions,
                     ])

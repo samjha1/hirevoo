@@ -114,7 +114,55 @@
     var countCacheKey = 'tp_search_count_v2';
     var minLen = 2;
     var timer;
+    var cityTimer;
     var previewRequest = null;
+    var cityRequest = null;
+
+    function renderCityOptions(options) {
+        var select = document.getElementById('tp-location');
+        if (!select || !Array.isArray(options)) return;
+        var selected = select.value;
+        var html = '<option value="">All cities</option>';
+        options.forEach(function (loc) {
+            if (!loc || !loc.label) return;
+            var label = String(loc.label);
+            var count = Number(loc.count || 0);
+            var suffix = count > 0 ? ' (' + count.toLocaleString() + ')' : '';
+            html += '<option value="' + label.replace(/"/g, '&quot;') + '"' + (selected === label ? ' selected' : '') + '>'
+                + label + suffix + '</option>';
+        });
+        if (selected && !options.some(function (loc) { return loc && loc.label === selected; })) {
+            html += '<option value="' + selected.replace(/"/g, '&quot;') + '" selected>' + selected + '</option>';
+        }
+        select.innerHTML = html;
+    }
+
+    function fetchCityOptions() {
+        if (cityRequest) cityRequest.abort();
+        var controller = new AbortController();
+        cityRequest = controller;
+        fetch(facetsUrl + '?' + collectParams() + '&locations_only=1', {
+            signal: controller.signal,
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (Array.isArray(data.location_options)) {
+                    renderCityOptions(data.location_options);
+                }
+            })
+            .catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+            })
+            .finally(function () {
+                if (cityRequest === controller) cityRequest = null;
+            });
+    }
+
+    function debouncedCityRefresh() {
+        clearTimeout(cityTimer);
+        cityTimer = setTimeout(fetchCityOptions, 500);
+    }
 
     function collectParams() {
         if (!form) return '';
@@ -181,6 +229,9 @@
                     setPreview('');
                     return;
                 }
+                if (Array.isArray(data.location_options)) {
+                    renderCityOptions(data.location_options);
+                }
                 var label;
                 if (n === 0) {
                     label = 'No exact matches for this search';
@@ -207,6 +258,7 @@
     function debouncedPreview() {
         clearTimeout(timer);
         timer = setTimeout(fetchPreview, 900);
+        debouncedCityRefresh();
     }
 
     form?.addEventListener('submit', function () {
@@ -224,6 +276,8 @@
     if (hasCriteria()) {
         showCachedPreview();
         fetchPreview();
+    } else {
+        fetchCityOptions();
     }
 })();
 </script>

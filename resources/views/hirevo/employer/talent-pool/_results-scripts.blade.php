@@ -75,6 +75,9 @@
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.filters_html) filtersEl.innerHTML = data.filters_html;
+                if (Array.isArray(data.location_options)) {
+                    updateLocationOptions(data.location_options);
+                }
                 bindAll();
             })
             .catch(function () {});
@@ -110,6 +113,9 @@
             .then(function (data) {
                 if (data.html) resultsEl.innerHTML = data.html;
                 if (data.filters_html && filtersEl) filtersEl.innerHTML = data.filters_html;
+                if (Array.isArray(data.location_options)) {
+                    updateLocationOptions(data.location_options);
+                }
                 if (typeof data.total_count === 'number') {
                     updateTotalCount(data.total_count);
                     storeCachedCount(data.total_count);
@@ -158,6 +164,25 @@
         e.preventDefault();
         fetchResults(1, { withFacets: true });
     });
+
+    function updateLocationOptions(options) {
+        var select = document.getElementById('tp-location');
+        if (!select || !Array.isArray(options)) return;
+        var selected = select.value;
+        var html = '<option value="">All cities</option>';
+        options.forEach(function (loc) {
+            if (!loc || !loc.label) return;
+            var label = String(loc.label);
+            var count = Number(loc.count || 0);
+            var suffix = count > 0 ? ' (' + count.toLocaleString() + ')' : '';
+            html += '<option value="' + label.replace(/"/g, '&quot;') + '"' + (selected === label ? ' selected' : '') + '>'
+                + label + suffix + '</option>';
+        });
+        if (selected && !options.some(function (loc) { return loc && loc.label === selected; })) {
+            html += '<option value="' + selected.replace(/"/g, '&quot;') + '" selected>' + selected + '</option>';
+        }
+        select.innerHTML = html;
+    }
 
     function bindLocationSelect() {
         var locSelect = document.getElementById('tp-location');

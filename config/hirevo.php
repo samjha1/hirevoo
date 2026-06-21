@@ -51,6 +51,9 @@ return [
      */
     'talent_pool_location_facet_min_count' => max(0, (int) env('TALENT_POOL_LOCATION_FACET_MIN_COUNT', 5)),
 
+    /** Cache distinct talent pool cities for dropdowns (seconds). */
+    'talent_pool_cities_cache_ttl' => max(300, (int) env('TALENT_POOL_CITIES_CACHE_TTL', 3600)),
+
     /** Multiplier applied to talent pool candidate counts shown in the UI (e.g. 10 → 1,908 displays as 19,080). */
     'talent_pool_display_count_multiplier' => max(1, (int) env('TALENT_POOL_DISPLAY_COUNT_MULTIPLIER', 10)),
 
@@ -97,7 +100,7 @@ return [
             'Marketing' => ['marketing', 'digital marketing', 'seo', 'sem', 'content marketing', 'growth'],
             'Human Resources' => ['hr', 'recruitment', 'recruiter', 'talent acquisition', 'staffing', 'bench', 'hiring'],
             'Finance' => ['finance', 'accounting', 'audit', 'fp&a', 'taxation', 'gst'],
-            'Engineering' => ['developer', 'engineer', 'programmer', 'software', 'devops', 'qa', 'tester'],
+            'Engineering' => ['developer', 'engineer', 'programmer', 'software', 'devops', 'qa', 'tester', 'flutter', 'react', 'angular', 'laravel', 'php', 'python', 'java', 'node', 'mobile', 'android', 'ios'],
             'Operations' => ['operations', 'supply chain', 'logistics', 'procurement'],
             'Customer Support' => ['customer support', 'customer service', 'call center', 'helpdesk'],
         ],

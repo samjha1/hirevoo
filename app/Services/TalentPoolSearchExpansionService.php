@@ -71,6 +71,24 @@ class TalentPoolSearchExpansionService
     }
 
     /**
+     * Fast category expansion (config + department hints) without GPT or generic token fallback.
+     */
+    public function hasFastExpansionMatch(string $query): bool
+    {
+        if (! $this->isEnabled()) {
+            return false;
+        }
+
+        $query = trim($query);
+        if ($query === '') {
+            return false;
+        }
+
+        return $this->expandFromConfig($query) !== null
+            || $this->expandFromDepartmentHintsOnly($query) !== null;
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      */
     public function extractSearchText(array $filters): string
@@ -138,6 +156,30 @@ class TalentPoolSearchExpansionService
      */
     protected function expandFromDepartmentHints(string $query): ?array
     {
+        $departmentMatch = $this->expandFromDepartmentHintsOnly($query);
+        if ($departmentMatch !== null) {
+            return $departmentMatch;
+        }
+
+        $tokens = preg_split('/[\s,;]+/', mb_strtolower($query)) ?: [];
+        $tokens = array_values(array_filter($tokens, fn (string $t): bool => mb_strlen($t) >= 3));
+
+        if ($tokens === []) {
+            return null;
+        }
+
+        return $this->normalizeExpansion(
+            'Related profiles',
+            array_slice($tokens, 0, (int) config('hirevo.talent_pool_related_search.max_keywords', 8)),
+            $query
+        );
+    }
+
+    /**
+     * @return array{sector: string, keywords: list<string>}|null
+     */
+    protected function expandFromDepartmentHintsOnly(string $query): ?array
+    {
         $normalized = $this->normalizeForMatch($query);
         if ($normalized === '') {
             return null;
@@ -179,18 +221,7 @@ class TalentPoolSearchExpansionService
             return $this->normalizeExpansion($department, $keywords, $query);
         }
 
-        $tokens = preg_split('/[\s,;]+/', mb_strtolower($query)) ?: [];
-        $tokens = array_values(array_filter($tokens, fn (string $t): bool => mb_strlen($t) >= 3));
-
-        if ($tokens === []) {
-            return null;
-        }
-
-        return $this->normalizeExpansion(
-            'Related profiles',
-            array_slice($tokens, 0, (int) config('hirevo.talent_pool_related_search.max_keywords', 8)),
-            $query
-        );
+        return null;
     }
 
     /**

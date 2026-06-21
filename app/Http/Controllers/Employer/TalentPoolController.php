@@ -35,7 +35,7 @@ class TalentPoolController extends Controller
             'educationOptions' => CandidateProfile::educationDegreeValues(),
             'canAccessTalentPool' => $this->planService->canAccessTalentPool($user->referrerProfile),
             'filters' => $filters,
-            'locationFacets' => [],
+            'locationFacets' => $this->searchService->cityOptionsForFilters($filters),
             'totalCount' => null,
         ]);
     }
@@ -71,6 +71,7 @@ class TalentPoolController extends Controller
             'filters' => $filters,
             'selectedLocations' => $this->searchService->selectedLocations($filters),
             'facets' => $facets,
+            'locationFacets' => $this->searchService->cityOptionsForFilters($filters),
             'activeFilterCount' => $result['active_filter_count'],
             'educationOptions' => CandidateProfile::educationDegreeValues(),
             'candidates' => $items,
@@ -97,25 +98,39 @@ class TalentPoolController extends Controller
         if (! $this->searchService->hasSearchCriteria($filters)) {
             return response()->json([
                 'facets' => ['locations' => [], 'education' => [], 'experience' => []],
+                'location_options' => $this->searchService->cityOptionsForFilters($filters),
                 'total_count' => 0,
             ]);
         }
 
         $countOnly = $request->boolean('count_only');
+        $locationsOnly = $request->boolean('locations_only');
+
+        if ($locationsOnly) {
+            return response()->json([
+                'location_options' => $this->searchService->cityOptionsForFilters($filters),
+            ]);
+        }
 
         if ($countOnly) {
-            return response()->json($this->facetCountPayload($filters));
+            $payload = $this->facetCountPayload($filters);
+            $payload['location_options'] = $this->searchService->cityOptionsForFilters($filters);
+
+            return response()->json($payload);
         }
 
         $facetFilters = $this->searchService->filtersForFacetComputation($filters);
         $facets = TalentPoolDisplay::applyFacetCounts($this->searchService->filterFacets($facetFilters));
+        $locationOptions = $this->searchService->cityOptionsForFilters($filters);
 
         return response()->json([
             'facets' => $facets,
+            'location_options' => $locationOptions,
             'filters_html' => view('hirevo.employer.talent-pool._filters', [
                 'filters' => $filters,
                 'selectedLocations' => $this->searchService->selectedLocations($filters),
                 'facets' => $facets,
+                'locationFacets' => $locationOptions,
                 'activeFilterCount' => $this->searchService->countActiveFilters($filters),
                 'educationOptions' => CandidateProfile::educationDegreeValues(),
             ])->render(),
@@ -188,13 +203,16 @@ class TalentPoolController extends Controller
         ];
 
         if ($withFacets) {
+            $locationOptions = $this->searchService->cityOptionsForFilters($filters);
             $payload['filters_html'] = view('hirevo.employer.talent-pool._filters', [
                 'filters' => $filters,
                 'selectedLocations' => $this->searchService->selectedLocations($filters),
                 'facets' => TalentPoolDisplay::applyFacetCounts($result['facets'] ?? ['locations' => [], 'education' => [], 'experience' => []]),
+                'locationFacets' => $locationOptions,
                 'activeFilterCount' => $result['active_filter_count'],
                 'educationOptions' => CandidateProfile::educationDegreeValues(),
             ])->render();
+            $payload['location_options'] = $locationOptions;
         }
 
         return response()->json($payload);

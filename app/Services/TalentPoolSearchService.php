@@ -435,6 +435,124 @@ class TalentPoolSearchService
     }
 
     /**
+     * @return list<string>
+     */
+    public function discoverableCityLabels(int $limit = 600): array
+    {
+        $limit = max(50, min(1000, $limit));
+        $ttl = max(300, (int) config('hirevo.talent_pool_cities_cache_ttl', 3600));
+
+        return Cache::remember("tp_discoverable_cities:{$limit}", $ttl, function () use ($limit) {
+            $cityExpr = $this->citySqlExpression('location');
+            $prefExpr = $this->citySqlExpression('preferred_job_location');
+
+            $verifiedLocation = DB::table('candidate_profiles')
+                ->join('users', 'users.id', '=', 'candidate_profiles.user_id')
+                ->where('users.role', 'candidate')
+                ->where('users.status', 'active')
+                ->whereNotNull('candidate_profiles.location')
+                ->where('candidate_profiles.location', '!=', '')
+                ->selectRaw("{$cityExpr} as city");
+
+            $verifiedPreferred = DB::table('candidate_profiles')
+                ->join('users', 'users.id', '=', 'candidate_profiles.user_id')
+                ->where('users.role', 'candidate')
+                ->where('users.status', 'active')
+                ->whereNotNull('candidate_profiles.preferred_job_location')
+                ->where('candidate_profiles.preferred_job_location', '!=', '')
+                ->selectRaw("{$prefExpr} as city");
+
+            $talentLocation = DB::table('talent_pool_candidates')
+                ->where('status', TalentPoolCandidate::STATUS_ACTIVE)
+                ->whereNotNull('location')
+                ->where('location', '!=', '')
+                ->selectRaw("{$cityExpr} as city");
+
+            $rows = DB::query()
+                ->fromSub($verifiedLocation->union($verifiedPreferred)->union($talentLocation), 'city_rows')
+                ->whereNotNull('city')
+                ->where('city', '!=', '')
+                ->selectRaw('DISTINCT city')
+                ->orderBy('city')
+                ->limit($limit)
+                ->pluck('city');
+
+            $labels = [];
+            foreach ($rows as $city) {
+                $city = trim((string) $city);
+                if ($city === '') {
+                    continue;
+                }
+
+                $labels[mb_strtolower($city)] = $city;
+            }
+
+            $values = array_values($labels);
+            natcasesort($values);
+
+            return array_values($values);
+        });
+    }
+
+    /**
+     * Merge DB cities with optional facet counts (search context).
+     *
+     * @param  list<array{label: string, count: int}>  $facetLocations
+     * @return list<array{label: string, count: int}>
+     */
+    public function cityDropdownOptions(array $facetLocations = []): array
+    {
+        $rolled = [];
+
+        foreach ($facetLocations as $facet) {
+            $label = trim((string) ($facet['label'] ?? ''));
+            $count = (int) ($facet['count'] ?? 0);
+            if ($label === '') {
+                continue;
+            }
+
+            $canonical = $this->canonicalMainCityLabel($label) ?? $label;
+            $rolled[$canonical] = ($rolled[$canonical] ?? 0) + $count;
+        }
+
+        foreach ($this->discoverableCityLabels() as $city) {
+            $canonical = $this->canonicalMainCityLabel($city) ?? $city;
+            if (! array_key_exists($canonical, $rolled)) {
+                $rolled[$canonical] = 0;
+            }
+        }
+
+        $options = collect($rolled)
+            ->map(fn (int $count, string $label) => ['label' => $label, 'count' => $count])
+            ->sort(function (array $a, array $b): int {
+                if ($a['count'] !== $b['count']) {
+                    return $b['count'] <=> $a['count'];
+                }
+
+                return strnatcasecmp($a['label'], $b['label']);
+            })
+            ->values()
+            ->all();
+
+        return $options;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array{label: string, count: int}>
+     */
+    public function cityOptionsForFilters(array $filters): array
+    {
+        $facetLocations = [];
+        if ($this->hasSearchCriteria($filters)) {
+            $facetFilters = $this->filtersForFacetComputation($filters);
+            $facetLocations = $this->filterFacets($facetFilters)['locations'] ?? [];
+        }
+
+        return $this->cityDropdownOptions($facetLocations);
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      * @return array{locations: list<array{label: string, count: int}>, education: list<array{label: string, count: int}>, experience: list<array{label: string, min: int|null, max: int|null, count: int}>}
      */
@@ -1337,6 +1455,7 @@ class TalentPoolSearchService
         }
 
         $cityExpr = $this->citySqlExpression('location');
+        $prefExpr = $this->citySqlExpression('preferred_job_location');
         $counts = [];
         $userSub = $this->verifiedCandidatesQuery($filters)->select('users.id');
 
@@ -1344,14 +1463,25 @@ class TalentPoolSearchService
             ->whereIn('user_id', $userSub)
             ->whereNotNull('location')
             ->where('location', '!=', '')
-            ->selectRaw("{$cityExpr} as label, COUNT(*) as aggregate")
+            ->selectRaw("{$cityExpr} as label");
+
+        $prefRows = DB::table('candidate_profiles')
+            ->whereIn('user_id', $userSub)
+            ->whereNotNull('preferred_job_location')
+            ->where('preferred_job_location', '!=', '')
+            ->selectRaw("{$prefExpr} as label");
+
+        $verifiedLocs = DB::query()
+            ->fromSub($locRows->unionAll($prefRows), 'verified_city_rows')
+            ->whereNotNull('label')
+            ->where('label', '!=', '')
+            ->selectRaw('label, COUNT(*) as aggregate')
             ->groupBy('label')
-            ->having('label', '!=', '')
             ->orderByDesc('aggregate')
-            ->limit(40)
+            ->limit(60)
             ->get();
 
-        foreach ($locRows as $row) {
+        foreach ($verifiedLocs as $row) {
             $counts[$row->label] = (int) $row->aggregate;
         }
 
@@ -1495,11 +1625,7 @@ class TalentPoolSearchService
                 continue;
             }
 
-            $canonical = $lookup['alias_to_canonical'][mb_strtolower($label)] ?? null;
-            if ($canonical === null) {
-                continue;
-            }
-
+            $canonical = $lookup['alias_to_canonical'][mb_strtolower($label)] ?? $label;
             $rolled[$canonical] = ($rolled[$canonical] ?? 0) + $count;
         }
 
