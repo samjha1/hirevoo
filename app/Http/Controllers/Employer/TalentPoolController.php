@@ -9,17 +9,21 @@ use App\Models\TalentPoolCandidate;
 use App\Models\User;
 use App\Services\EmployerPlanService;
 use App\Services\TalentPoolSearchService;
+use App\Services\TalentPoolTokenService;
 use App\Support\TalentPoolDisplay;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TalentPoolController extends Controller
 {
     public function __construct(
         protected TalentPoolSearchService $searchService,
-        protected EmployerPlanService $planService
+        protected EmployerPlanService $planService,
+        protected TalentPoolTokenService $tokenService,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -34,6 +38,9 @@ class TalentPoolController extends Controller
         return view('hirevo.employer.talent-pool.search', [
             'educationOptions' => CandidateProfile::educationDegreeValues(),
             'canAccessTalentPool' => $this->planService->canAccessTalentPool($user->referrerProfile),
+            'talentPoolTokens' => $this->planService->talentPoolTokens($user->referrerProfile),
+            'viewTokenCost' => $this->tokenService->viewCost(),
+            'downloadTokenCost' => $this->tokenService->downloadCost(),
             'filters' => $filters,
             'locationFacets' => $this->searchService->cityOptionsForFilters($filters),
             'totalCount' => null,
@@ -61,7 +68,7 @@ class TalentPoolController extends Controller
             includeTotal: true,
         );
 
-        $items = $result['items']->map(fn (array $row) => $this->planService->maskCandidateRow($row, $user, true));
+        $items = $result['items']->map(fn (array $row) => $this->planService->enrichCandidateRow($row, $user, true));
         $facetFilters = $this->searchService->filtersForFacetComputation($filters);
         $facets = TalentPoolDisplay::applyFacetCounts(
             $result['facets'] ?? $this->searchService->filterFacets($facetFilters)
@@ -81,6 +88,9 @@ class TalentPoolController extends Controller
             'matchingSkills' => $this->matchingHighlightTerms($filters, $result['related_fallback'] ?? null),
             'requiresSearch' => (bool) ($result['requires_search'] ?? false),
             'canAccessTalentPool' => $canAccess,
+            'talentPoolTokens' => $this->planService->talentPoolTokens($profile),
+            'viewTokenCost' => $this->tokenService->viewCost(),
+            'downloadTokenCost' => $this->tokenService->downloadCost(),
             'currentPlan' => $this->planService->planKey($profile),
             'relatedFallback' => $result['related_fallback'] ?? null,
         ]);
@@ -181,7 +191,7 @@ class TalentPoolController extends Controller
             includeTotal: $includeTotal,
         );
 
-        $items = $result['items']->map(fn (array $row) => $this->planService->maskCandidateRow($row, $user, true));
+        $items = $result['items']->map(fn (array $row) => $this->planService->enrichCandidateRow($row, $user, true));
 
         $html = view('hirevo.employer.talent-pool._results', [
             'candidates' => $items,
@@ -241,12 +251,122 @@ class TalentPoolController extends Controller
             return response()->json(['message' => 'Candidate not found.'], 404);
         }
 
+        $result = $this->tokenService->unlockProfileView(
+            $user,
+            $validated['source'],
+            (int) $validated['source_id']
+        );
+
+        if (! ($result['ok'] ?? false)) {
+            if (($result['error'] ?? '') === 'insufficient_tokens') {
+                return response()->json([
+                    'message' => 'insufficient_tokens',
+                    'tokens_remaining' => $result['tokens_remaining'] ?? 0,
+                    'tokens_required' => $result['tokens_required'] ?? $this->tokenService->viewCost(),
+                ], 402);
+            }
+
+            return response()->json(['message' => $result['error'] ?? 'unlock_failed'], 422);
+        }
+
         $details = $this->searchService->details($validated['source'], (int) $validated['source_id']);
+        if ($details !== null) {
+            $details = $this->planService->enrichCandidateRow($details, $user, false);
+        }
 
         return response()->json([
             'is_unlocked' => true,
             'candidate' => $details,
+            'tokens_remaining' => $result['tokens_remaining'] ?? $this->planService->talentPoolTokens($user->referrerProfile),
+            'tokens_spent' => $result['tokens_spent'] ?? 0,
         ]);
+    }
+
+    public function download(Request $request): JsonResponse|StreamedResponse
+    {
+        $user = $this->requireApprovedEmployer();
+        if ($user instanceof RedirectResponse) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if (! $this->planService->canAccessTalentPool($user->referrerProfile)) {
+            return response()->json(['message' => 'subscription_required'], 402);
+        }
+
+        $validated = $request->validate([
+            'source' => 'required|string|in:verified,talent_pool',
+            'source_id' => 'required|integer|min:1',
+        ]);
+
+        if (! $this->candidateExists($validated['source'], (int) $validated['source_id'])) {
+            return response()->json(['message' => 'Candidate not found.'], 404);
+        }
+
+        if (! $this->tokenService->canDownload($user, $validated['source'], (int) $validated['source_id'])) {
+            $result = $this->tokenService->unlockDownload(
+                $user,
+                $validated['source'],
+                (int) $validated['source_id']
+            );
+
+            if (! ($result['ok'] ?? false)) {
+                if (($result['error'] ?? '') === 'insufficient_tokens') {
+                    return response()->json([
+                        'message' => 'insufficient_tokens',
+                        'tokens_remaining' => $result['tokens_remaining'] ?? 0,
+                        'tokens_required' => $result['tokens_required'] ?? $this->tokenService->downloadCost(),
+                    ], 402);
+                }
+
+                return response()->json(['message' => $result['error'] ?? 'download_failed'], 422);
+            }
+        }
+
+        $details = $this->searchService->details($validated['source'], (int) $validated['source_id']);
+        if ($details === null) {
+            return response()->json(['message' => 'Candidate not found.'], 404);
+        }
+
+        $details = $this->planService->enrichCandidateRow($details, $user, false);
+        $filename = 'candidate-'.$validated['source'].'-'.$validated['source_id'].'-'.now()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($details) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Field', 'Value']);
+            foreach ($this->candidateExportRows($details) as $label => $value) {
+                fputcsv($out, [$label, $value]);
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Tokens-Remaining' => (string) $this->planService->talentPoolTokens($user->referrerProfile),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $details
+     * @return array<string, string>
+     */
+    protected function candidateExportRows(array $details): array
+    {
+        $skills = is_array($details['skills'] ?? null)
+            ? implode(', ', $details['skills'])
+            : (string) ($details['skills'] ?? '');
+
+        return array_filter([
+            'Name' => (string) ($details['full_name'] ?? ''),
+            'Phone' => (string) ($details['phone'] ?? ''),
+            'Email' => (string) ($details['email'] ?? ''),
+            'Title' => (string) ($details['title'] ?? ''),
+            'Location' => (string) ($details['location'] ?? ''),
+            'Experience' => (string) ($details['experience_label'] ?? ''),
+            'Education' => (string) ($details['education'] ?? ''),
+            'Skills' => $skills,
+            'Expected salary' => (string) ($details['expected_salary'] ?? ''),
+            'Summary' => (string) ($details['profile_summary'] ?? ''),
+            'Resume URL' => (string) ($details['resume_url'] ?? ''),
+            'Source' => (string) ($details['badge'] ?? $details['source'] ?? ''),
+        ], static fn (string $value): bool => $value !== '');
     }
 
     public function details(Request $request, string $source, int $id): JsonResponse
@@ -266,8 +386,11 @@ class TalentPoolController extends Controller
         }
 
         $canViewContact = $this->planService->canViewCandidate($user, $source, $id);
+        $canDownload = $this->planService->canDownloadCandidate($user, $source, $id);
         if (! $canViewContact) {
             $details = $this->planService->maskCandidateRow($details, $user, true);
+        } else {
+            $details = $this->planService->enrichCandidateRow($details, $user, false);
         }
 
         $action = EmployerTalentPoolAction::query()
@@ -279,10 +402,15 @@ class TalentPoolController extends Controller
         $details['is_saved'] = (bool) ($action?->is_saved);
         $details['is_shortlisted'] = (bool) ($action?->is_shortlisted);
         $details['is_unlocked'] = $canViewContact;
+        $details['can_download'] = $canDownload;
 
         return response()->json([
             'candidate' => $details,
             'can_view_contact' => $canViewContact,
+            'can_download' => $canDownload,
+            'tokens_remaining' => $this->planService->talentPoolTokens($user->referrerProfile),
+            'view_token_cost' => $this->tokenService->viewCost(),
+            'download_token_cost' => $this->tokenService->downloadCost(),
         ]);
     }
 
@@ -315,7 +443,10 @@ class TalentPoolController extends Controller
         $action->is_saved = ! $action->is_saved;
         $action->save();
 
-        return response()->json(['is_saved' => $action->is_saved]);
+        return response()->json([
+            'is_saved' => $action->is_saved,
+            'message' => $action->is_saved ? 'Candidate saved.' : 'Candidate removed from saved.',
+        ]);
     }
 
     public function shortlist(Request $request): JsonResponse

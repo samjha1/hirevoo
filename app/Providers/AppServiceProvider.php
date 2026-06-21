@@ -122,6 +122,7 @@ class AppServiceProvider extends ServiceProvider
             ['layouts.app', 'layouts.employer', 'hirevo.employer.*'],
             function ($view) {
                 $credits = 0;
+                $talentPoolTokens = 0;
                 $profilePhotoUrl = null;
                 $activePlanKey = null;
                 $activePlanName = null;
@@ -131,12 +132,13 @@ class AppServiceProvider extends ServiceProvider
 
                 if (auth()->check() && auth()->user()->isReferrer() && auth()->user()->referrerProfile) {
                     $profile = auth()->user()->referrerProfile;
+                    $planService = app(EmployerPlanService::class);
                     $credits = (int) $profile->credits;
+                    $talentPoolTokens = $planService->talentPoolTokens($profile);
                     if ($profile->profile_photo) {
                         $profilePhotoUrl = $profile->profilePhotoUrl();
                     }
 
-                    $planService = app(EmployerPlanService::class);
                     $activePlanKey = $planService->planKey($profile);
                     $hasActivePlan = $planService->hasActiveSubscription($profile);
                     $planExpiresAt = $profile->subscription_expires_at;
@@ -152,6 +154,7 @@ class AppServiceProvider extends ServiceProvider
 
                 $view->with([
                     'employerCredits' => $credits,
+                    'employerTalentPoolTokens' => $talentPoolTokens,
                     'employerProfilePhotoUrl' => $profilePhotoUrl,
                     'employerActivePlanKey' => $activePlanKey,
                     'employerActivePlanName' => $activePlanName,

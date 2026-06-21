@@ -12,6 +12,12 @@ class EmployerTalentPoolUnlock extends Model
         'candidate_source',
         'candidate_ref_id',
         'credits_spent',
+        'download_tokens_spent',
+        'downloaded_at',
+    ];
+
+    protected $casts = [
+        'downloaded_at' => 'datetime',
     ];
 
     public function employer(): BelongsTo

@@ -5,6 +5,8 @@
     $matchingSkills = $matchingSkills ?? [];
 
     $canAccessTalentPool = $canAccessTalentPool ?? false;
+    $viewTokenCost = $viewTokenCost ?? config('hirevo_plans.unlock_credit_cost', 1);
+    $downloadTokenCost = $downloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 2);
 
     $plansUrl = route('employer.plans.index');
 
@@ -198,11 +200,16 @@
 
             <div class="d-flex flex-wrap align-items-center gap-2 pt-2 border-top">
 
-                @if($canAccessTalentPool && !empty($candidate['phone']))
+                @if($canAccessTalentPool && !empty($candidate['is_unlocked']) && !empty($candidate['phone']))
                     @php $phoneDigits = preg_replace('/\D+/', '', (string) $candidate['phone']); @endphp
                     <a href="tel:{{ $phoneDigits }}" class="btn btn-outline-primary btn-sm">
-                        <i class="mdi mdi-phone-outline me-1"></i> Phone number
+                        <i class="mdi mdi-phone-outline me-1"></i> {{ $candidate['phone'] }}
                     </a>
+                @elseif($canAccessTalentPool)
+                    <button type="button" class="btn btn-outline-primary btn-sm tp-unlock-phone-btn"
+                            data-source="{{ $candidate['source'] }}" data-source-id="{{ $candidate['source_id'] }}">
+                        <i class="mdi mdi-phone-lock-outline me-1"></i> View phone ({{ $viewTokenCost }} token)
+                    </button>
                 @else
                     <a href="{{ $plansUrl }}" class="btn btn-outline-primary btn-sm tp-phone-plans-btn">
                         <i class="mdi mdi-phone-outline me-1"></i> Phone number
@@ -213,11 +220,25 @@
                         data-source="{{ $candidate['source'] }}" data-source-id="{{ $candidate['source_id'] }}">
                     View profile
                 </button>
+
+                @if(!empty($candidate['is_saved']))
+                    <button type="button" class="btn btn-outline-secondary btn-sm tp-download-btn"
+                            data-source="{{ $candidate['source'] }}" data-source-id="{{ $candidate['source_id'] }}"
+                            data-can-download="{{ !empty($candidate['can_download']) ? '1' : '0' }}">
+                        <i class="mdi mdi-download-outline me-1"></i>
+                        @if(!empty($candidate['can_download']))
+                            Download
+                        @else
+                            Download ({{ $downloadTokenCost }} tokens)
+                        @endif
+                    </button>
+                @endif
+
                 @if(!empty($candidate['has_resume']))
                     <span class="badge bg-light text-dark border"><i class="mdi mdi-paperclip me-1"></i>CV attached</span>
                 @endif
-                @if(empty($canAccessTalentPool) || !empty($candidate['is_locked']))
-                    <span class="badge bg-light text-dark border"><i class="mdi mdi-lock-outline me-1"></i>Plan required for contact</span>
+                @if($canAccessTalentPool && empty($candidate['is_unlocked']))
+                    <span class="badge bg-light text-dark border"><i class="mdi mdi-lock-outline me-1"></i>{{ $viewTokenCost }} token to view contact</span>
                 @endif
 
             </div>

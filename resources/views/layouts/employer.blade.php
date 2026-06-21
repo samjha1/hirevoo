@@ -892,6 +892,7 @@
 
             @php
                 $credits = $employerCredits ?? 0;
+                $talentPoolTokens = $employerTalentPoolTokens ?? 0;
                 $hasPlan = $employerHasActivePlan ?? false;
                 $planName = $employerActivePlanName ?? null;
                 $planExpires = $employerPlanExpiresAt ?? null;
@@ -931,12 +932,8 @@
                         <span class="es-wallet__stat-value {{ $credits < 1 ? 'es-wallet__stat-value--low' : '' }}">{{ $credits }}</span>
                     </div>
                     <div class="es-wallet__stat">
-                        <span class="es-wallet__stat-label">Talent Pool</span>
-                        @if($hasPlan)
-                            <span class="es-wallet__stat-value" style="font-size:.85rem;">Unlocked</span>
-                        @else
-                            <span class="es-wallet__stat-value es-wallet__stat-value--low" style="font-size:.85rem;">Locked</span>
-                        @endif
+                        <span class="es-wallet__stat-label">Pool tokens</span>
+                        <span class="es-wallet__stat-value {{ $talentPoolTokens < 1 ? 'es-wallet__stat-value--low' : '' }}">{{ $talentPoolTokens }}</span>
                     </div>
                 </div>
 
@@ -985,6 +982,15 @@
                                 <span class="et-credits-pill__value">{{ $credits }}</span>
                             </span>
                         </a>
+                        @if($hasPlan)
+                            <span class="et-credits-pill" title="Talent pool tokens" id="tp-topbar-tokens">
+                                <span class="et-credits-pill__icon" style="background:linear-gradient(135deg,#e8f6ef,#d1fae5);color:#15803d;"><i class="mdi mdi-wallet-outline"></i></span>
+                                <span class="et-credits-pill__text">
+                                    <span class="et-credits-pill__label">Tokens</span>
+                                    <span class="et-credits-pill__value" id="tp-topbar-tokens-value">{{ $talentPoolTokens }}</span>
+                                </span>
+                            </span>
+                        @endif
                     @endunless
 
                     @yield('header_actions')

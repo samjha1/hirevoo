@@ -154,6 +154,7 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
         Route::get('/talent-pool/results/ajax', [EmployerTalentPoolController::class, 'search'])->name('talent-pool.search');
         Route::get('/talent-pool/facets', [EmployerTalentPoolController::class, 'facets'])->name('talent-pool.facets');
         Route::post('/talent-pool/unlock', [EmployerTalentPoolController::class, 'unlock'])->name('talent-pool.unlock');
+        Route::post('/talent-pool/download', [EmployerTalentPoolController::class, 'download'])->name('talent-pool.download');
         Route::get('/talent-pool/{source}/{id}/details', [EmployerTalentPoolController::class, 'details'])
             ->name('talent-pool.details')
             ->whereIn('source', ['verified', 'talent_pool']);

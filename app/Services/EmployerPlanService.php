@@ -238,15 +238,41 @@ class EmployerPlanService
         return $credits;
     }
 
+    public function grantPlanTalentPoolTokens(ReferrerProfile $profile, string $planKey): int
+    {
+        return app(TalentPoolTokenService::class)->grantPlanTokens($profile, $planKey);
+    }
+
+    public function talentPoolTokens(?ReferrerProfile $profile): int
+    {
+        return app(TalentPoolTokenService::class)->tokens($profile);
+    }
+
     public function canViewCandidate(User $employer, string $source, int $sourceId): bool
     {
-        return $this->canAccessTalentPool($employer->referrerProfile);
+        return app(TalentPoolTokenService::class)->canViewContact($employer, $source, $sourceId);
+    }
+
+    public function canDownloadCandidate(User $employer, string $source, int $sourceId): bool
+    {
+        return app(TalentPoolTokenService::class)->canDownload($employer, $source, $sourceId);
     }
 
     /**
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>
      */
+    public function enrichCandidateRow(array $row, User $employer, bool $previewMode = true): array
+    {
+        $source = (string) ($row['source'] ?? '');
+        $sourceId = (int) ($row['source_id'] ?? 0);
+        $row['is_unlocked'] = $this->canViewCandidate($employer, $source, $sourceId);
+        $row['is_locked'] = ! $row['is_unlocked'];
+        $row['can_download'] = $this->canDownloadCandidate($employer, $source, $sourceId);
+
+        return $this->maskCandidateRow($row, $employer, $previewMode);
+    }
+
     public function maskCandidateRow(array $row, User $employer, bool $previewMode = true): array
     {
         if ($this->canViewCandidate($employer, (string) ($row['source'] ?? ''), (int) ($row['source_id'] ?? 0))) {

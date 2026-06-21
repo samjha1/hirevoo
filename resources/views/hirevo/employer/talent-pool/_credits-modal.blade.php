@@ -4,14 +4,14 @@
         <div class="tp-credits-modal-icon" aria-hidden="true">
             <i class="mdi mdi-wallet-outline"></i>
         </div>
-        <h5 id="tp-credits-modal-title" class="fw-700 text-center mb-2">Insufficient database credits</h5>
+        <h5 id="tp-credits-modal-title" class="fw-700 text-center mb-2">Insufficient pool tokens</h5>
         <p class="text-muted small text-center mb-3">
-            You don't have enough database credits to unlock this profile. Buy credits or upgrade to Growth for unlimited unlocks.
+            You don't have enough talent pool tokens for this action. Buy a plan with database tokens or upgrade for unlimited unlocks.
         </p>
         <div class="tp-credits-modal-box small text-muted mb-3">
-            <p class="fw-600 text-dark mb-2">How to use database credits?</p>
-            <p class="mb-1"><i class="mdi mdi-lock-outline me-1"></i> 1 profile unlock = {{ config('hirevo_plans.unlock_credit_cost', 1) }} database credit</p>
-            <p class="mb-0"><i class="mdi mdi-download-outline me-1"></i> 1 Excel download = {{ config('hirevo_plans.excel_download_credit_cost', 2) }} database credits</p>
+            <p class="fw-600 text-dark mb-2">How tokens work</p>
+            <p class="mb-1"><i class="mdi mdi-phone-outline me-1"></i> View phone / contact = {{ config('hirevo_plans.unlock_credit_cost', 1) }} token</p>
+            <p class="mb-0"><i class="mdi mdi-download-outline me-1"></i> Download candidate data = {{ config('hirevo_plans.excel_download_credit_cost', 2) }} tokens</p>
         </div>
         <a href="{{ route('employer.plans.index') }}" class="btn btn-success w-100 mb-2">View plans & pricing</a>
     </div>

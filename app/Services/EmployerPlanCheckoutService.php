@@ -626,6 +626,7 @@ class EmployerPlanCheckoutService
 
         $this->planService->activateSubscription($profile, $planKey, billingMonths: $billingMonths);
         $creditsGranted = $this->planService->grantPlanJobCredits($profile->fresh(), $planKey);
+        $tokensGranted = $this->planService->grantPlanTalentPoolTokens($profile->fresh(), $planKey);
 
         Log::info('Employer subscription activated', [
             'payment_id' => $payment->id,

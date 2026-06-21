@@ -293,7 +293,17 @@
                 Resume database access requires an active plan. Use <strong>Phone number</strong> on any card to view plans, or
                 <a href="{{ route('employer.plans.index') }}" class="alert-link fw-600">subscribe here</a>.
             </div>
-        @elseif(!empty($requiresSearch))
+        @else
+            <div class="alert alert-light border mb-3 py-2 px-3 d-flex flex-wrap align-items-center gap-2">
+                <span class="small"><i class="mdi mdi-wallet-outline text-success me-1"></i>
+                    <strong id="tp-token-balance">{{ number_format($talentPoolTokens ?? 0) }}</strong> pool tokens
+                </span>
+                <span class="small text-muted">· View phone = {{ $viewTokenCost ?? 1 }} token · Download = {{ $downloadTokenCost ?? 2 }} tokens</span>
+                <a href="{{ route('employer.talent-pool.results', ['saved_only' => 1]) }}" class="btn btn-sm btn-outline-secondary ms-auto">Saved candidates</a>
+            </div>
+        @endif
+
+        @if(!empty($requiresSearch))
             <div class="alert alert-info mb-3">
                 Enter at least {{ config('hirevo_plans.min_search_length', 2) }} characters, skills, location, or other filters to search. We only load matching candidates — not the entire database.
             </div>
@@ -370,6 +380,8 @@
     </div>
 </aside>
 
+@include('hirevo.employer.talent-pool._credits-modal')
+
 @endsection
 
 @php
@@ -385,5 +397,8 @@
         @include('hirevo.employer.talent-pool._results-scripts', [
             'tpHighlightTerms' => $tpHighlightTerms,
             'tpSkipInitialFetch' => !empty($facets) || isset($totalCount),
+            'tpViewTokenCost' => $viewTokenCost ?? config('hirevo_plans.unlock_credit_cost', 1),
+            'tpDownloadTokenCost' => $downloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 2),
+            'tpTalentPoolTokens' => $talentPoolTokens ?? 0,
         ])
 @endpush

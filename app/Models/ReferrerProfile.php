@@ -13,7 +13,7 @@ class ReferrerProfile extends Model
         'referral_code',
         'designation', 'department', 'profile_photo',
         'gstin', 'gst_verified', 'company_legal_name', 'company_address', 'invoice_consent',
-        'is_approved', 'approved_at', 'credits',
+        'is_approved', 'approved_at', 'credits', 'talent_pool_tokens',
         'subscription_plan', 'subscription_started_at', 'subscription_expires_at',
     ];
 
@@ -25,6 +25,7 @@ class ReferrerProfile extends Model
         'approved_at' => 'datetime',
         'subscription_started_at' => 'datetime',
         'subscription_expires_at' => 'datetime',
+        'talent_pool_tokens' => 'integer',
     ];
 
     public function setReferralCodeAttribute(?string $value): void

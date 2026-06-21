@@ -9,7 +9,11 @@
     var detailsUrlTemplate = @json(route('employer.talent-pool.details', ['source' => '__SOURCE__', 'id' => '__ID__']));
     var saveUrl = @json(route('employer.talent-pool.save'));
     var shortlistUrl = @json(route('employer.talent-pool.shortlist'));
+    var unlockUrl = @json(route('employer.talent-pool.unlock'));
+    var downloadUrl = @json(route('employer.talent-pool.download'));
     var plansUrl = @json(route('employer.plans.index'));
+    var viewTokenCost = @json((int) ($tpViewTokenCost ?? config('hirevo_plans.unlock_credit_cost', 1)));
+    var downloadTokenCost = @json((int) ($tpDownloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 2)));
     var highlightTerms = @json($tpHighlightTerms ?? []);
     var skipInitialFetch = @json(!empty($tpSkipInitialFetch));
     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -26,6 +30,104 @@
     var drawer = document.getElementById('tp-drawer');
     var drawerLoading = document.getElementById('tp-drawer-loading');
     var drawerBody = document.getElementById('tp-drawer-body');
+    var tokenBalanceEl = document.getElementById('tp-token-balance');
+    var topbarTokensEl = document.getElementById('tp-topbar-tokens-value');
+    var creditsModal = document.getElementById('tp-credits-modal');
+
+    function updateTokenBalance(n) {
+        if (typeof n !== 'number') return;
+        if (tokenBalanceEl) tokenBalanceEl.textContent = n.toLocaleString();
+        if (topbarTokensEl) topbarTokensEl.textContent = n.toLocaleString();
+    }
+
+    function showCreditsModal() {
+        if (!creditsModal) return;
+        creditsModal.hidden = false;
+        creditsModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideCreditsModal() {
+        if (!creditsModal) return;
+        creditsModal.hidden = true;
+        creditsModal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.getElementById('tp-credits-modal-close')?.addEventListener('click', hideCreditsModal);
+    creditsModal?.addEventListener('click', function (e) {
+        if (e.target === creditsModal) hideCreditsModal();
+    });
+
+    function postJson(url, payload) {
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+        }).then(function (r) {
+            return r.json().then(function (data) {
+                return { status: r.status, data: data };
+            }).catch(function () {
+                return { status: r.status, data: null };
+            });
+        });
+    }
+
+    function unlockContact(source, sourceId) {
+        return postJson(unlockUrl, {
+            source: source,
+            source_id: parseInt(sourceId, 10)
+        }).then(function (res) {
+            if (res.status === 402 && res.data && res.data.message === 'insufficient_tokens') {
+                showCreditsModal();
+                return null;
+            }
+            if (res.data && typeof res.data.tokens_remaining === 'number') {
+                updateTokenBalance(res.data.tokens_remaining);
+            }
+            return res.data;
+        });
+    }
+
+    function downloadCandidate(source, sourceId) {
+        return fetch(downloadUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/csv, application/json',
+                'X-CSRF-TOKEN': csrf,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ source: source, source_id: parseInt(sourceId, 10) })
+        }).then(function (r) {
+            if (r.status === 402) {
+                return r.json().then(function (data) {
+                    if (data.message === 'insufficient_tokens') showCreditsModal();
+                    return null;
+                });
+            }
+            if (!r.ok) return null;
+            var tokensRemaining = r.headers.get('X-Tokens-Remaining');
+            if (tokensRemaining) updateTokenBalance(parseInt(tokensRemaining, 10));
+            var disposition = r.headers.get('Content-Disposition') || '';
+            var match = disposition.match(/filename="?([^";]+)"?/i);
+            var filename = match ? match[1] : 'candidate.csv';
+            return r.blob().then(function (blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                return true;
+            });
+        });
+    }
 
     function collectParams(page, opts) {
         opts = opts || {};
@@ -327,12 +429,25 @@
             ? '<img src="' + escapeHtml(c.profile_image) + '" alt="" class="tp-dr-avatar">'
             : '<div class="tp-dr-avatar-fallback">' + escapeHtml(ini) + '</div>';
 
-        var phoneHref = canViewContact && c.phone
-            ? 'tel:' + String(c.phone).replace(/\D+/g, '')
-            : plansUrl;
-        var phoneLabel = canViewContact && c.phone ? 'View Phone Number' : 'View Phone Number';
-        var phoneClass = 'tp-dr-phone-btn' + (canViewContact && c.phone ? '' : ' is-locked');
-        var phoneIcon = canViewContact && c.phone ? 'mdi-phone' : 'mdi-lock-outline';
+        var phoneFooter;
+        if (canViewContact && c.phone) {
+            phoneFooter = '<a href="tel:' + String(c.phone).replace(/\D+/g, '') + '" class="tp-dr-phone-btn">'
+                + '<i class="mdi mdi-phone"></i> ' + escapeHtml(c.phone) + '</a>';
+        } else if (canViewContact) {
+            phoneFooter = '<div class="tp-dr-cv-empty"><p class="mb-0">Phone not available for this candidate.</p></div>';
+        } else {
+            phoneFooter = '<button type="button" class="tp-dr-phone-btn is-locked tp-drawer-unlock-btn" data-source="'
+                + escapeHtml(c.source) + '" data-source-id="' + c.source_id + '">'
+                + '<i class="mdi mdi-phone-lock-outline"></i> Unlock phone (' + viewTokenCost + ' token)</button>';
+        }
+
+        var downloadAction = '';
+        if (c.is_saved) {
+            downloadAction = '<button type="button" class="btn btn-sm btn-outline-secondary tp-download-btn" data-source="'
+                + escapeHtml(c.source) + '" data-source-id="' + c.source_id + '" data-can-download="'
+                + (c.can_download ? '1' : '0') + '"><i class="mdi mdi-download-outline me-1"></i>'
+                + (c.can_download ? 'Download data' : ('Download (' + downloadTokenCost + ' tokens)')) + '</button>';
+        }
 
         var eduHtml = '';
         if (c.education) {
@@ -401,14 +516,14 @@
             + '<div class="tp-dr-panel" data-panel="profile">' + profileTab + '</div>'
             + '<div class="tp-dr-panel" data-panel="cv" hidden>' + cvTab + '</div>'
             + '<div class="tp-dr-actions">'
+            + downloadAction
             + '<button type="button" class="btn btn-sm ' + (c.is_saved ? 'btn-warning' : 'btn-outline-secondary') + ' tp-save-btn" data-source="' + escapeHtml(c.source) + '" data-source-id="' + c.source_id + '"><i class="mdi mdi-bookmark-outline me-1"></i>Save</button>'
             + '<button type="button" class="btn btn-sm ' + (c.is_shortlisted ? 'btn-success' : 'btn-outline-success') + ' tp-shortlist-btn" data-source="' + escapeHtml(c.source) + '" data-source-id="' + c.source_id + '"><i class="mdi mdi-star-outline me-1"></i>Shortlist</button>'
             + '</div></div></div>'
             + '<div class="tp-dr-footer">'
-            + '<a href="' + escapeHtml(phoneHref) + '" class="' + phoneClass + '">'
-            + '<i class="mdi ' + phoneIcon + '"></i> ' + phoneLabel + '</a>'
+            + phoneFooter
             + '<div class="tp-dr-footer-note">'
-            + (canViewContact ? '<span><i class="mdi mdi-check-circle-outline text-success"></i> Plan active</span>' : '<span><i class="mdi mdi-lock-outline"></i> Subscribe to unlock</span>')
+            + (canViewContact ? '<span><i class="mdi mdi-check-circle-outline text-success"></i> Contact unlocked</span>' : '<span><i class="mdi mdi-lock-outline"></i> ' + viewTokenCost + ' token to view phone</span>')
             + (c.active_label ? '<span>Active on ' + escapeHtml(c.active_label) + '</span>' : '')
             + '</div></div>';
 
@@ -425,6 +540,15 @@
                     panel.hidden = panel.dataset.panel !== target;
                 });
             };
+        });
+
+        drawerBody.querySelector('.tp-drawer-unlock-btn')?.addEventListener('click', function () {
+            var btn = this;
+            unlockContact(btn.dataset.source, btn.dataset.sourceId).then(function (data) {
+                if (data && data.candidate) {
+                    renderDrawer(data.candidate, true);
+                }
+            });
         });
 
         bindActions();
@@ -448,6 +572,9 @@
             .then(function (res) {
                 if (res.data.candidate) {
                     renderDrawer(res.data.candidate, !!res.data.can_view_contact);
+                    if (typeof res.data.tokens_remaining === 'number') {
+                        updateTokenBalance(res.data.tokens_remaining);
+                    }
                 } else {
                     closeDrawer();
                 }
@@ -486,8 +613,40 @@
 
         document.querySelectorAll('.tp-candidate-row.tp-row-openable').forEach(function (row) {
             row.onclick = function (e) {
-                if (e.target.closest('a, button, .tp-save-btn, .tp-shortlist-btn, .tp-phone-plans-btn')) return;
+                if (e.target.closest('a, button, .tp-save-btn, .tp-shortlist-btn, .tp-phone-plans-btn, .tp-unlock-phone-btn, .tp-download-btn')) return;
                 loadDetails(row.dataset.source, row.dataset.sourceId, row);
+            };
+        });
+
+        document.querySelectorAll('.tp-unlock-phone-btn').forEach(function (btn) {
+            btn.onclick = function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var source = btn.dataset.source;
+                var sourceId = btn.dataset.sourceId;
+                unlockContact(source, sourceId).then(function (data) {
+                    if (!data || !data.candidate || !data.candidate.phone) return;
+                    var phone = escapeHtml(data.candidate.phone);
+                    var tel = 'tel:' + String(data.candidate.phone).replace(/\D+/g, '');
+                    btn.outerHTML = '<a href="' + tel + '" class="btn btn-outline-primary btn-sm"><i class="mdi mdi-phone-outline me-1"></i> ' + phone + '</a>';
+                });
+            };
+        });
+
+        document.querySelectorAll('.tp-download-btn').forEach(function (btn) {
+            btn.onclick = function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var source = btn.dataset.source;
+                var sourceId = btn.dataset.sourceId;
+                btn.disabled = true;
+                downloadCandidate(source, sourceId).then(function (ok) {
+                    btn.disabled = false;
+                    if (ok) {
+                        btn.dataset.canDownload = '1';
+                        btn.innerHTML = '<i class="mdi mdi-download-outline me-1"></i> Download';
+                    }
+                });
             };
         });
 
