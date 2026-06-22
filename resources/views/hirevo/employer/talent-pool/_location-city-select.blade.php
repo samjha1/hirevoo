@@ -1,18 +1,21 @@
 @php
+    $paramName = $paramName ?? 'location';
     $locationFacets = $locationFacets ?? ($facets['locations'] ?? []);
-    $selectedCity = $selectedCity ?? ($filters['location'] ?? '');
-    if ($selectedCity === '' && !empty($selectedLocations[0] ?? null)) {
+    $selectedCity = $selectedCity ?? ($filters[$paramName] ?? '');
+    if ($selectedCity === '' && $paramName === 'location' && !empty($selectedLocations[0] ?? null)) {
         $selectedCity = $selectedLocations[0];
     }
-    $selectId = $selectId ?? 'tp-location';
+    $selectId = $selectId ?? ($paramName === 'preferred_location' ? 'tp-preferred-location' : 'tp-location');
     $selectClass = $selectClass ?? 'form-select form-select-sm tp-filter';
     $formId = $formId ?? 'tp-search-form';
     $showCounts = $showCounts ?? true;
+    $allOptionLabel = $allOptionLabel ?? 'All cities';
+    $hintText = $hintText ?? 'Main metro cities (Mumbai, Delhi NCR, Bangalore, etc.).';
 @endphp
-<select class="{{ $selectClass }}" id="{{ $selectId }}" name="location"
+<select class="{{ $selectClass }}" id="{{ $selectId }}" name="{{ $paramName }}"
         @if($formId) form="{{ $formId }}" @endif
         @if(!empty($onchangeFilter)) data-tp-filter="1" @endif>
-    <option value="">All cities</option>
+    <option value="">{{ $allOptionLabel }}</option>
     @foreach($locationFacets as $loc)
         @php
             $label = (string) ($loc['label'] ?? '');
@@ -26,6 +29,6 @@
         <option value="{{ $selectedCity }}" selected>{{ $selectedCity }}</option>
     @endif
 </select>
-@if(empty($locationFacets) && ($selectedCity === ''))
-    <p class="small text-muted mb-0 mt-1">Main metro cities (Mumbai, Delhi NCR, Bangalore, etc.).</p>
+@if(empty($locationFacets) && ($selectedCity === '') && $hintText !== '')
+    <p class="small text-muted mb-0 mt-1">{{ $hintText }}</p>
 @endif

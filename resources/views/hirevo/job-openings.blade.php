@@ -1645,10 +1645,6 @@
                         <div class="jo-results-bar__left">
                             @if($jobs->total() > 0)
                                 <span class="jo-results-count"><i class="mdi mdi-view-list-outline" aria-hidden="true"></i> Results</span>
-                                <span id="jo-showing-line">
-                                    Showing <strong id="jo-range-from">{{ $jobs->firstItem() }}</strong>–<strong id="jo-range-to">{{ $jobs->lastItem() }}</strong>
-                                    of <strong id="jo-range-total">{{ $jobs->total() }}</strong>
-                                </span>
                                 @if($hasActiveFilters)
                                     <span class="text-muted">· filtered</span>
                                 @endif

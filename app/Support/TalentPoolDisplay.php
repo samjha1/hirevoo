@@ -15,12 +15,12 @@ class TalentPoolDisplay
     }
 
     /**
-     * @param  array{locations?: list<array{label: string, count: int}>, education?: list<array{label: string, count: int}>, experience?: list<array{label: string, count: int}>}  $facets
-     * @return array{locations: list<array{label: string, count: int}>, education: list<array{label: string, count: int}>, experience: list<array{label: string, count: int}>}
+     * @param  array{locations?: list<array{label: string, count: int}>, preferred_locations?: list<array{label: string, count: int}>, education?: list<array{label: string, count: int}>, experience?: list<array{label: string, count: int}>}  $facets
+     * @return array{locations: list<array{label: string, count: int}>, preferred_locations: list<array{label: string, count: int}>, education: list<array{label: string, count: int}>, experience: list<array{label: string, count: int}>}
      */
     public static function applyFacetCounts(array $facets): array
     {
-        $keys = ['locations', 'education', 'experience'];
+        $keys = ['locations', 'preferred_locations', 'education', 'experience', 'salary'];
 
         foreach ($keys as $key) {
             $facets[$key] = array_map(function (array $facet): array {
@@ -32,8 +32,10 @@ class TalentPoolDisplay
 
         return [
             'locations' => $facets['locations'] ?? [],
+            'preferred_locations' => $facets['preferred_locations'] ?? [],
             'education' => $facets['education'] ?? [],
             'experience' => $facets['experience'] ?? [],
+            'salary' => $facets['salary'] ?? [],
         ];
     }
 }

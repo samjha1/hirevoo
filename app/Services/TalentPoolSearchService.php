@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\TalentPoolSalary;
 use App\Models\CandidateProfile;
 use App\Models\EmployerTalentPoolAction;
 use App\Models\Resume;
@@ -65,7 +66,7 @@ class TalentPoolSearchService
                     'query' => request()->query(),
                 ]),
                 'active_filter_count' => $this->countActiveFilters($filters),
-                'facets' => $withFacets ? ['locations' => [], 'education' => [], 'experience' => []] : null,
+                'facets' => $withFacets ? ['locations' => [], 'preferred_locations' => [], 'education' => [], 'experience' => [], 'salary' => []] : null,
                 'total_count' => 0,
                 'requires_search' => true,
             ];
@@ -412,10 +413,16 @@ class TalentPoolSearchService
         if ($this->selectedLocations($filters) !== []) {
             return true;
         }
+        if ($this->selectedPreferredLocations($filters) !== []) {
+            return true;
+        }
         if (trim((string) ($filters['education'] ?? '')) !== '') {
             return true;
         }
         if (($filters['experience_min'] ?? '') !== '' || ($filters['experience_max'] ?? '') !== '') {
+            return true;
+        }
+        if ($this->selectedSalaryMinLpa($filters) !== null) {
             return true;
         }
         if (filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
@@ -449,7 +456,7 @@ class TalentPoolSearchService
      * @param  list<array{label: string, count: int}>  $facetLocations
      * @return list<array{label: string, count: int}>
      */
-    public function cityDropdownOptions(array $facetLocations = []): array
+    public function cityDropdownOptions(array $facetLocations = [], ?string $pinLabel = null): array
     {
         $lookup = $this->mainCityLookup();
         $rolled = [];
@@ -475,7 +482,7 @@ class TalentPoolSearchService
             }
         }
 
-        return collect($rolled)
+        $options = collect($rolled)
             ->map(fn (int $count, string $label) => ['label' => $label, 'count' => $count])
             ->sort(function (array $a, array $b): int {
                 if ($a['count'] !== $b['count']) {
@@ -486,6 +493,23 @@ class TalentPoolSearchService
             })
             ->values()
             ->all();
+
+        $pinLabel = trim((string) ($pinLabel ?? ''));
+        if ($pinLabel === '') {
+            return $options;
+        }
+
+        $pinned = [];
+        $rest = [];
+        foreach ($options as $option) {
+            if (strcasecmp($option['label'], $pinLabel) === 0) {
+                $pinned[] = $option;
+            } else {
+                $rest[] = $option;
+            }
+        }
+
+        return array_merge($pinned, $rest);
     }
 
     /**
@@ -500,12 +524,33 @@ class TalentPoolSearchService
             $facetLocations = $this->filterFacets($facetFilters)['locations'] ?? [];
         }
 
-        return $this->cityDropdownOptions($facetLocations);
+        return $this->cityDropdownOptions(
+            $facetLocations,
+            trim((string) ($filters['location'] ?? ''))
+        );
     }
 
     /**
      * @param  array<string, mixed>  $filters
-     * @return array{locations: list<array{label: string, count: int}>, education: list<array{label: string, count: int}>, experience: list<array{label: string, min: int|null, max: int|null, count: int}>}
+     * @return list<array{label: string, count: int}>
+     */
+    public function preferredLocationOptionsForFilters(array $filters): array
+    {
+        $facetLocations = [];
+        if ($this->hasSearchCriteria($filters)) {
+            $facetFilters = $this->filtersForFacetComputation($filters);
+            $facetLocations = $this->filterFacets($facetFilters)['preferred_locations'] ?? [];
+        }
+
+        return $this->cityDropdownOptions(
+            $facetLocations,
+            trim((string) ($filters['preferred_location'] ?? ''))
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{locations: list<array{label: string, count: int}>, preferred_locations: list<array{label: string, count: int}>, education: list<array{label: string, count: int}>, experience: list<array{label: string, min: int|null, max: int|null, count: int}>}
      */
     public function filterFacets(array $filters): array
     {
@@ -515,6 +560,8 @@ class TalentPoolSearchService
                 $facets = $this->elasticsearch->aggregateFacets($prepared);
                 if (is_array($facets)) {
                     $facets['locations'] = $this->filterLocationFacetsForDropdown($facets['locations'] ?? []);
+                    $facets['preferred_locations'] = $this->filterLocationFacetsForDropdown($facets['preferred_locations'] ?? []);
+                    $facets['salary'] = $facets['salary'] ?? [];
 
                     return $facets;
                 }
@@ -523,16 +570,24 @@ class TalentPoolSearchService
             $forLocations = $filters;
             unset($forLocations['location'], $forLocations['locations']);
 
+            $forPreferredLocations = $filters;
+            unset($forPreferredLocations['preferred_location'], $forPreferredLocations['preferred_locations']);
+
             $forEducation = $filters;
             unset($forEducation['education']);
 
             $forExperience = $filters;
             unset($forExperience['experience_min'], $forExperience['experience_max']);
 
+            $forSalary = $filters;
+            unset($forSalary['salary_min_lpa']);
+
             return [
                 'locations' => $this->filterLocationFacetsForDropdown($this->aggregateLocationFacets($forLocations)),
+                'preferred_locations' => $this->filterLocationFacetsForDropdown($this->aggregatePreferredLocationFacets($forPreferredLocations)),
                 'education' => $this->aggregateEducationFacets($forEducation),
                 'experience' => $this->aggregateExperienceFacets($forExperience),
+                'salary' => $this->aggregateSalaryFacets($forSalary),
             ];
         });
     }
@@ -552,10 +607,16 @@ class TalentPoolSearchService
         if ($this->selectedLocations($filters) !== []) {
             $count++;
         }
+        if ($this->selectedPreferredLocations($filters) !== []) {
+            $count++;
+        }
         if (trim((string) ($filters['education'] ?? '')) !== '') {
             $count++;
         }
         if (($filters['experience_min'] ?? '') !== '' || ($filters['experience_max'] ?? '') !== '') {
+            $count++;
+        }
+        if ($this->selectedSalaryMinLpa($filters) !== null) {
             $count++;
         }
         if (filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
@@ -587,6 +648,39 @@ class TalentPoolSearchService
         }
 
         return $this->expandMainCitySelections($locations);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<string>
+     */
+    public function selectedPreferredLocations(array $filters): array
+    {
+        $locations = $filters['preferred_locations'] ?? [];
+        if (is_string($locations) && $locations !== '') {
+            $locations = [$locations];
+        }
+        if (! is_array($locations)) {
+            $locations = [];
+        }
+        $locations = array_values(array_filter(array_map(fn ($s) => trim((string) $s), $locations)));
+        if ($locations === [] && trim((string) ($filters['preferred_location'] ?? '')) !== '') {
+            $locations = [trim((string) $filters['preferred_location'])];
+        }
+
+        return $this->expandMainCitySelections($locations);
+    }
+
+    public function selectedSalaryMinLpa(array $filters): ?int
+    {
+        $value = $filters['salary_min_lpa'] ?? null;
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $value = (int) $value;
+
+        return TalentPoolSalary::isAllowedMinLpa($value) ? $value : null;
     }
 
     /**
@@ -635,30 +729,70 @@ class TalentPoolSearchService
         }
 
         $verified = $this->verifiedCandidatesQuery($filters)
-            ->select([
+            ->select($this->unionSelectColumns($filters, self::SOURCE_VERIFIED));
+
+        $talent = $this->talentPoolCandidatesQuery($filters)
+            ->select($this->unionSelectColumns($filters, self::SOURCE_TALENT_POOL));
+
+        $union = $verified->unionAll($talent);
+
+        $order = DB::query()->fromSub($union, 'merged_candidates');
+        if ($this->selectedPreferredLocations($filters) !== []) {
+            $order->orderBy('pref_sort');
+        }
+        $order->orderBy('source_priority')->orderByDesc('sort_at');
+
+        return $order->offset($offset)->limit($limit)->get();
+    }
+
+    /**
+     * @return list<\Illuminate\Contracts\Database\Query\Expression|string>
+     */
+    protected function unionSelectColumns(array $filters, string $source): array
+    {
+        $prefSort = $source === self::SOURCE_VERIFIED
+            ? $this->preferredLocationSortSql($filters, 'candidate_profiles.preferred_job_location', 'candidate_profiles.location')
+            : $this->preferredLocationSortSql($filters, 'talent_pool_candidates.location');
+
+        if ($source === self::SOURCE_VERIFIED) {
+            return [
                 'users.id',
                 DB::raw("'".self::SOURCE_VERIFIED."' as candidate_source"),
                 DB::raw('0 as source_priority'),
                 'users.updated_at as sort_at',
-            ]);
+                DB::raw('('.($prefSort ?? '1').') as pref_sort'),
+            ];
+        }
 
-        $talent = $this->talentPoolCandidatesQuery($filters)
-            ->select([
-                'talent_pool_candidates.id',
-                DB::raw("'".self::SOURCE_TALENT_POOL."' as candidate_source"),
-                DB::raw('1 as source_priority'),
-                'talent_pool_candidates.created_at as sort_at',
-            ]);
+        return [
+            'talent_pool_candidates.id',
+            DB::raw("'".self::SOURCE_TALENT_POOL."' as candidate_source"),
+            DB::raw('1 as source_priority'),
+            'talent_pool_candidates.created_at as sort_at',
+            DB::raw('('.($prefSort ?? '1').') as pref_sort'),
+        ];
+    }
 
-        $union = $verified->unionAll($talent);
+    protected function preferredLocationSortSql(array $filters, string $primaryColumn, ?string $secondaryColumn = null): ?string
+    {
+        $locations = $this->selectedPreferredLocations($filters);
+        if ($locations === []) {
+            return null;
+        }
 
-        return DB::query()
-            ->fromSub($union, 'merged_candidates')
-            ->orderBy('source_priority')
-            ->orderByDesc('sort_at')
-            ->offset($offset)
-            ->limit($limit)
-            ->get();
+        $rank = 0;
+        $whens = [];
+        foreach ($locations as $location) {
+            $like = addslashes($location);
+            $whens[] = "WHEN {$primaryColumn} LIKE '%{$like}%' THEN {$rank}";
+            $rank++;
+            if ($secondaryColumn !== null) {
+                $whens[] = "WHEN {$secondaryColumn} LIKE '%{$like}%' THEN {$rank}";
+                $rank++;
+            }
+        }
+
+        return 'CASE '.implode(' ', $whens).' ELSE '.$rank.' END';
     }
 
     /**
@@ -778,6 +912,8 @@ class TalentPoolSearchService
     protected function hasStructuralFilters(array $filters): bool
     {
         return $this->selectedLocations($filters) !== []
+            || $this->selectedPreferredLocations($filters) !== []
+            || $this->selectedSalaryMinLpa($filters) !== null
             || trim((string) ($filters['education'] ?? '')) !== ''
             || ($filters['experience_min'] ?? '') !== ''
             || ($filters['experience_max'] ?? '') !== ''
@@ -1279,6 +1415,7 @@ class TalentPoolSearchService
         }
 
         $this->applyVerifiedLocationFilter($query, $filters);
+        $this->applyVerifiedSalaryFilter($query, $filters);
 
         $education = trim((string) ($filters['education'] ?? ''));
         if ($education !== '') {
@@ -1329,6 +1466,7 @@ class TalentPoolSearchService
         }
 
         $this->applyTalentPoolLocationFilter($query, $filters);
+        $this->applyTalentPoolSalaryFilter($query, $filters);
 
         $education = trim((string) ($filters['education'] ?? ''));
         if ($education !== '') {
@@ -1352,6 +1490,58 @@ class TalentPoolSearchService
         }
 
         return $query;
+    }
+
+    protected function applyVerifiedSalaryFilter(Builder $query, array $filters): void
+    {
+        $minLpa = $this->selectedSalaryMinLpa($filters);
+        if ($minLpa === null) {
+            return;
+        }
+
+        $minInr = TalentPoolSalary::minAnnualInr($minLpa);
+        $digitsExpr = "CAST(REGEXP_REPLACE(COALESCE(candidate_profiles.expected_salary, ''), '[^0-9]', '') AS UNSIGNED)";
+
+        $query->where(function (Builder $salaryQuery) use ($minInr, $minLpa, $digitsExpr) {
+            $salaryQuery
+                ->whereRaw("({$digitsExpr} >= ? AND {$digitsExpr} >= 100000)", [$minInr])
+                ->orWhereRaw(
+                    "(LOWER(candidate_profiles.expected_salary) REGEXP '(lpa|lakh|lac)' AND {$digitsExpr} >= ?)",
+                    [$minLpa]
+                )
+                ->orWhereRaw(
+                    "({$digitsExpr} < 100 AND {$digitsExpr} >= ?)",
+                    [$minLpa]
+                )
+                ->orWhereRaw(
+                    "(candidate_profiles.expected_salary_period = 'per_month' AND ({$digitsExpr} * 12) >= ?)",
+                    [$minInr]
+                );
+        });
+    }
+
+    protected function applyTalentPoolSalaryFilter(Builder $query, array $filters): void
+    {
+        $minLpa = $this->selectedSalaryMinLpa($filters);
+        if ($minLpa === null) {
+            return;
+        }
+
+        $minInr = TalentPoolSalary::minAnnualInr($minLpa);
+        $digitsExpr = "CAST(REGEXP_REPLACE(COALESCE(talent_pool_candidates.expected_salary, ''), '[^0-9]', '') AS UNSIGNED)";
+
+        $query->where(function (Builder $salaryQuery) use ($minInr, $minLpa, $digitsExpr) {
+            $salaryQuery
+                ->whereRaw("({$digitsExpr} >= ? AND {$digitsExpr} >= 100000)", [$minInr])
+                ->orWhereRaw(
+                    "(LOWER(talent_pool_candidates.expected_salary) REGEXP '(lpa|lakh|lac)' AND {$digitsExpr} >= ?)",
+                    [$minLpa]
+                )
+                ->orWhereRaw(
+                    "({$digitsExpr} < 100 AND {$digitsExpr} >= ?)",
+                    [$minLpa]
+                );
+        });
     }
 
     /**
@@ -1480,6 +1670,49 @@ class TalentPoolSearchService
 
         foreach ($talentLocs as $row) {
             $counts[$row->label] = ($counts[$row->label] ?? 0) + (int) $row->aggregate;
+        }
+
+        arsort($counts);
+
+        return collect($counts)
+            ->take(50)
+            ->map(fn (int $count, string $label) => ['label' => $label, 'count' => $count])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array{label: string, count: int}>
+     */
+    protected function aggregatePreferredLocationFacets(array $filters): array
+    {
+        if (! $this->hasSearchCriteria($filters)) {
+            return [];
+        }
+
+        $prefExpr = $this->citySqlExpression('preferred_job_location');
+        $counts = [];
+        $userSub = $this->verifiedCandidatesQuery($filters)->select('users.id');
+
+        $prefRows = DB::table('candidate_profiles')
+            ->whereIn('user_id', $userSub)
+            ->whereNotNull('preferred_job_location')
+            ->where('preferred_job_location', '!=', '')
+            ->selectRaw("{$prefExpr} as label");
+
+        $verifiedPrefs = DB::query()
+            ->fromSub($prefRows, 'preferred_city_rows')
+            ->whereNotNull('label')
+            ->where('label', '!=', '')
+            ->selectRaw('label, COUNT(*) as aggregate')
+            ->groupBy('label')
+            ->orderByDesc('aggregate')
+            ->limit(60)
+            ->get();
+
+        foreach ($verifiedPrefs as $row) {
+            $counts[$row->label] = (int) $row->aggregate;
         }
 
         arsort($counts);
@@ -1740,6 +1973,35 @@ class TalentPoolSearchService
                     'label' => $bucket['label'],
                     'min' => $bucket['min'],
                     'max' => $bucket['max'],
+                    'count' => $count,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array{label: string, min_lpa: int, count: int}>
+     */
+    protected function aggregateSalaryFacets(array $filters): array
+    {
+        if (! $this->hasSearchCriteria($filters)) {
+            return [];
+        }
+
+        $result = [];
+        foreach (TalentPoolSalary::buckets() as $bucket) {
+            $bucketFilters = $filters;
+            $bucketFilters['salary_min_lpa'] = $bucket['min_lpa'];
+            $count = $this->verifiedCandidatesQuery($bucketFilters)->count('users.id')
+                + $this->talentPoolCandidatesQuery($bucketFilters)->count();
+
+            if ($count > 0) {
+                $result[] = [
+                    'label' => $bucket['label'],
+                    'min_lpa' => $bucket['min_lpa'],
                     'count' => $count,
                 ];
             }

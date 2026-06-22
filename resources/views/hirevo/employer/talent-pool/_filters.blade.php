@@ -1,7 +1,7 @@
 @php
     use App\Models\CandidateProfile;
     $selectedLocations = $selectedLocations ?? [];
-    $facets = $facets ?? ['locations' => [], 'education' => [], 'experience' => []];
+    $facets = $facets ?? ['locations' => [], 'preferred_locations' => [], 'education' => [], 'experience' => [], 'salary' => []];
     $activeFilterCount = $activeFilterCount ?? 0;
     $educationOptions = $educationOptions ?? CandidateProfile::educationDegreeValues();
 @endphp
@@ -25,6 +25,48 @@
                 'selectedLocations' => $selectedLocations,
                 'onchangeFilter' => true,
             ])
+        </div>
+    </div>
+
+    <div class="tp-filter-block">
+        <button type="button" class="tp-filter-toggle" data-bs-toggle="collapse" data-bs-target="#tp-pref-loc-panel" aria-expanded="true">
+            <span>Preferred location</span>
+            <i class="mdi mdi-chevron-down"></i>
+        </button>
+        <div class="collapse show" id="tp-pref-loc-panel">
+            @include('hirevo.employer.talent-pool._location-city-select', [
+                'locationFacets' => $preferredLocationFacets ?? ($facets['preferred_locations'] ?? []),
+                'filters' => $filters,
+                'paramName' => 'preferred_location',
+                'allOptionLabel' => 'All preferred cities',
+                'hintText' => 'Matching preferred city appears first in results.',
+                'onchangeFilter' => true,
+            ])
+        </div>
+    </div>
+
+    <div class="tp-filter-block">
+        <button type="button" class="tp-filter-toggle" data-bs-toggle="collapse" data-bs-target="#tp-salary-panel" aria-expanded="true">
+            <span>Expected salary</span>
+            <i class="mdi mdi-chevron-down"></i>
+        </button>
+        <div class="collapse show" id="tp-salary-panel">
+            @php
+                $salaryFacets = collect($facets['salary'] ?? [])->keyBy('min_lpa');
+                $selectedSalary = (string) ($filters['salary_min_lpa'] ?? '');
+            @endphp
+            <select class="form-select form-select-sm tp-filter" id="tp-salary-min-lpa" name="salary_min_lpa" form="tp-search-form">
+                <option value="">Any salary</option>
+                @foreach(\App\Support\TalentPoolSalary::buckets() as $bucket)
+                    @php
+                        $facet = $salaryFacets->get($bucket['min_lpa']);
+                        $count = (int) ($facet['count'] ?? 0);
+                    @endphp
+                    <option value="{{ $bucket['min_lpa'] }}" @selected($selectedSalary === (string) $bucket['min_lpa'])>
+                        {{ $bucket['label'] }}@if($count > 0) ({{ number_format($count) }})@endif
+                    </option>
+                @endforeach
+            </select>
         </div>
     </div>
 

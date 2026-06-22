@@ -73,6 +73,32 @@
                 ])
                 <p class="small fw-600 mb-0 mt-1 text-muted" id="tp-search-preview" hidden></p>
             </div>
+            <div class="mb-3">
+                <label class="form-label" for="tp-preferred-location">Preferred location</label>
+                @include('hirevo.employer.talent-pool._location-city-select', [
+                    'locationFacets' => $preferredLocationFacets ?? [],
+                    'filters' => $filters ?? [],
+                    'paramName' => 'preferred_location',
+                    'selectId' => 'tp-preferred-location',
+                    'selectClass' => 'form-control',
+                    'formId' => null,
+                    'allOptionLabel' => 'All preferred cities',
+                    'hintText' => 'Matching preferred city appears first in results.',
+                ])
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-12">
+                    <label class="form-label" for="tp-salary-min-lpa">Expected salary</label>
+                    <select class="form-control" id="tp-salary-min-lpa" name="salary_min_lpa">
+                        <option value="">Any salary</option>
+                        @foreach(\App\Support\TalentPoolSalary::buckets() as $bucket)
+                            <option value="{{ $bucket['min_lpa'] }}" @selected((string) old('salary_min_lpa', request('salary_min_lpa')) === (string) $bucket['min_lpa'])>
+                                {{ $bucket['label'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
             <div class="row g-3 mb-3">
                 <div class="col-6">
                     <label class="form-label" for="tp-exp-min">Min experience (years)</label>
@@ -118,11 +144,11 @@
     var previewRequest = null;
     var cityRequest = null;
 
-    function renderCityOptions(options) {
-        var select = document.getElementById('tp-location');
+    function renderCityOptions(selectId, options, allLabel) {
+        var select = document.getElementById(selectId);
         if (!select || !Array.isArray(options)) return;
         var selected = select.value;
-        var html = '<option value="">All cities</option>';
+        var html = '<option value="">' + (allLabel || 'All cities') + '</option>';
         options.forEach(function (loc) {
             if (!loc || !loc.label) return;
             var label = String(loc.label);
@@ -148,7 +174,10 @@
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (Array.isArray(data.location_options)) {
-                    renderCityOptions(data.location_options);
+                    renderCityOptions('tp-location', data.location_options);
+                }
+                if (Array.isArray(data.preferred_location_options)) {
+                    renderCityOptions('tp-preferred-location', data.preferred_location_options, 'All preferred cities');
                 }
             })
             .catch(function (err) {
@@ -177,9 +206,11 @@
         var skills = (form?.querySelector('[name=skills]')?.value || '').trim();
         return q.length >= minLen || skills.length >= minLen
             || (form?.querySelector('[name=location]')?.value || '').trim() !== ''
+            || (form?.querySelector('[name=preferred_location]')?.value || '').trim() !== ''
             || (form?.querySelector('[name=education]')?.value || '').trim() !== ''
             || (form?.querySelector('[name=experience_min]')?.value || '').trim() !== ''
-            || (form?.querySelector('[name=experience_max]')?.value || '').trim() !== '';
+            || (form?.querySelector('[name=experience_max]')?.value || '').trim() !== ''
+            || (form?.querySelector('[name=salary_min_lpa]')?.value || '').trim() !== '';
     }
 
     function setPreview(text, tone) {
@@ -230,7 +261,10 @@
                     return;
                 }
                 if (Array.isArray(data.location_options)) {
-                    renderCityOptions(data.location_options);
+                    renderCityOptions('tp-location', data.location_options);
+                }
+                if (Array.isArray(data.preferred_location_options)) {
+                    renderCityOptions('tp-preferred-location', data.preferred_location_options, 'All preferred cities');
                 }
                 var label;
                 if (n === 0) {

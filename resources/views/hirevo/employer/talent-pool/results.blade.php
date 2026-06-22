@@ -5,7 +5,7 @@
 @section('header_title', 'Search Results')
 
 @section('header_actions')
-    <a href="{{ route('employer.talent-pool.index', request()->only(['q', 'skills', 'location', 'education', 'experience_min', 'experience_max'])) }}" class="btn btn-outline-secondary btn-sm">
+    <a href="{{ route('employer.talent-pool.index', request()->only(['q', 'skills', 'location', 'preferred_location', 'education', 'experience_min', 'experience_max', 'salary_min_lpa'])) }}" class="btn btn-outline-secondary btn-sm">
         <i class="mdi mdi-pencil-outline me-1"></i> Modify search
     </a>
 @endsection
@@ -310,7 +310,7 @@
         @endif
 
         <div class="tp-results-summary">
-            <a href="{{ route('employer.talent-pool.index', request()->only(['q', 'skills', 'location', 'education', 'experience_min', 'experience_max'])) }}" class="btn btn-sm btn-light border me-1" title="Back to search">
+            <a href="{{ route('employer.talent-pool.index', request()->only(['q', 'skills', 'location', 'preferred_location', 'education', 'experience_min', 'experience_max', 'salary_min_lpa'])) }}" class="btn btn-sm btn-light border me-1" title="Back to search">
                 <i class="mdi mdi-arrow-left"></i>
             </a>
             <span class="tp-query">{{ \Illuminate\Support\Str::limit($queryLabel, 60) }}</span>
@@ -319,6 +319,16 @@
             @endif
             @if(!empty($filters['location']))
                 <span class="tp-chip">{{ $filters['location'] }}</span>
+            @endif
+            @if(!empty($filters['preferred_location']))
+                <span class="tp-chip">Pref: {{ $filters['preferred_location'] }}</span>
+            @endif
+            @if(!empty($filters['salary_min_lpa']))
+                @php
+                    $salaryLabel = collect(\App\Support\TalentPoolSalary::buckets())
+                        ->firstWhere('min_lpa', (int) $filters['salary_min_lpa'])['label'] ?? ($filters['salary_min_lpa'].'+ LPA');
+                @endphp
+                <span class="tp-chip">{{ $salaryLabel }}</span>
             @endif
             @if(!empty($filters['education']))
                 <span class="tp-chip">{{ $filters['education'] }}</span>
@@ -356,6 +366,7 @@
                         'selectedLocations' => $selectedLocations,
                         'facets' => $facets,
                         'locationFacets' => $locationFacets ?? [],
+                        'preferredLocationFacets' => $preferredLocationFacets ?? [],
                         'activeFilterCount' => $activeFilterCount,
                         'educationOptions' => $educationOptions,
                     ])

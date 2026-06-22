@@ -180,6 +180,9 @@
                 if (Array.isArray(data.location_options)) {
                     updateLocationOptions(data.location_options);
                 }
+                if (Array.isArray(data.preferred_location_options)) {
+                    updatePreferredLocationOptions(data.preferred_location_options);
+                }
                 bindAll();
             })
             .catch(function () {});
@@ -217,6 +220,9 @@
                 if (data.filters_html && filtersEl) filtersEl.innerHTML = data.filters_html;
                 if (Array.isArray(data.location_options)) {
                     updateLocationOptions(data.location_options);
+                }
+                if (Array.isArray(data.preferred_location_options)) {
+                    updatePreferredLocationOptions(data.preferred_location_options);
                 }
                 if (typeof data.total_count === 'number') {
                     updateTotalCount(data.total_count);
@@ -267,11 +273,11 @@
         fetchResults(1, { withFacets: true });
     });
 
-    function updateLocationOptions(options) {
-        var select = document.getElementById('tp-location');
+    function updateLocationSelectOptions(selectId, options, allLabel) {
+        var select = document.getElementById(selectId);
         if (!select || !Array.isArray(options)) return;
         var selected = select.value;
-        var html = '<option value="">All cities</option>';
+        var html = '<option value="">' + (allLabel || 'All cities') + '</option>';
         options.forEach(function (loc) {
             if (!loc || !loc.label) return;
             var label = String(loc.label);
@@ -286,11 +292,29 @@
         select.innerHTML = html;
     }
 
+    function updateLocationOptions(options) {
+        updateLocationSelectOptions('tp-location', options, 'All cities');
+    }
+
+    function updatePreferredLocationOptions(options) {
+        updateLocationSelectOptions('tp-preferred-location', options, 'All preferred cities');
+    }
+
     function bindLocationSelect() {
         var locSelect = document.getElementById('tp-location');
         if (!locSelect || locSelect.dataset.tpBound) return;
         locSelect.dataset.tpBound = '1';
         locSelect.onchange = function () {
+            debouncedFetch();
+            debouncedCount();
+        };
+    }
+
+    function bindPreferredLocationSelect() {
+        var prefSelect = document.getElementById('tp-preferred-location');
+        if (!prefSelect || prefSelect.dataset.tpBound) return;
+        prefSelect.dataset.tpBound = '1';
+        prefSelect.onchange = function () {
             debouncedFetch();
             debouncedCount();
         };
@@ -670,6 +694,7 @@
 
     function bindAll() {
         bindLocationSelect();
+        bindPreferredLocationSelect();
         bindFilters();
         bindExperienceRadios();
         bindEducationRadios();

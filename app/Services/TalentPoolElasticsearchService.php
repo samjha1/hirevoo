@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Support\TalentPoolSalary;
+
 use App\Support\ElasticsearchClientFactory;
 use App\Models\TalentPoolCandidate;
 use App\Models\User;
@@ -66,11 +68,7 @@ class TalentPoolElasticsearchService
                     'track_total_hits' => true,
                     '_source' => ['entity_type', 'entity_id'],
                     'query' => $this->buildFilterQuery($filters),
-                    'sort' => [
-                        ['_score' => ['order' => 'desc']],
-                        ['entity_type' => ['order' => 'asc']],
-                        ['entity_id' => ['order' => 'desc']],
-                    ],
+                    'sort' => $this->buildSearchSort($filters),
                 ],
             ]);
 
@@ -133,7 +131,7 @@ class TalentPoolElasticsearchService
     public function aggregateFacets(array $filters): ?array
     {
         if ($this->isEmployerActionFilterEmpty($filters)) {
-            return ['locations' => [], 'education' => [], 'experience' => []];
+            return ['locations' => [], 'preferred_locations' => [], 'education' => [], 'experience' => [], 'salary' => []];
         }
 
         $client = $this->client();
@@ -144,17 +142,25 @@ class TalentPoolElasticsearchService
         $forLocations = $filters;
         unset($forLocations['location'], $forLocations['locations']);
 
+        $forPreferredLocations = $filters;
+        unset($forPreferredLocations['preferred_location'], $forPreferredLocations['preferred_locations']);
+
         $forEducation = $filters;
         unset($forEducation['education']);
 
         $forExperience = $filters;
         unset($forExperience['experience_min'], $forExperience['experience_max']);
 
+        $forSalary = $filters;
+        unset($forSalary['salary_min_lpa']);
+
         try {
             return [
                 'locations' => $this->termsFacet($forLocations, 'location_city', 50),
+                'preferred_locations' => $this->termsFacet($forPreferredLocations, 'preferred_location_city', 50),
                 'education' => $this->termsFacet($forEducation, 'education_raw', 20),
                 'experience' => $this->experienceFacets($forExperience),
+                'salary' => $this->salaryFacets($forSalary),
             ];
         } catch (Throwable $e) {
             Log::warning('Talent pool Elasticsearch facets failed.', [
@@ -196,7 +202,8 @@ class TalentPoolElasticsearchService
 
         $resume = $user->resumes->sortByDesc(fn ($r) => ($r->is_primary ? 1 : 0).$r->id)->first();
         $skills = $this->skillsText($profile->skills, $resume?->extracted_skills);
-        $location = trim((string) ($profile->location ?? '').' '.(string) ($profile->preferred_job_location ?? ''));
+        $location = trim((string) ($profile->location ?? ''));
+        $preferredLocation = trim((string) ($profile->preferred_job_location ?? ''));
 
         $this->upsertDocument(self::ENTITY_VERIFIED, (int) $user->id, [
             'entity_type' => self::ENTITY_VERIFIED,
@@ -205,8 +212,14 @@ class TalentPoolElasticsearchService
             'title' => (string) ($profile->headline ?? ''),
             'email' => (string) ($user->email ?? ''),
             'phone' => (string) ($user->phone ?? ''),
-            'location' => $location,
-            'location_city' => $this->extractCity($location),
+            'location' => trim($location.' '.$preferredLocation),
+            'location_city' => $this->extractCity($location !== '' ? $location : $preferredLocation),
+            'preferred_location_city' => $this->extractCity($preferredLocation),
+            'expected_salary_annual_inr' => TalentPoolSalary::parseAnnualInr(
+                $profile->expected_salary,
+                $profile->expected_salary_currency,
+                $profile->expected_salary_period
+            ) ?? 0,
             'education' => (string) ($profile->education ?? ''),
             'education_raw' => mb_substr(trim((string) ($profile->education ?? '')), 0, 256),
             'skills' => $skills,
@@ -243,6 +256,8 @@ class TalentPoolElasticsearchService
             'phone' => (string) ($candidate->phone ?? ''),
             'location' => $location,
             'location_city' => $this->extractCity($location),
+            'preferred_location_city' => '',
+            'expected_salary_annual_inr' => TalentPoolSalary::parseAnnualInr($candidate->expected_salary) ?? 0,
             'education' => (string) ($candidate->education ?? ''),
             'education_raw' => mb_substr(trim((string) ($candidate->education ?? '')), 0, 256),
             'skills' => $this->skillsText($candidate->skills),
@@ -307,6 +322,8 @@ class TalentPoolElasticsearchService
                         'status' => ['type' => 'keyword'],
                         'experience_years' => ['type' => 'integer'],
                         'location_city' => ['type' => 'keyword'],
+                        'preferred_location_city' => ['type' => 'keyword'],
+                        'expected_salary_annual_inr' => ['type' => 'integer'],
                         'education_raw' => ['type' => 'keyword'],
                         'name' => ['type' => 'text', 'analyzer' => 'talent_text'],
                         'title' => ['type' => 'text', 'analyzer' => 'talent_text'],
@@ -526,7 +543,8 @@ class TalentPoolElasticsearchService
 
         $resume = $user->resumes->sortByDesc(fn ($r) => ($r->is_primary ? 1 : 0).$r->id)->first();
         $skills = $this->skillsText($profile->skills, $resume?->extracted_skills);
-        $location = trim((string) ($profile->location ?? '').' '.(string) ($profile->preferred_job_location ?? ''));
+        $location = trim((string) ($profile->location ?? ''));
+        $preferredLocation = trim((string) ($profile->preferred_job_location ?? ''));
         $education = (string) ($profile->education ?? '');
 
         return [
@@ -536,8 +554,14 @@ class TalentPoolElasticsearchService
             'title' => (string) ($profile->headline ?? ''),
             'email' => (string) ($user->email ?? ''),
             'phone' => (string) ($user->phone ?? ''),
-            'location' => $location,
-            'location_city' => $this->extractCity($location),
+            'location' => trim($location.' '.$preferredLocation),
+            'location_city' => $this->extractCity($location !== '' ? $location : $preferredLocation),
+            'preferred_location_city' => $this->extractCity($preferredLocation),
+            'expected_salary_annual_inr' => TalentPoolSalary::parseAnnualInr(
+                $profile->expected_salary,
+                $profile->expected_salary_currency,
+                $profile->expected_salary_period
+            ) ?? 0,
             'education' => $education,
             'education_raw' => mb_substr(trim($education), 0, 256),
             'skills' => $skills,
@@ -572,6 +596,8 @@ class TalentPoolElasticsearchService
             'phone' => (string) ($candidate->phone ?? ''),
             'location' => $location,
             'location_city' => $this->extractCity($location),
+            'preferred_location_city' => '',
+            'expected_salary_annual_inr' => TalentPoolSalary::parseAnnualInr($candidate->expected_salary) ?? 0,
             'education' => $education,
             'education_raw' => mb_substr(trim($education), 0, 256),
             'skills' => $this->skillsText($candidate->skills),
@@ -863,7 +889,73 @@ class TalentPoolElasticsearchService
             $clauses[] = ['range' => ['experience_years' => $range]];
         }
 
+        $salaryMinLpa = (int) ($filters['salary_min_lpa'] ?? 0);
+        if (TalentPoolSalary::isAllowedMinLpa($salaryMinLpa)) {
+            $clauses[] = [
+                'range' => [
+                    'expected_salary_annual_inr' => [
+                        'gte' => TalentPoolSalary::minAnnualInr($salaryMinLpa),
+                    ],
+                ],
+            ];
+        }
+
         return $clauses;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array<string, mixed>>
+     */
+    protected function buildSearchSort(array $filters): array
+    {
+        $sort = [];
+        $preferred = $this->parsePreferredLocations($filters);
+        if ($preferred !== []) {
+            $cities = $this->expandLocationCities($preferred);
+            if ($cities !== []) {
+                $sort[] = [
+                    '_script' => [
+                        'type' => 'number',
+                        'order' => 'asc',
+                        'script' => [
+                            'lang' => 'painless',
+                            'source' => "int rank = 200; if (doc.containsKey('preferred_location_city') && !doc['preferred_location_city'].empty) { String v = doc['preferred_location_city'].value; for (int i = 0; i < params.cities.size(); i++) { if (v.equals(params.cities.get(i))) return i; } } if (doc.containsKey('location_city') && !doc['location_city'].empty) { String v = doc['location_city'].value; for (int i = 0; i < params.cities.size(); i++) { if (v.equals(params.cities.get(i))) return params.cities.size() + i; } } return rank;",
+                            'params' => ['cities' => array_values($cities)],
+                        ],
+                    ],
+                ];
+            }
+        }
+
+        $sort[] = ['_score' => ['order' => 'desc']];
+        $sort[] = ['entity_type' => ['order' => 'asc']];
+        $sort[] = ['entity_id' => ['order' => 'desc']];
+
+        return $sort;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array{label: string, min_lpa: int, count: int}>
+     */
+    protected function salaryFacets(array $filters): array
+    {
+        $result = [];
+        foreach (TalentPoolSalary::buckets() as $bucket) {
+            $bucketFilters = $filters;
+            $bucketFilters['salary_min_lpa'] = $bucket['min_lpa'];
+            $count = $this->countMatching($bucketFilters);
+            if ($count !== null && $count > 0) {
+                $result[] = [
+                    'label' => $bucket['label'],
+                    'min_lpa' => $bucket['min_lpa'],
+                    'count' => $count,
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -1182,6 +1274,30 @@ class TalentPoolElasticsearchService
         )));
         if ($locations === [] && trim((string) ($filters['location'] ?? '')) !== '') {
             $locations = [trim((string) $filters['location'])];
+        }
+
+        return $locations;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<string>
+     */
+    protected function parsePreferredLocations(array $filters): array
+    {
+        $locations = $filters['preferred_locations'] ?? [];
+        if (is_string($locations) && $locations !== '') {
+            $locations = [$locations];
+        }
+        if (! is_array($locations)) {
+            $locations = [];
+        }
+        $locations = array_values(array_filter(array_map(
+            static fn ($s) => trim((string) $s),
+            $locations
+        )));
+        if ($locations === [] && trim((string) ($filters['preferred_location'] ?? '')) !== '') {
+            $locations = [trim((string) $filters['preferred_location'])];
         }
 
         return $locations;
