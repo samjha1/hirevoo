@@ -38,7 +38,7 @@
 <div class="tp-search-page">
     <div class="tp-search-card">
         <h5>Find candidates</h5>
-        <p class="lead-hint">Search verified Hirevo profiles and your talent pool. Results open on the next screen.</p>
+        <p class="lead-hint">Search by title, education, or profile summary. Use skills and filters to narrow results.</p>
 
         @if(empty($canAccessTalentPool))
             <div class="alert alert-warning mb-3">
@@ -50,10 +50,10 @@
 
         <form method="GET" action="{{ route('employer.talent-pool.results') }}" id="tp-search-form-start">
             <div class="mb-3">
-                <label class="form-label" for="tp-q">Role / keywords</label>
+                <label class="form-label" for="tp-q">Keywords</label>
                 <input type="search" class="form-control form-control-lg" id="tp-q" name="q"
                        value="{{ old('q', request('q')) }}"
-                       placeholder="e.g. Flutter Developer, PHP, Product Manager (comma = any match)"
+                       placeholder="e.g. sales, delivery, MBA (matches title, education, profile)"
                        autofocus autocomplete="off">
             </div>
             <div class="mb-3">

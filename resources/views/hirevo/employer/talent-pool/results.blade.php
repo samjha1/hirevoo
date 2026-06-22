@@ -305,7 +305,7 @@
 
         @if(!empty($requiresSearch))
             <div class="alert alert-info mb-3">
-                Enter at least {{ config('hirevo_plans.min_search_length', 2) }} characters, skills, location, or other filters to search. We only load matching candidates — not the entire database.
+                Enter at least {{ config('hirevo_plans.min_search_length', 2) }} characters (title, education, profile), skills, location, or other filters to search. We only load matching candidates — not the entire database.
             </div>
         @endif
 

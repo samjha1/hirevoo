@@ -1042,31 +1042,19 @@ class TalentPoolSearchService
     protected function applyVerifiedKeywordSearch(Builder $query, string $q): void
     {
         $this->applyKeywordSearch($query, $q, function (Builder $outer, string $like): void {
-            $outer->where('users.name', 'like', $like)
-                ->orWhere('users.email', 'like', $like)
-                ->orWhere('users.phone', 'like', $like)
-                ->orWhere('candidate_profiles.headline', 'like', $like)
-                ->orWhere('candidate_profiles.location', 'like', $like)
-                ->orWhere('candidate_profiles.preferred_job_location', 'like', $like)
+            $outer->where('candidate_profiles.headline', 'like', $like)
                 ->orWhere('candidate_profiles.education', 'like', $like)
-                ->orWhere('candidate_profiles.skills', 'like', $like)
                 ->orWhere('candidate_profiles.bio_summary', 'like', $like)
-                ->orWhere('candidate_profiles.career_objective', 'like', $like)
-                ->orWhere('candidate_profiles.current_company', 'like', $like);
+                ->orWhere('candidate_profiles.career_objective', 'like', $like);
         });
     }
 
     protected function applyTalentKeywordSearch(Builder $query, string $q): void
     {
         $this->applyKeywordSearch($query, $q, function (Builder $outer, string $like): void {
-            $outer->where('full_name', 'like', $like)
-                ->orWhere('title', 'like', $like)
-                ->orWhere('location', 'like', $like)
+            $outer->where('title', 'like', $like)
                 ->orWhere('education', 'like', $like)
-                ->orWhere('skills', 'like', $like)
-                ->orWhere('profile_summary', 'like', $like)
-                ->orWhere('email', 'like', $like)
-                ->orWhere('phone', 'like', $like);
+                ->orWhere('profile_summary', 'like', $like);
         });
     }
 
@@ -1131,11 +1119,22 @@ class TalentPoolSearchService
 
         $phraseLike = '%'.$q.'%';
         $tokens = $this->elasticsearch->tokenize($q);
+        $likePatterns = $this->likePatterns($q);
 
-        $query->where(function (Builder $outer) use ($phraseLike, $tokens, $matchLike) {
+        $query->where(function (Builder $outer) use ($phraseLike, $tokens, $likePatterns, $matchLike) {
             if (count($tokens) <= 1) {
-                $outer->where(function (Builder $inner) use ($phraseLike, $matchLike) {
-                    $matchLike($inner, $phraseLike);
+                $outer->where(function (Builder $inner) use ($likePatterns, $matchLike) {
+                    foreach ($likePatterns as $index => $like) {
+                        if ($index === 0) {
+                            $inner->where(function (Builder $match) use ($like, $matchLike) {
+                                $matchLike($match, $like);
+                            });
+                        } else {
+                            $inner->orWhere(function (Builder $match) use ($like, $matchLike) {
+                                $matchLike($match, $like);
+                            });
+                        }
+                    }
                 });
 
                 return;
@@ -1146,11 +1145,45 @@ class TalentPoolSearchService
             })->orWhere(function (Builder $inner) use ($tokens, $matchLike) {
                 foreach ($tokens as $token) {
                     $inner->where(function (Builder $tokenMatch) use ($token, $matchLike) {
-                        $matchLike($tokenMatch, '%'.$token.'%');
+                        foreach ($this->likePatterns($token) as $index => $like) {
+                            if ($index === 0) {
+                                $tokenMatch->where(function (Builder $match) use ($like, $matchLike) {
+                                    $matchLike($match, $like);
+                                });
+                            } else {
+                                $tokenMatch->orWhere(function (Builder $match) use ($like, $matchLike) {
+                                    $matchLike($match, $like);
+                                });
+                            }
+                        }
                     });
                 }
             });
         });
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function likePatterns(string $term): array
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return [];
+        }
+
+        $variants = [$term];
+        $lower = mb_strtolower($term);
+        if (str_ends_with($lower, 's') && mb_strlen($term) > 3) {
+            $variants[] = mb_substr($term, 0, -1);
+        } elseif (! str_ends_with($lower, 's')) {
+            $variants[] = $term.'s';
+        }
+
+        return array_values(array_unique(array_map(
+            static fn (string $variant): string => '%'.$variant.'%',
+            $variants
+        )));
     }
 
     /**
@@ -1195,10 +1228,9 @@ class TalentPoolSearchService
 
     protected function applyVerifiedLikeMatch(Builder $query, string $like): void
     {
-        $query->where('users.name', 'like', $like)
+        $query->where('candidate_profiles.headline', 'like', $like)
             ->orWhere('users.email', 'like', $like)
             ->orWhere('users.phone', 'like', $like)
-            ->orWhere('candidate_profiles.headline', 'like', $like)
             ->orWhere('candidate_profiles.location', 'like', $like)
             ->orWhere('candidate_profiles.preferred_job_location', 'like', $like)
             ->orWhere('candidate_profiles.education', 'like', $like)
@@ -1210,8 +1242,7 @@ class TalentPoolSearchService
 
     protected function applyTalentLikeMatch(Builder $query, string $like): void
     {
-        $query->where('full_name', 'like', $like)
-            ->orWhere('title', 'like', $like)
+        $query->where('title', 'like', $like)
             ->orWhere('location', 'like', $like)
             ->orWhere('education', 'like', $like)
             ->orWhere('skills', 'like', $like)

@@ -3,7 +3,7 @@
         <div class="card-body text-center py-5">
             <i class="mdi mdi-magnify text-muted tp-empty-icon"></i>
             <h5 class="mt-3 fw-600">Start your search</h5>
-            <p class="text-muted mb-3">Add keywords, skills, or filters to find matching candidates.</p>
+            <p class="text-muted mb-3">Enter keywords (title, education, profile), skills, or filters to find matching candidates.</p>
             <a href="{{ route('employer.talent-pool.index') }}" class="btn btn-primary btn-sm">Modify search</a>
         </div>
     </div>

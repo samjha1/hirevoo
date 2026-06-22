@@ -629,14 +629,14 @@ class TalentPoolElasticsearchService
             $must[] = [
                 'bool' => [
                     'should' => array_map(
-                        fn (string $term) => $this->buildTextQuery($term),
+                        fn (string $term) => $this->buildProfileQuery($term),
                         $this->capTerms($queryTerms, $this->maxQueryTerms())
                     ),
                     'minimum_should_match' => 1,
                 ],
             ];
         } elseif (count($queryTerms) === 1) {
-            $must[] = $this->buildTextQuery($queryTerms[0]);
+            $must[] = $this->buildProfileQuery($queryTerms[0]);
         }
 
         $skills = $this->capTerms(
@@ -645,11 +645,11 @@ class TalentPoolElasticsearchService
         );
         if ($skills !== []) {
             if (count($skills) === 1) {
-                $must[] = $this->buildTextQuery($skills[0]);
+                $must[] = $this->buildSkillQuery($skills[0]);
             } else {
                 $must[] = [
                     'bool' => [
-                        'should' => array_map(fn (string $skill) => $this->buildTextQuery($skill), $skills),
+                        'should' => array_map(fn (string $skill) => $this->buildSkillQuery($skill), $skills),
                         'minimum_should_match' => 1,
                     ],
                 ];
@@ -680,16 +680,12 @@ class TalentPoolElasticsearchService
         return $segments !== [] ? $segments : [$q];
     }
 
-    protected function buildTextQuery(string $searchText): array
+    protected function buildProfileQuery(string $searchText): array
     {
         $fields = [
-            'name^4',
             'title^3',
-            'skills^3',
-            'profile_text^2',
             'education^2',
-            'location',
-            'email',
+            'profile_text^2',
         ];
 
         $searchText = trim($searchText);
@@ -697,6 +693,36 @@ class TalentPoolElasticsearchService
             return ['match_none' => (object) []];
         }
 
+        $clauses = [$this->buildMultiFieldTextQuery($searchText, $fields)];
+
+        $lower = mb_strtolower($searchText);
+        if (str_ends_with($lower, 's') && mb_strlen($searchText) > 3) {
+            $singular = mb_substr($searchText, 0, -1);
+            if ($singular !== '') {
+                $clauses[] = $this->buildMultiFieldTextQuery($singular, $fields);
+            }
+        } elseif (! str_ends_with($lower, 's')) {
+            $clauses[] = $this->buildMultiFieldTextQuery($searchText.'s', $fields);
+        }
+
+        if (count($clauses) === 1) {
+            return $clauses[0];
+        }
+
+        return [
+            'bool' => [
+                'should' => $clauses,
+                'minimum_should_match' => 1,
+            ],
+        ];
+    }
+
+    /**
+     * @param  list<string>  $fields
+     * @return array<string, mixed>
+     */
+    protected function buildMultiFieldTextQuery(string $searchText, array $fields): array
+    {
         $tokens = $this->tokenize($searchText);
         if (count($tokens) <= 1) {
             return [
@@ -718,13 +744,30 @@ class TalentPoolElasticsearchService
         ];
     }
 
+    protected function buildSkillQuery(string $searchText): array
+    {
+        $fields = [
+            'skills^4',
+            'title^3',
+            'profile_text^2',
+            'education^2',
+            'location',
+        ];
+
+        $searchText = trim($searchText);
+        if ($searchText === '') {
+            return ['match_none' => (object) []];
+        }
+
+        return $this->buildMultiFieldTextQuery($searchText, $fields);
+    }
+
     /**
      * @param  list<string>  $terms
      */
     protected function buildRelatedTermsQuery(array $terms): array
     {
         $fields = [
-            'name^4',
             'title^3',
             'skills^3',
             'profile_text^2',

@@ -86,6 +86,10 @@
 
                     </div>
 
+                    @if(!empty($candidate['title']))
+                        <p class="text-muted small mb-1 text-truncate">{{ $candidate['title'] }}</p>
+                    @endif
+
                     <div class="tp-highlights d-flex flex-wrap gap-3 small text-muted">
 
                         @if(!empty($candidate['experience_label']))
