@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Rules\StrictEmail;
 use App\Support\EmployerVerification;
+use App\Support\RoleEmailGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,8 +35,12 @@ class LoginController extends Controller
                     Auth::logout();
                     $request->session()->invalidate();
                     $request->session()->regenerateToken();
+
+                    $message = RoleEmailGuard::crossRoleConflict('referrer', $user)
+                        ?? 'This account is not an employer account. Please use the regular Sign In.';
+
                     return redirect()->route('login', ['role' => 'referrer'])->withErrors([
-                        'email' => 'This account is not an employer account. Please use the regular Sign In.',
+                        'email' => $message,
                     ])->onlyInput('email');
                 }
             } else {
@@ -44,8 +49,12 @@ class LoginController extends Controller
                     Auth::logout();
                     $request->session()->invalidate();
                     $request->session()->regenerateToken();
+
+                    $message = RoleEmailGuard::crossRoleConflict('candidate', $user)
+                        ?? 'This is an employer account. Please use For Employers → Log in as employer.';
+
                     return redirect()->route('login')->withErrors([
-                        'email' => 'This is an employer account. Please use For Employers → Log in as employer.',
+                        'email' => $message,
                     ])->onlyInput('email');
                 }
             }

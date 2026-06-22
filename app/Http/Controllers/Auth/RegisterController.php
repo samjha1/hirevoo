@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\ReferrerProfile;
+use App\Rules\EmailAvailableForRole;
 use App\Rules\StrictEmail;
 use App\Rules\ValidEmployerReferralCode;
 use App\Services\CandidateLeadService;
@@ -37,7 +38,6 @@ class RegisterController extends Controller
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'contact' => ['required', 'string', 'max:20'],
-            'email' => ['required', 'string', 'max:255', new StrictEmail, 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => ['required', 'in:candidate,referrer,edtech'],
         ];
@@ -47,6 +47,9 @@ class RegisterController extends Controller
             $rules['company_name'] = ['required', 'string', 'max:255'];
             $rules['referral_code'] = ['nullable', 'string', 'max:50', new ValidEmployerReferralCode];
         }
+
+        $signupRole = $employerSignup ? 'referrer' : $role;
+        $rules['email'] = ['required', 'string', 'max:255', new StrictEmail, new EmailAvailableForRole($signupRole)];
 
         $validated = $request->validate($rules);
 

@@ -7,6 +7,7 @@ use App\Models\CandidateProfile;
 use App\Models\User;
 use App\Services\CandidateLeadService;
 use App\Support\EmployerVerification;
+use App\Support\RoleEmailGuard;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -195,18 +196,10 @@ class SocialAuthController extends Controller
         $user = User::where('email', $email)->first();
 
         if ($user) {
-            if ($intendedRole === 'referrer' && ! $user->isReferrer()) {
-                $this->clearOAuthSession();
-
-                return redirect()->route('login', ['role' => 'referrer'])
-                    ->withErrors(['email' => 'This account is not an employer account. Please use the regular Sign In.']);
+            if ($conflict = RoleEmailGuard::crossRoleConflict($intendedRole, $user)) {
+                return $this->oauthFailureRedirect($context, $conflict);
             }
-            if ($intendedRole !== 'referrer' && $user->isReferrer()) {
-                $this->clearOAuthSession();
 
-                return redirect()->route('login')
-                    ->withErrors(['email' => 'This is an employer account. Please use For Employers → Log in as employer.']);
-            }
             Auth::login($user, true);
 
             return $this->redirectAfterLogin($context);
@@ -231,6 +224,10 @@ class SocialAuthController extends Controller
                     $context,
                     'Could not sign in with this provider. Please try again or use email.'
                 );
+            }
+
+            if ($conflict = RoleEmailGuard::crossRoleConflict($intendedRole, $user)) {
+                return $this->oauthFailureRedirect($context, $conflict);
             }
 
             Auth::login($user, true);
