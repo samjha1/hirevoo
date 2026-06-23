@@ -46,6 +46,24 @@ class TalentPoolSearchService
      *     active_filter_count: int
      * }
      */
+    /**
+     * Saved / shortlisted list views show the full list, not keyword-filtered subsets.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function normalizeListModeFilters(array $filters): array
+    {
+        if (filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            || filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $filters['q'] = null;
+            $filters['skills'] = null;
+            unset($filters['_related_terms']);
+        }
+
+        return $filters;
+    }
+
     public function search(
         int $employerUserId,
         array $filters = [],
@@ -55,6 +73,7 @@ class TalentPoolSearchService
         bool $includeTotal = true,
     ): array
     {
+        $filters = $this->normalizeListModeFilters($filters);
         $perPage = max(10, min(30, $perPage));
         $page = max(1, $page);
 
@@ -172,6 +191,48 @@ class TalentPoolSearchService
         }
 
         return $result;
+    }
+
+    /**
+     * All candidate refs matching current talent-pool filters (for bulk export).
+     *
+     * @param  array<string, mixed>  $filters
+     * @return list<array{source: string, source_id: int}>
+     */
+    public function allMatchingCandidateRefs(int $employerUserId, array $filters, int $max = 500): array
+    {
+        if (! $this->hasSearchCriteria($filters)) {
+            return [];
+        }
+
+        $refs = [];
+        $seen = [];
+        $page = 1;
+        $perPage = 30;
+
+        do {
+            $result = $this->search($employerUserId, $filters, $perPage, $page, false, false);
+            foreach ($result['items'] as $row) {
+                $source = (string) ($row['source'] ?? '');
+                $sourceId = (int) ($row['source_id'] ?? 0);
+                if ($source === '' || $sourceId < 1) {
+                    continue;
+                }
+                $key = $source.':'.$sourceId;
+                if (isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
+                $refs[] = ['source' => $source, 'source_id' => $sourceId];
+                if (count($refs) >= $max) {
+                    break 2;
+                }
+            }
+            $hasMore = $result['paginator']->hasMorePages();
+            $page++;
+        } while ($hasMore);
+
+        return $refs;
     }
 
     /**

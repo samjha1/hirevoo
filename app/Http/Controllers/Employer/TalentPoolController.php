@@ -283,13 +283,89 @@ class TalentPoolController extends Controller
         $details = $this->searchService->details($validated['source'], (int) $validated['source_id']);
         if ($details !== null) {
             $details = $this->planService->enrichCandidateRow($details, $user, false);
+            $details['is_saved'] = (bool) ($result['is_saved'] ?? true);
         }
 
         return response()->json([
             'is_unlocked' => true,
+            'is_saved' => (bool) ($result['is_saved'] ?? true),
             'candidate' => $details,
             'tokens_remaining' => $result['tokens_remaining'] ?? $this->planService->talentPoolTokens($user->referrerProfile),
             'tokens_spent' => $result['tokens_spent'] ?? 0,
+        ]);
+    }
+
+    public function downloadList(Request $request): JsonResponse|StreamedResponse
+    {
+        $user = $this->requireApprovedEmployer();
+        if ($user instanceof RedirectResponse) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if (! $this->planService->canAccessTalentPool($user->referrerProfile)) {
+            return response()->json(['message' => 'subscription_required'], 402);
+        }
+
+        $validated = $request->validate([
+            'list' => 'required|string|in:saved,shortlisted',
+        ]);
+
+        $filters = $this->filtersFromRequest($request, $user->id);
+        if ($validated['list'] === 'saved') {
+            $filters['saved_only'] = true;
+            $filters['shortlisted_only'] = false;
+        } else {
+            $filters['shortlisted_only'] = true;
+            $filters['saved_only'] = false;
+        }
+
+        $candidates = $this->searchService->allMatchingCandidateRefs($user->id, $filters);
+
+        if ($candidates === []) {
+            return response()->json(['message' => 'No candidates in this list.'], 422);
+        }
+
+        $unlockResult = $this->tokenService->bulkUnlockDownloads($user, $candidates);
+        if (! ($unlockResult['ok'] ?? false)) {
+            if (($unlockResult['error'] ?? '') === 'insufficient_tokens') {
+                return response()->json([
+                    'message' => 'insufficient_tokens',
+                    'tokens_remaining' => $unlockResult['tokens_remaining'] ?? 0,
+                    'tokens_required' => $unlockResult['tokens_required'] ?? 0,
+                ], 402);
+            }
+
+            return response()->json(['message' => $unlockResult['error'] ?? 'download_failed'], 422);
+        }
+
+        $rows = [];
+        foreach ($candidates as $candidate) {
+            $details = $this->searchService->details($candidate['source'], $candidate['source_id']);
+            if ($details === null) {
+                continue;
+            }
+            $details = $this->planService->enrichCandidateRow($details, $user, false);
+            $rows[] = $this->candidateListExportRow($details);
+        }
+
+        if ($rows === []) {
+            return response()->json(['message' => 'No candidate data available.'], 422);
+        }
+
+        $label = $validated['list'] === 'saved' ? 'saved' : 'shortlisted';
+        $filename = 'talent-pool-'.$label.'-'.now()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, array_keys($rows[0]));
+            foreach ($rows as $row) {
+                fputcsv($out, array_values($row));
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Tokens-Remaining' => (string) $this->planService->talentPoolTokens($user->referrerProfile),
+            'X-Tokens-Spent' => (string) ($unlockResult['tokens_spent'] ?? 0),
         ]);
     }
 
@@ -375,9 +451,34 @@ class TalentPoolController extends Controller
             'Skills' => $skills,
             'Expected salary' => (string) ($details['expected_salary'] ?? ''),
             'Summary' => (string) ($details['profile_summary'] ?? ''),
-            'Resume URL' => (string) ($details['resume_url'] ?? ''),
             'Source' => (string) ($details['badge'] ?? $details['source'] ?? ''),
         ], static fn (string $value): bool => $value !== '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $details
+     * @return array<string, string>
+     */
+    protected function candidateListExportRow(array $details): array
+    {
+        $skills = is_array($details['skills'] ?? null)
+            ? implode(', ', $details['skills'])
+            : (string) ($details['skills'] ?? '');
+
+        return [
+            'Name' => (string) ($details['full_name'] ?? ''),
+            'Phone' => (string) ($details['phone'] ?? ''),
+            'Email' => (string) ($details['email'] ?? ''),
+            'Title' => (string) ($details['title'] ?? ''),
+            'Location' => (string) ($details['location'] ?? ''),
+            'Preferred location' => (string) ($details['preferred_location'] ?? ''),
+            'Experience' => (string) ($details['experience_label'] ?? ''),
+            'Education' => (string) ($details['education'] ?? ''),
+            'Skills' => $skills,
+            'Expected salary' => (string) ($details['expected_salary'] ?? ''),
+            'Summary' => (string) ($details['profile_summary'] ?? ''),
+            'Source' => (string) ($details['badge'] ?? $details['source'] ?? ''),
+        ];
     }
 
     public function details(Request $request, string $source, int $id): JsonResponse
@@ -512,6 +613,8 @@ class TalentPoolController extends Controller
             'shortlisted_only' => $request->boolean('shortlisted_only'),
             'employer_user_id' => $employerUserId,
         ];
+
+        return $this->searchService->normalizeListModeFilters($filters);
     }
 
     protected function requireApprovedEmployer(): User|RedirectResponse

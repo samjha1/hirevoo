@@ -277,7 +277,11 @@
     if ($queryLabel === '' && !empty($filters['skills'])) {
         $queryLabel = trim((string) $filters['skills']);
     }
-    if ($queryLabel === '') {
+    if (!empty($filters['saved_only'])) {
+        $queryLabel = 'Saved candidates';
+    } elseif (!empty($filters['shortlisted_only'])) {
+        $queryLabel = 'Shortlisted candidates';
+    } elseif ($queryLabel === '') {
         $queryLabel = 'All candidates';
     }
 @endphp
@@ -298,12 +302,31 @@
                 <span class="small"><i class="mdi mdi-wallet-outline text-success me-1"></i>
                     <strong id="tp-token-balance">{{ number_format($talentPoolTokens ?? 0) }}</strong> pool tokens
                 </span>
-                <span class="small text-muted">· View phone = {{ $viewTokenCost ?? 1 }} token · Download = {{ $downloadTokenCost ?? 2 }} tokens</span>
+                <span class="small text-muted">· View phone = {{ $viewTokenCost ?? 1 }} token · Download = {{ $downloadTokenCost ?? 1 }} token</span>
                 <a href="{{ route('employer.talent-pool.results', ['saved_only' => 1]) }}" class="btn btn-sm btn-outline-secondary ms-auto">Saved candidates</a>
+                <a href="{{ route('employer.talent-pool.results', ['shortlisted_only' => 1]) }}" class="btn btn-sm btn-outline-secondary">Shortlisted</a>
             </div>
         @endif
 
-        @if(!empty($requiresSearch))
+            @if(!empty($filters['saved_only']) || !empty($filters['shortlisted_only']))
+                <div class="alert alert-light border py-2 px-3 mb-3 d-flex flex-wrap align-items-center gap-2">
+                    <span class="small fw-600">
+                        @if(!empty($filters['saved_only']))
+                            Saved candidates list
+                        @else
+                            Shortlisted candidates list
+                        @endif
+                    </span>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary ms-auto tp-download-list-btn"
+                            data-list="{{ !empty($filters['saved_only']) ? 'saved' : 'shortlisted' }}">
+                        <i class="mdi mdi-download-outline me-1"></i>
+                        Download all ({{ $downloadTokenCost ?? 1 }} token each)
+                    </button>
+                </div>
+            @endif
+
+            @if(!empty($requiresSearch))
             <div class="alert alert-info mb-3">
                 Enter at least {{ config('hirevo_plans.min_search_length', 2) }} characters (title, education, profile), skills, location, or other filters to search. We only load matching candidates — not the entire database.
             </div>
@@ -423,7 +446,7 @@
             'tpHighlightTerms' => $tpHighlightTerms,
             'tpSkipInitialFetch' => !empty($facets) || isset($totalCount),
             'tpViewTokenCost' => $viewTokenCost ?? config('hirevo_plans.unlock_credit_cost', 1),
-            'tpDownloadTokenCost' => $downloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 2),
+            'tpDownloadTokenCost' => $downloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 1),
             'tpTalentPoolTokens' => $talentPoolTokens ?? 0,
         ])
 @endpush

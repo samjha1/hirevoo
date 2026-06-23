@@ -6,7 +6,7 @@
 
     $canAccessTalentPool = $canAccessTalentPool ?? false;
     $viewTokenCost = $viewTokenCost ?? config('hirevo_plans.unlock_credit_cost', 1);
-    $downloadTokenCost = $downloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 2);
+    $downloadTokenCost = $downloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 1);
 
     $plansUrl = route('employer.plans.index');
 
@@ -233,7 +233,7 @@
                         @if(!empty($candidate['can_download']))
                             Download
                         @else
-                            Download ({{ $downloadTokenCost }} tokens)
+                            Download ({{ $downloadTokenCost }} token)
                         @endif
                     </button>
                 @endif

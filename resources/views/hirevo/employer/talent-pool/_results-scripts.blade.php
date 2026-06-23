@@ -11,9 +11,10 @@
     var shortlistUrl = @json(route('employer.talent-pool.shortlist'));
     var unlockUrl = @json(route('employer.talent-pool.unlock'));
     var downloadUrl = @json(route('employer.talent-pool.download'));
+    var downloadListUrl = @json(route('employer.talent-pool.download-list'));
     var plansUrl = @json(route('employer.plans.index'));
     var viewTokenCost = @json((int) ($tpViewTokenCost ?? config('hirevo_plans.unlock_credit_cost', 1)));
-    var downloadTokenCost = @json((int) ($tpDownloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 2)));
+    var downloadTokenCost = @json((int) ($tpDownloadTokenCost ?? config('hirevo_plans.excel_download_credit_cost', 1)));
     var highlightTerms = @json($tpHighlightTerms ?? []);
     var skipInitialFetch = @json(!empty($tpSkipInitialFetch));
     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -116,17 +117,139 @@
             var match = disposition.match(/filename="?([^";]+)"?/i);
             var filename = match ? match[1] : 'candidate.csv';
             return r.blob().then(function (blob) {
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
+                triggerBlobDownload(blob, filename);
                 return true;
             });
         });
+    }
+
+    function triggerBlobDownload(blob, filename) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function downloadList(listType) {
+        var payload = { list: listType };
+        if (listType === 'saved') {
+            payload.saved_only = '1';
+        } else {
+            payload.shortlisted_only = '1';
+        }
+        return fetch(downloadListUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/csv, application/json',
+                'X-CSRF-TOKEN': csrf,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+        }).then(function (r) {
+            if (r.status === 402) {
+                return r.json().then(function (data) {
+                    if (data.message === 'insufficient_tokens') showCreditsModal();
+                    return null;
+                });
+            }
+            if (!r.ok) {
+                return r.json().then(function (data) {
+                    if (data && data.message) alert(data.message);
+                    return null;
+                }).catch(function () { return null; });
+            }
+            var tokensRemaining = r.headers.get('X-Tokens-Remaining');
+            if (tokensRemaining) updateTokenBalance(parseInt(tokensRemaining, 10));
+            var disposition = r.headers.get('Content-Disposition') || '';
+            var match = disposition.match(/filename="?([^";]+)"?/i);
+            var filename = match ? match[1] : 'talent-pool-list.csv';
+            return r.blob().then(function (blob) {
+                triggerBlobDownload(blob, filename);
+                return true;
+            });
+        });
+    }
+
+    function markSavedUi(source, sourceId) {
+        document.querySelectorAll('.tp-save-btn[data-source="' + source + '"][data-source-id="' + sourceId + '"]').forEach(function (b) {
+            b.classList.add('btn-warning');
+            b.classList.remove('btn-outline-secondary');
+            var icon = b.querySelector('i');
+            if (icon) icon.className = 'mdi mdi-bookmark me-1';
+        });
+    }
+
+    function ensureDownloadButton(row, source, sourceId, canDownload) {
+        if (!row || row.querySelector('.tp-download-btn')) return;
+        var actions = row.querySelector('.d-flex.flex-wrap.align-items-center.gap-2.pt-2.border-top')
+            || row.querySelector('.d-flex.flex-wrap.align-items-center.gap-2');
+        if (!actions) return;
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline-secondary btn-sm tp-download-btn';
+        btn.dataset.source = source;
+        btn.dataset.sourceId = sourceId;
+        btn.dataset.canDownload = canDownload ? '1' : '0';
+        btn.innerHTML = '<i class="mdi mdi-download-outline me-1"></i> '
+            + (canDownload ? 'Download' : ('Download (' + downloadTokenCost + ' token)'));
+        var profileBtn = actions.querySelector('.tp-open-profile');
+        if (profileBtn && profileBtn.nextSibling) {
+            actions.insertBefore(btn, profileBtn.nextSibling);
+        } else {
+            actions.appendChild(btn);
+        }
+        btn.onclick = function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            btn.disabled = true;
+            downloadCandidate(source, sourceId).then(function (ok) {
+                btn.disabled = false;
+                if (ok) {
+                    btn.dataset.canDownload = '1';
+                    btn.innerHTML = '<i class="mdi mdi-download-outline me-1"></i> Download';
+                }
+            });
+        };
+    }
+
+    function clearKeywordFilters() {
+        var qEl = document.getElementById('tp-q');
+        var skillsEl = document.getElementById('tp-skills');
+        if (qEl) qEl.value = '';
+        if (skillsEl) skillsEl.value = '';
+        form?.querySelectorAll('input[name="q"], input[name="skills"]').forEach(function (el) {
+            el.value = '';
+        });
+    }
+
+    function applyListModeFilters(mode) {
+        var savedEl = document.getElementById('tp-saved-only');
+        var shortEl = document.getElementById('tp-shortlisted-only');
+        clearKeywordFilters();
+        if (mode === 'saved') {
+            if (savedEl) savedEl.checked = true;
+            if (shortEl) shortEl.checked = false;
+        } else if (mode === 'shortlisted') {
+            if (shortEl) shortEl.checked = true;
+            if (savedEl) savedEl.checked = false;
+        }
+        fetchResults(1, { withFacets: true });
+    }
+
+    function syncListModeUrl() {
+        var savedEl = document.getElementById('tp-saved-only');
+        var shortEl = document.getElementById('tp-shortlisted-only');
+        if (!savedEl?.checked && !shortEl?.checked) return;
+        clearKeywordFilters();
+        var params = collectParams(1);
+        params.delete('q');
+        params.delete('skills');
+        history.replaceState(null, '', form.action + '?' + params.toString());
     }
 
     function collectParams(page, opts) {
@@ -334,6 +457,33 @@
         });
     }
 
+    function bindSavedListToggles() {
+        var savedEl = document.getElementById('tp-saved-only');
+        var shortEl = document.getElementById('tp-shortlisted-only');
+        if (savedEl && !savedEl.dataset.tpBound) {
+            savedEl.dataset.tpBound = '1';
+            savedEl.onchange = function () {
+                if (!this.checked) {
+                    debouncedFetch();
+                    debouncedCount();
+                    return;
+                }
+                applyListModeFilters('saved');
+            };
+        }
+        if (shortEl && !shortEl.dataset.tpBound) {
+            shortEl.dataset.tpBound = '1';
+            shortEl.onchange = function () {
+                if (!this.checked) {
+                    debouncedFetch();
+                    debouncedCount();
+                    return;
+                }
+                applyListModeFilters('shortlisted');
+            };
+        }
+    }
+
     function bindEducationRadios() {
         document.querySelectorAll('.tp-edu-radio').forEach(function (radio) {
             radio.onchange = function () {
@@ -348,6 +498,9 @@
     function bindFilters() {
         document.querySelectorAll('.tp-filter').forEach(function (el) {
             if (el.classList.contains('tp-exp-radio') || el.classList.contains('tp-edu-radio')) {
+                return;
+            }
+            if (el.id === 'tp-saved-only' || el.id === 'tp-shortlisted-only') {
                 return;
             }
             el.onchange = function () {
@@ -473,7 +626,7 @@
             downloadAction = '<button type="button" class="btn btn-sm btn-outline-secondary tp-download-btn" data-source="'
                 + escapeHtml(c.source) + '" data-source-id="' + c.source_id + '" data-can-download="'
                 + (c.can_download ? '1' : '0') + '"><i class="mdi mdi-download-outline me-1"></i>'
-                + (c.can_download ? 'Download data' : ('Download (' + downloadTokenCost + ' tokens)')) + '</button>';
+                + (c.can_download ? 'Download data' : ('Download (' + downloadTokenCost + ' token)')) + '</button>';
         }
 
         var eduHtml = '';
@@ -573,7 +726,15 @@
             var btn = this;
             unlockContact(btn.dataset.source, btn.dataset.sourceId).then(function (data) {
                 if (data && data.candidate) {
+                    data.candidate.is_saved = true;
                     renderDrawer(data.candidate, true);
+                    markSavedUi(btn.dataset.source, btn.dataset.sourceId);
+                    ensureDownloadButton(
+                        document.querySelector('.tp-candidate-row[data-source="' + btn.dataset.source + '"][data-source-id="' + btn.dataset.sourceId + '"]'),
+                        btn.dataset.source,
+                        btn.dataset.sourceId,
+                        !!data.candidate.can_download
+                    );
                 }
             });
         });
@@ -620,11 +781,27 @@
                 if (kind === 'save') {
                     b.classList.toggle('btn-warning', !!data.is_saved);
                     b.classList.toggle('btn-outline-secondary', !data.is_saved);
+                    var icon = b.querySelector('i');
+                    if (icon) icon.className = 'mdi ' + (data.is_saved ? 'mdi-bookmark' : 'mdi-bookmark-outline');
                 } else {
                     b.classList.toggle('btn-success', !!data.is_shortlisted);
                     b.classList.toggle('btn-outline-success', !data.is_shortlisted);
+                    var star = b.querySelector('i');
+                    if (star) star.className = 'mdi ' + (data.is_shortlisted ? 'mdi-star' : 'mdi-star-outline');
                 }
             });
+            if (kind === 'save') {
+                var row = document.querySelector('.tp-candidate-row[data-source="' + source + '"][data-source-id="' + sourceId + '"]');
+                if (data.is_saved) {
+                    ensureDownloadButton(row, source, sourceId, false);
+                    applyListModeFilters('saved');
+                } else if (row) {
+                    row.querySelectorAll('.tp-download-btn').forEach(function (btn) { btn.remove(); });
+                    if (document.getElementById('tp-saved-only')?.checked) {
+                        fetchResults(1, { withFacets: true });
+                    }
+                }
+            }
         });
     }
 
@@ -653,9 +830,14 @@
                 var sourceId = btn.dataset.sourceId;
                 unlockContact(source, sourceId).then(function (data) {
                     if (!data || !data.candidate || !data.candidate.phone) return;
+                    var row = btn.closest('.tp-candidate-row');
                     var phone = escapeHtml(data.candidate.phone);
                     var tel = 'tel:' + String(data.candidate.phone).replace(/\D+/g, '');
                     btn.outerHTML = '<a href="' + tel + '" class="btn btn-outline-primary btn-sm"><i class="mdi mdi-phone-outline me-1"></i> ' + phone + '</a>';
+                    if (data.is_saved) {
+                        markSavedUi(source, sourceId);
+                        ensureDownloadButton(row, source, sourceId, !!data.candidate.can_download);
+                    }
                 });
             };
         });
@@ -690,11 +872,24 @@
                 postAction(shortlistUrl, btn.dataset.source, btn.dataset.sourceId, 'shortlist');
             };
         });
+
+        document.querySelectorAll('.tp-download-list-btn').forEach(function (btn) {
+            btn.onclick = function (e) {
+                e.preventDefault();
+                var listType = btn.dataset.list;
+                if (!listType) return;
+                btn.disabled = true;
+                downloadList(listType).then(function (ok) {
+                    btn.disabled = false;
+                });
+            };
+        });
     }
 
     function bindAll() {
         bindLocationSelect();
         bindPreferredLocationSelect();
+        bindSavedListToggles();
         bindFilters();
         bindExperienceRadios();
         bindEducationRadios();
@@ -704,6 +899,7 @@
 
     showCachedCount();
     bindAll();
+    syncListModeUrl();
     if (!skipInitialFetch) {
         if (filtersEl) fetchFacets();
         if (totalCountEl && totalCountEl.textContent.indexOf('Loading') >= 0) fetchTotalCount();

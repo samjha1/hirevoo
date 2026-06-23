@@ -26,7 +26,7 @@ class TalentPoolTokenService
 
     public function downloadCost(): int
     {
-        return max(1, (int) config('hirevo_plans.excel_download_credit_cost', 2));
+        return max(1, (int) config('hirevo_plans.excel_download_credit_cost', 1));
     }
 
     public function hasUnlimitedUnlocks(?ReferrerProfile $profile): bool
@@ -103,20 +103,25 @@ class TalentPoolTokenService
         }
 
         if ($this->isProfileViewUnlocked($employer->id, $source, $sourceId)) {
+            $this->markSaved($employer->id, $source, $sourceId);
+
             return [
                 'ok' => true,
                 'already_unlocked' => true,
                 'tokens_remaining' => $this->tokens($profile),
+                'is_saved' => true,
             ];
         }
 
         if ($this->hasUnlimitedUnlocks($profile)) {
             $this->recordViewUnlock($employer->id, $source, $sourceId, 0);
+            $this->markSaved($employer->id, $source, $sourceId);
 
             return [
                 'ok' => true,
                 'unlimited' => true,
                 'tokens_remaining' => $this->tokens($profile),
+                'is_saved' => true,
             ];
         }
 
@@ -137,13 +142,115 @@ class TalentPoolTokenService
                 ->decrement('talent_pool_tokens', $cost);
 
             $this->recordViewUnlock($employer->id, $source, $sourceId, $cost);
+            $this->markSaved($employer->id, $source, $sourceId);
         });
 
         return [
             'ok' => true,
             'tokens_remaining' => $this->tokens($profile->fresh()),
             'tokens_spent' => $cost,
+            'is_saved' => true,
         ];
+    }
+
+    /**
+     * @param  list<array{source: string, source_id: int}>  $candidates
+     * @return array{
+     *     ok: bool,
+     *     error?: string,
+     *     tokens_remaining?: int,
+     *     tokens_required?: int,
+     *     tokens_spent?: int,
+     *     unlocked_count?: int
+     * }
+     */
+    public function bulkUnlockDownloads(User $employer, array $candidates): array
+    {
+        $profile = $employer->referrerProfile;
+        if (! $profile || ! $this->planService->canAccessTalentPool($profile)) {
+            return ['ok' => false, 'error' => 'subscription_required'];
+        }
+
+        $pending = [];
+        foreach ($candidates as $candidate) {
+            $source = (string) ($candidate['source'] ?? '');
+            $sourceId = (int) ($candidate['source_id'] ?? 0);
+            if (! EmployerTalentPoolAction::validSource($source) || $sourceId < 1) {
+                continue;
+            }
+            if ($this->isDownloadUnlocked($employer->id, $source, $sourceId)) {
+                continue;
+            }
+            $pending[] = ['source' => $source, 'source_id' => $sourceId];
+        }
+
+        if ($pending === []) {
+            return [
+                'ok' => true,
+                'tokens_remaining' => $this->tokens($profile),
+                'tokens_spent' => 0,
+                'unlocked_count' => 0,
+            ];
+        }
+
+        if ($this->hasUnlimitedUnlocks($profile)) {
+            foreach ($pending as $candidate) {
+                $this->recordDownloadUnlock($employer->id, $candidate['source'], $candidate['source_id'], 0);
+            }
+
+            return [
+                'ok' => true,
+                'unlimited' => true,
+                'tokens_remaining' => $this->tokens($profile),
+                'tokens_spent' => 0,
+                'unlocked_count' => count($pending),
+            ];
+        }
+
+        $costEach = $this->downloadCost();
+        $totalCost = count($pending) * $costEach;
+        if ($this->tokens($profile) < $totalCost) {
+            return [
+                'ok' => false,
+                'error' => 'insufficient_tokens',
+                'tokens_remaining' => $this->tokens($profile),
+                'tokens_required' => $totalCost,
+            ];
+        }
+
+        DB::transaction(function () use ($employer, $pending, $totalCost, $costEach, $profile): void {
+            ReferrerProfile::query()
+                ->whereKey($profile->id)
+                ->where('talent_pool_tokens', '>=', $totalCost)
+                ->decrement('talent_pool_tokens', $totalCost);
+
+            foreach ($pending as $candidate) {
+                $this->recordDownloadUnlock($employer->id, $candidate['source'], $candidate['source_id'], $costEach);
+            }
+        });
+
+        return [
+            'ok' => true,
+            'tokens_remaining' => $this->tokens($profile->fresh()),
+            'tokens_spent' => $totalCost,
+            'unlocked_count' => count($pending),
+        ];
+    }
+
+    public function markSaved(int $employerUserId, string $source, int $sourceId): void
+    {
+        if (! EmployerTalentPoolAction::validSource($source)) {
+            return;
+        }
+
+        $action = EmployerTalentPoolAction::query()->firstOrNew([
+            'employer_user_id' => $employerUserId,
+            'candidate_source' => $source,
+            'candidate_ref_id' => $sourceId,
+        ]);
+
+        $action->is_saved = true;
+        $action->save();
     }
 
     /**

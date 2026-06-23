@@ -227,7 +227,7 @@ return [
     /** Talent pool: tokens to view phone / contact for one candidate. */
     'unlock_credit_cost' => max(1, (int) env('TALENT_POOL_VIEW_TOKEN_COST', 1)),
     /** Talent pool: tokens to download one candidate profile (CSV + resume link). */
-    'excel_download_credit_cost' => max(1, (int) env('TALENT_POOL_DOWNLOAD_TOKEN_COST', 2)),
+    'excel_download_credit_cost' => max(1, (int) env('TALENT_POOL_DOWNLOAD_TOKEN_COST', 1)),
     /** Job posting credits granted when an employer account is approved (admin or email verification). */
     'employer_approval_credits' => max(0, (int) env('EMPLOYER_APPROVAL_CREDITS', 1)),
     'min_search_length' => 2,

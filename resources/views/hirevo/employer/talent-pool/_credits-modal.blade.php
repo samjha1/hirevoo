@@ -11,7 +11,7 @@
         <div class="tp-credits-modal-box small text-muted mb-3">
             <p class="fw-600 text-dark mb-2">How tokens work</p>
             <p class="mb-1"><i class="mdi mdi-phone-outline me-1"></i> View phone / contact = {{ config('hirevo_plans.unlock_credit_cost', 1) }} token</p>
-            <p class="mb-0"><i class="mdi mdi-download-outline me-1"></i> Download candidate data = {{ config('hirevo_plans.excel_download_credit_cost', 2) }} tokens</p>
+            <p class="mb-0"><i class="mdi mdi-download-outline me-1"></i> Download candidate data = {{ config('hirevo_plans.excel_download_credit_cost', 1) }} token</p>
         </div>
         <a href="{{ route('employer.plans.index') }}" class="btn btn-success w-100 mb-2">View plans & pricing</a>
     </div>
