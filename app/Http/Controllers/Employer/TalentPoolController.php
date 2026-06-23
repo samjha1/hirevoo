@@ -55,6 +55,24 @@ class TalentPoolController extends Controller
             return $user;
         }
 
+        if ($request->boolean('saved_only') || $request->boolean('shortlisted_only')) {
+            $cleanQuery = array_filter([
+                'saved_only' => $request->boolean('saved_only') ? '1' : null,
+                'shortlisted_only' => $request->boolean('shortlisted_only') ? '1' : null,
+                'per_page' => $request->input('per_page'),
+                'page' => max(1, (int) $request->input('page', 1)) > 1 ? (string) $request->input('page') : null,
+            ], static fn ($value) => $value !== null && $value !== '');
+
+            $incoming = $request->query();
+            unset($incoming['_token']);
+            ksort($incoming);
+            ksort($cleanQuery);
+
+            if ($incoming !== $cleanQuery) {
+                return redirect()->route('employer.talent-pool.results', $cleanQuery);
+            }
+        }
+
         $profile = $user->referrerProfile;
         $canAccess = $this->planService->canAccessTalentPool($profile);
 

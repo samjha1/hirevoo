@@ -227,10 +227,37 @@
         });
     }
 
+    function clearListModeFilters() {
+        clearKeywordFilters();
+        ['tp-location', 'tp-preferred-location', 'tp-education'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        var expMin = document.getElementById('tp-exp-min');
+        var expMax = document.getElementById('tp-exp-max');
+        if (expMin) expMin.value = '';
+        if (expMax) expMax.value = '';
+        document.querySelectorAll('.tp-exp-radio').forEach(function (radio) {
+            radio.checked = false;
+        });
+        document.querySelectorAll('.tp-edu-radio').forEach(function (radio) {
+            radio.checked = false;
+        });
+        document.querySelectorAll('input[name="salary_min_lpa"]').forEach(function (radio) {
+            radio.checked = false;
+        });
+        form?.querySelectorAll(
+            'input[name="location"], input[name="preferred_location"], input[name="education"],'
+            + 'input[name="experience_min"], input[name="experience_max"], input[name="salary_min_lpa"]'
+        ).forEach(function (el) {
+            el.value = '';
+        });
+    }
+
     function applyListModeFilters(mode) {
         var savedEl = document.getElementById('tp-saved-only');
         var shortEl = document.getElementById('tp-shortlisted-only');
-        clearKeywordFilters();
+        clearListModeFilters();
         if (mode === 'saved') {
             if (savedEl) savedEl.checked = true;
             if (shortEl) shortEl.checked = false;
@@ -245,10 +272,12 @@
         var savedEl = document.getElementById('tp-saved-only');
         var shortEl = document.getElementById('tp-shortlisted-only');
         if (!savedEl?.checked && !shortEl?.checked) return;
-        clearKeywordFilters();
-        var params = collectParams(1);
-        params.delete('q');
-        params.delete('skills');
+        clearListModeFilters();
+        var params = new URLSearchParams();
+        if (savedEl?.checked) params.set('saved_only', '1');
+        if (shortEl?.checked) params.set('shortlisted_only', '1');
+        var perPage = form?.querySelector('input[name="per_page"]')?.value;
+        if (perPage) params.set('per_page', perPage);
         history.replaceState(null, '', form.action + '?' + params.toString());
     }
 

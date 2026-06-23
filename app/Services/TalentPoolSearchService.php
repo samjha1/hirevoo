@@ -54,14 +54,31 @@ class TalentPoolSearchService
      */
     public function normalizeListModeFilters(array $filters): array
     {
-        if (filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)
-            || filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
-            $filters['q'] = null;
-            $filters['skills'] = null;
-            unset($filters['_related_terms']);
+        $employerUserId = (int) ($filters['employer_user_id'] ?? 0);
+
+        if (filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            return [
+                'saved_only' => true,
+                'shortlisted_only' => false,
+                'employer_user_id' => $employerUserId,
+            ];
+        }
+
+        if (filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            return [
+                'saved_only' => false,
+                'shortlisted_only' => true,
+                'employer_user_id' => $employerUserId,
+            ];
         }
 
         return $filters;
+    }
+
+    protected function isEmployerListMode(array $filters): bool
+    {
+        return filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            || filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
     }
 
     public function search(
@@ -89,6 +106,17 @@ class TalentPoolSearchService
                 'total_count' => 0,
                 'requires_search' => true,
             ];
+        }
+
+        if ($this->isEmployerListMode($filters)) {
+            return $this->searchEmployerList(
+                $employerUserId,
+                $filters,
+                $perPage,
+                $page,
+                $withFacets,
+                $includeTotal,
+            );
         }
 
         $activeFilterCount = $this->countActiveFilters($filters);
@@ -194,6 +222,96 @@ class TalentPoolSearchService
     }
 
     /**
+     * Saved / shortlisted lists load directly from employer actions (not ES keyword search).
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{
+     *     items: Collection<int, array<string, mixed>>,
+     *     paginator: Paginator,
+     *     active_filter_count: int,
+     *     total_count: int|null,
+     *     requires_search: bool,
+     *     facets?: array<string, mixed>
+     * }
+     */
+    protected function searchEmployerList(
+        int $employerUserId,
+        array $filters,
+        int $perPage,
+        int $page,
+        bool $withFacets,
+        bool $includeTotal,
+    ): array {
+        $savedOnly = filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $shortlistedOnly = filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        $actions = EmployerTalentPoolAction::query()
+            ->where('employer_user_id', $employerUserId)
+            ->when($savedOnly, fn ($q) => $q->where('is_saved', true))
+            ->when($shortlistedOnly, fn ($q) => $q->where('is_shortlisted', true))
+            ->orderByDesc('updated_at')
+            ->get(['candidate_source', 'candidate_ref_id', 'is_saved', 'is_shortlisted', 'updated_at']);
+
+        $rows = $actions->map(function (EmployerTalentPoolAction $action) {
+            return (object) [
+                'id' => (int) $action->candidate_ref_id,
+                'candidate_source' => $action->candidate_source,
+                'source_priority' => $action->candidate_source === self::SOURCE_VERIFIED ? 0 : 1,
+                'sort_at' => $action->updated_at,
+            ];
+        });
+
+        $items = $this->hydrateUnionRows($rows);
+        $actionMap = $this->actionMapForEmployer($employerUserId, $items);
+        $items = $items->map(function (array $row) use ($actionMap) {
+            $key = $row['source'].':'.$row['source_id'];
+            $action = $actionMap[$key] ?? null;
+            $row['is_saved'] = (bool) ($action['is_saved'] ?? false);
+            $row['is_shortlisted'] = (bool) ($action['is_shortlisted'] ?? false);
+
+            return $row;
+        })->values();
+
+        $totalCount = $items->count();
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+        $hasMore = ($offset + $perPage) < $totalCount;
+
+        $paginator = new Paginator(
+            $pageItems,
+            $perPage,
+            $page,
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
+        if ($hasMore) {
+            $paginator->hasMorePagesWhen(true);
+        }
+
+        $result = [
+            'items' => $pageItems,
+            'paginator' => $paginator,
+            'active_filter_count' => 1,
+            'total_count' => $includeTotal ? $totalCount : null,
+            'requires_search' => false,
+        ];
+
+        if ($withFacets) {
+            $result['facets'] = [
+                'locations' => [],
+                'preferred_locations' => [],
+                'education' => [],
+                'experience' => [],
+                'salary' => [],
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * All candidate refs matching current talent-pool filters (for bulk export).
      *
      * @param  array<string, mixed>  $filters
@@ -201,8 +319,14 @@ class TalentPoolSearchService
      */
     public function allMatchingCandidateRefs(int $employerUserId, array $filters, int $max = 500): array
     {
+        $filters = $this->normalizeListModeFilters($filters);
+
         if (! $this->hasSearchCriteria($filters)) {
             return [];
+        }
+
+        if ($this->isEmployerListMode($filters)) {
+            return $this->employerListCandidateRefs($employerUserId, $filters, $max);
         }
 
         $refs = [];
@@ -233,6 +357,57 @@ class TalentPoolSearchService
         } while ($hasMore);
 
         return $refs;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return list<array{source: string, source_id: int}>
+     */
+    protected function employerListCandidateRefs(int $employerUserId, array $filters, int $max): array
+    {
+        $savedOnly = filter_var($filters['saved_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $shortlistedOnly = filter_var($filters['shortlisted_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        $actions = EmployerTalentPoolAction::query()
+            ->where('employer_user_id', $employerUserId)
+            ->when($savedOnly, fn ($q) => $q->where('is_saved', true))
+            ->when($shortlistedOnly, fn ($q) => $q->where('is_shortlisted', true))
+            ->orderByDesc('updated_at')
+            ->limit($max)
+            ->get(['candidate_source', 'candidate_ref_id']);
+
+        $refs = [];
+        foreach ($actions as $action) {
+            $source = (string) $action->candidate_source;
+            $sourceId = (int) $action->candidate_ref_id;
+            if ($source === '' || $sourceId < 1) {
+                continue;
+            }
+            if (! $this->candidateRefExists($source, $sourceId)) {
+                continue;
+            }
+            $refs[] = ['source' => $source, 'source_id' => $sourceId];
+        }
+
+        return $refs;
+    }
+
+    protected function candidateRefExists(string $source, int $sourceId): bool
+    {
+        if ($source === self::SOURCE_VERIFIED) {
+            return User::query()
+                ->where('role', 'candidate')
+                ->where('status', 'active')
+                ->whereHas('candidateProfile')
+                ->whereKey($sourceId)
+                ->exists();
+        }
+
+        if ($source === self::SOURCE_TALENT_POOL) {
+            return TalentPoolCandidate::query()->discoverable()->whereKey($sourceId)->exists();
+        }
+
+        return false;
     }
 
     /**
@@ -440,8 +615,20 @@ class TalentPoolSearchService
      */
     public function countMatchingCandidates(array $filters): int
     {
+        $filters = $this->normalizeListModeFilters($filters);
+
         if (! $this->hasSearchCriteria($filters)) {
             return 0;
+        }
+
+        if ($this->isEmployerListMode($filters)) {
+            $employerId = (int) ($filters['employer_user_id'] ?? 0);
+            if ($employerId <= 0) {
+                return 0;
+            }
+            $result = $this->searchEmployerList($employerId, $filters, 1, 1, false, true);
+
+            return (int) ($result['total_count'] ?? 0);
         }
 
         return (int) $this->rememberSearchCache($filters, 'count', function () use ($filters) {
