@@ -246,13 +246,6 @@ class TalentPoolController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if (! $this->planService->canAccessTalentPool($user->referrerProfile)) {
-            return response()->json([
-                'message' => 'subscription_required',
-                'redirect' => route('employer.plans.index'),
-            ], 402);
-        }
-
         $validated = $request->validate([
             'source' => 'required|string|in:verified,talent_pool',
             'source_id' => 'required|integer|min:1',
@@ -300,10 +293,6 @@ class TalentPoolController extends Controller
         $user = $this->requireApprovedEmployer();
         if ($user instanceof RedirectResponse) {
             return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        if (! $this->planService->canAccessTalentPool($user->referrerProfile)) {
-            return response()->json(['message' => 'subscription_required'], 402);
         }
 
         $validated = $request->validate([
@@ -374,10 +363,6 @@ class TalentPoolController extends Controller
         $user = $this->requireApprovedEmployer();
         if ($user instanceof RedirectResponse) {
             return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        if (! $this->planService->canAccessTalentPool($user->referrerProfile)) {
-            return response()->json(['message' => 'subscription_required'], 402);
         }
 
         $validated = $request->validate([
@@ -533,10 +518,6 @@ class TalentPoolController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if (! $this->planService->canAccessTalentPool($user->referrerProfile)) {
-            return response()->json(['message' => 'subscription_required'], 402);
-        }
-
         $validated = $request->validate([
             'source' => 'required|string|in:verified,talent_pool',
             'source_id' => 'required|integer|min:1',
@@ -568,10 +549,6 @@ class TalentPoolController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if (! $this->planService->canAccessTalentPool($user->referrerProfile)) {
-            return response()->json(['message' => 'subscription_required'], 402);
-        }
-
         $validated = $request->validate([
             'source' => 'required|string|in:verified,talent_pool',
             'source_id' => 'required|integer|min:1',
@@ -598,7 +575,7 @@ class TalentPoolController extends Controller
      */
     protected function filtersFromRequest(Request $request, int $employerUserId): array
     {
-        return [
+        $filters = [
             'q' => $request->input('q'),
             'skills' => $request->input('skills'),
             'location' => $request->input('location'),

@@ -40,13 +40,15 @@
         <h5>Find candidates</h5>
         <p class="lead-hint">Search by title, education, or profile summary. Use skills and filters to narrow results.</p>
 
-        @if(empty($canAccessTalentPool))
-            <div class="alert alert-warning mb-3">
-                <i class="mdi mdi-lock-outline me-1"></i>
-                You can search candidates, but phone numbers and full profiles need an active plan.
-                <a href="{{ route('employer.plans.index') }}" class="alert-link fw-600">View plans & pricing</a>
-            </div>
-        @endif
+        <div class="alert alert-light border mb-3 py-2 px-3 d-flex flex-wrap align-items-center gap-2">
+            <span class="small"><i class="mdi mdi-wallet-outline text-success me-1"></i>
+                <strong>{{ number_format($talentPoolTokens ?? 0) }}</strong> pool tokens
+            </span>
+            <span class="small text-muted">· Phone &amp; download use tokens (no active plan required)</span>
+            @if(($talentPoolTokens ?? 0) < 1)
+                <a href="{{ route('employer.plans.index') }}" class="btn btn-sm btn-success ms-auto">Get pool tokens</a>
+            @endif
+        </div>
 
         <form method="GET" action="{{ route('employer.talent-pool.results') }}" id="tp-search-form-start">
             <div class="mb-3">

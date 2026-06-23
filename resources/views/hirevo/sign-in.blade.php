@@ -31,7 +31,7 @@
                                 <div class="w-100">
                                     <div class="text-center mb-4">
                                         <h5>Welcome Back!</h5>
-                                        <p class="text-white-70">Sign in to continue to Hirevo.</p>
+                                        <p class="text-white-70">Sign in to continue to Hirevoo.</p>
                                     </div>
                                     @if($errors->any())
                                         <div class="alert alert-danger py-2 mb-3">{{ $errors->first() }}</div>

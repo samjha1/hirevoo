@@ -291,22 +291,17 @@
         <input type="hidden" name="q" value="{{ $filters['q'] ?? '' }}">
         <input type="hidden" name="skills" value="{{ $filters['skills'] ?? '' }}">
 
-        @if(empty($canAccessTalentPool))
-            <div class="alert alert-warning mb-3">
-                <i class="mdi mdi-lock-outline me-1"></i>
-                Resume database access requires an active plan. Use <strong>Phone number</strong> on any card to view plans, or
-                <a href="{{ route('employer.plans.index') }}" class="alert-link fw-600">subscribe here</a>.
-            </div>
-        @else
-            <div class="alert alert-light border mb-3 py-2 px-3 d-flex flex-wrap align-items-center gap-2">
-                <span class="small"><i class="mdi mdi-wallet-outline text-success me-1"></i>
-                    <strong id="tp-token-balance">{{ number_format($talentPoolTokens ?? 0) }}</strong> pool tokens
-                </span>
-                <span class="small text-muted">· View phone = {{ $viewTokenCost ?? 1 }} token · Download = {{ $downloadTokenCost ?? 1 }} token</span>
-                <a href="{{ route('employer.talent-pool.results', ['saved_only' => 1]) }}" class="btn btn-sm btn-outline-secondary ms-auto">Saved candidates</a>
-                <a href="{{ route('employer.talent-pool.results', ['shortlisted_only' => 1]) }}" class="btn btn-sm btn-outline-secondary">Shortlisted</a>
-            </div>
-        @endif
+        <div class="alert alert-light border mb-3 py-2 px-3 d-flex flex-wrap align-items-center gap-2">
+            <span class="small"><i class="mdi mdi-wallet-outline text-success me-1"></i>
+                <strong id="tp-token-balance">{{ number_format($talentPoolTokens ?? 0) }}</strong> pool tokens
+            </span>
+            <span class="small text-muted">· View phone = {{ $viewTokenCost ?? 1 }} token · Download = {{ $downloadTokenCost ?? 1 }} token</span>
+            @if(($talentPoolTokens ?? 0) < 1)
+                <a href="{{ route('employer.plans.index') }}" class="btn btn-sm btn-success">Get pool tokens</a>
+            @endif
+            <a href="{{ route('employer.talent-pool.results', ['saved_only' => 1]) }}" class="btn btn-sm btn-outline-secondary ms-auto">Saved candidates</a>
+            <a href="{{ route('employer.talent-pool.results', ['shortlisted_only' => 1]) }}" class="btn btn-sm btn-outline-secondary">Shortlisted</a>
+        </div>
 
             @if(!empty($filters['saved_only']) || !empty($filters['shortlisted_only']))
                 <div class="alert alert-light border py-2 px-3 mb-3 d-flex flex-wrap align-items-center gap-2">

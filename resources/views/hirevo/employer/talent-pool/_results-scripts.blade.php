@@ -671,8 +671,7 @@
                 + '<i class="mdi mdi-file-document-outline me-1"></i> Open CV / Resume</a></div>'
             : '<div class="tp-dr-cv-empty">'
                 + '<i class="mdi mdi-file-document-outline"></i>'
-                + '<p class="mb-2">' + (canViewContact ? 'No resume attached for this candidate.' : 'Subscribe to a plan to view resumes.') + '</p>'
-                + (!canViewContact ? '<a href="' + escapeHtml(plansUrl) + '" class="btn btn-sm btn-success">View plans</a>' : '')
+                + '<p class="mb-2">' + (canViewContact ? 'No resume attached for this candidate.' : 'Unlock contact with ' + viewTokenCost + ' pool token to view resume.') + '</p>'
                 + '</div>';
 
         var html = ''

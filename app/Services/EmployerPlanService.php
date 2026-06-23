@@ -94,11 +94,11 @@ class EmployerPlanService
     }
 
     /**
-     * Talent Pool resume database — requires any active subscription (not credits).
+     * Talent Pool — approved employers can browse; phone/download use pool tokens.
      */
     public function canAccessTalentPool(?ReferrerProfile $profile): bool
     {
-        return $this->hasActiveSubscription($profile);
+        return $profile !== null;
     }
 
     /** Credits on referrer profile are used for job postings only. */

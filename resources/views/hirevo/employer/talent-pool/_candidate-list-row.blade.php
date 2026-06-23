@@ -204,20 +204,16 @@
 
             <div class="d-flex flex-wrap align-items-center gap-2 pt-2 border-top">
 
-                @if($canAccessTalentPool && !empty($candidate['is_unlocked']) && !empty($candidate['phone']))
+                @if(!empty($candidate['is_unlocked']) && !empty($candidate['phone']))
                     @php $phoneDigits = preg_replace('/\D+/', '', (string) $candidate['phone']); @endphp
                     <a href="tel:{{ $phoneDigits }}" class="btn btn-outline-primary btn-sm">
                         <i class="mdi mdi-phone-outline me-1"></i> {{ $candidate['phone'] }}
                     </a>
-                @elseif($canAccessTalentPool)
+                @else
                     <button type="button" class="btn btn-outline-primary btn-sm tp-unlock-phone-btn"
                             data-source="{{ $candidate['source'] }}" data-source-id="{{ $candidate['source_id'] }}">
                         <i class="mdi mdi-phone-lock-outline me-1"></i> View phone ({{ $viewTokenCost }} token)
                     </button>
-                @else
-                    <a href="{{ $plansUrl }}" class="btn btn-outline-primary btn-sm tp-phone-plans-btn">
-                        <i class="mdi mdi-phone-outline me-1"></i> Phone number
-                    </a>
                 @endif
 
                 <button type="button" class="btn btn-success btn-sm tp-open-profile"
@@ -241,7 +237,7 @@
                 @if(!empty($candidate['has_resume']))
                     <span class="badge bg-light text-dark border"><i class="mdi mdi-paperclip me-1"></i>CV attached</span>
                 @endif
-                @if($canAccessTalentPool && empty($candidate['is_unlocked']))
+                @if(empty($candidate['is_unlocked']))
                     <span class="badge bg-light text-dark border"><i class="mdi mdi-lock-outline me-1"></i>{{ $viewTokenCost }} token to view contact</span>
                 @endif
 

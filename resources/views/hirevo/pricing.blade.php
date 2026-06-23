@@ -268,7 +268,7 @@
                     <span class="pricing-chip">Real Referrals</span>
                     <span class="pricing-chip">Career Insights</span>
                 </div>
-                <small class="text-muted">www.hirevoo.in</small>
+                <small class="text-muted">www.hirevoo.com</small>
             </div>
 
             @include('hirevo.partials.sponsored-ad', ['ad' => $sponsoredAd ?? null, 'variant' => $sponsoredAdVariant ?? 'strip'])

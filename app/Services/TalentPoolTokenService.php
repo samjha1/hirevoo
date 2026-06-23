@@ -62,12 +62,11 @@ class TalentPoolTokenService
 
     public function canViewContact(User $employer, string $source, int $sourceId): bool
     {
-        $profile = $employer->referrerProfile;
-        if (! $this->planService->canAccessTalentPool($profile)) {
+        if (! $employer->referrerProfile) {
             return false;
         }
 
-        if ($this->hasUnlimitedUnlocks($profile)) {
+        if ($this->hasUnlimitedUnlocks($employer->referrerProfile)) {
             return true;
         }
 
@@ -76,12 +75,11 @@ class TalentPoolTokenService
 
     public function canDownload(User $employer, string $source, int $sourceId): bool
     {
-        $profile = $employer->referrerProfile;
-        if (! $this->planService->canAccessTalentPool($profile)) {
+        if (! $employer->referrerProfile) {
             return false;
         }
 
-        if ($this->hasUnlimitedUnlocks($profile)) {
+        if ($this->hasUnlimitedUnlocks($employer->referrerProfile)) {
             return true;
         }
 
@@ -94,8 +92,8 @@ class TalentPoolTokenService
     public function unlockProfileView(User $employer, string $source, int $sourceId): array
     {
         $profile = $employer->referrerProfile;
-        if (! $profile || ! $this->planService->canAccessTalentPool($profile)) {
-            return ['ok' => false, 'error' => 'subscription_required'];
+        if (! $profile) {
+            return ['ok' => false, 'error' => 'profile_required'];
         }
 
         if (! EmployerTalentPoolAction::validSource($source)) {
@@ -167,8 +165,8 @@ class TalentPoolTokenService
     public function bulkUnlockDownloads(User $employer, array $candidates): array
     {
         $profile = $employer->referrerProfile;
-        if (! $profile || ! $this->planService->canAccessTalentPool($profile)) {
-            return ['ok' => false, 'error' => 'subscription_required'];
+        if (! $profile) {
+            return ['ok' => false, 'error' => 'profile_required'];
         }
 
         $pending = [];
@@ -259,8 +257,8 @@ class TalentPoolTokenService
     public function unlockDownload(User $employer, string $source, int $sourceId): array
     {
         $profile = $employer->referrerProfile;
-        if (! $profile || ! $this->planService->canAccessTalentPool($profile)) {
-            return ['ok' => false, 'error' => 'subscription_required'];
+        if (! $profile) {
+            return ['ok' => false, 'error' => 'profile_required'];
         }
 
         if (! EmployerTalentPoolAction::validSource($source)) {
