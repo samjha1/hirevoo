@@ -70,14 +70,16 @@ class JobOpeningsSearchService
             return [];
         }
 
+        $ids = null;
         if ($this->canUseElasticsearch()) {
             $ids = $this->searchElasticsearch($rawQuery, 'employer_job');
-            if ($ids !== null) {
-                return $ids;
-            }
         }
 
-        return $this->searchEmployerJobsSql($rawQuery);
+        if ($ids === null || $ids === []) {
+            $ids = $this->searchEmployerJobsSql($rawQuery);
+        }
+
+        return $this->rankEmployerJobIds($ids, $rawQuery);
     }
 
     /**
@@ -90,14 +92,16 @@ class JobOpeningsSearchService
             return [];
         }
 
+        $ids = null;
         if ($this->canUseElasticsearch()) {
             $ids = $this->searchElasticsearch($rawQuery, 'job_role');
-            if ($ids !== null) {
-                return $ids;
-            }
         }
 
-        return $this->searchJobRolesSql($rawQuery);
+        if ($ids === null || $ids === []) {
+            $ids = $this->searchJobRolesSql($rawQuery);
+        }
+
+        return $this->rankJobRoleIds($ids, $rawQuery);
     }
 
     public function indexEmployerJob(EmployerJob $job): void
@@ -379,15 +383,40 @@ class JobOpeningsSearchService
         ];
 
         $should = [];
+        $phrase = trim($this->normalizeQuery($rawQuery));
 
-        $phrase = trim($rawQuery);
         if ($phrase !== '') {
+            $should[] = [
+                'match_phrase' => [
+                    'title' => [
+                        'query' => $phrase,
+                        'boost' => 12,
+                    ],
+                ],
+            ];
+            $should[] = [
+                'match_phrase' => [
+                    'skills' => [
+                        'query' => $phrase,
+                        'boost' => 6,
+                    ],
+                ],
+            ];
+            $should[] = [
+                'multi_match' => [
+                    'query' => $phrase,
+                    'fields' => ['title^5', 'skills^2'],
+                    'operator' => 'and',
+                    'boost' => 5,
+                ],
+            ];
             $should[] = [
                 'multi_match' => [
                     'query' => $phrase,
                     'fields' => $fields,
                     'type' => 'best_fields',
                     'operator' => 'or',
+                    'minimum_should_match' => '50%',
                     'fuzziness' => 'AUTO',
                 ],
             ];
@@ -399,7 +428,6 @@ class JobOpeningsSearchService
                     'query' => $token,
                     'fields' => $fields,
                     'fuzziness' => 'AUTO',
-                    'operator' => 'or',
                 ],
             ];
         }
@@ -430,13 +458,14 @@ class JobOpeningsSearchService
                 'company_name',
                 'job_department',
                 'location',
+                'required_skills',
             ]);
             $outer->orWhereHas('user.referrerProfile', function (Builder $profile) use ($rawQuery, $tokens) {
                 $this->applySqlTextClauses($profile, $rawQuery, $tokens, ['company_name']);
             });
         });
 
-        return $query->orderByDesc('created_at')
+        return $query
             ->limit((int) config('elasticsearch.search_limit', 500))
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
@@ -459,11 +488,153 @@ class JobOpeningsSearchService
             ]);
         });
 
-        return $query->orderByDesc('id')
+        return $query
             ->limit((int) config('elasticsearch.search_limit', 500))
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    protected function rankEmployerJobIds(array $ids, string $rawQuery): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $phrase = mb_strtolower($this->normalizeQuery($rawQuery));
+        $tokens = $this->tokenize($rawQuery);
+
+        $jobs = EmployerJob::query()
+            ->whereIn('id', $ids)
+            ->get(['id', 'title', 'company_name', 'required_skills']);
+
+        $positions = array_flip($ids);
+        $scored = [];
+
+        foreach ($jobs as $job) {
+            $scored[] = [
+                'id' => (int) $job->id,
+                'score' => $this->employerJobRelevanceScore($job, $phrase, $tokens),
+                'position' => $positions[$job->id] ?? PHP_INT_MAX,
+            ];
+        }
+
+        usort($scored, function (array $a, array $b): int {
+            if ($a['score'] !== $b['score']) {
+                return $b['score'] <=> $a['score'];
+            }
+
+            return $a['position'] <=> $b['position'];
+        });
+
+        return array_values(array_map(fn (array $row): int => $row['id'], $scored));
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    protected function rankJobRoleIds(array $ids, string $rawQuery): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $phrase = mb_strtolower($this->normalizeQuery($rawQuery));
+        $tokens = $this->tokenize($rawQuery);
+
+        $roles = JobRole::query()
+            ->whereIn('id', $ids)
+            ->get(['id', 'title', 'sector']);
+
+        $positions = array_flip($ids);
+        $scored = [];
+
+        foreach ($roles as $role) {
+            $scored[] = [
+                'id' => (int) $role->id,
+                'score' => $this->textRelevanceScore(
+                    mb_strtolower(trim((string) $role->title)),
+                    mb_strtolower(trim((string) ($role->sector ?? ''))),
+                    '',
+                    $phrase,
+                    $tokens,
+                ),
+                'position' => $positions[$role->id] ?? PHP_INT_MAX,
+            ];
+        }
+
+        usort($scored, function (array $a, array $b): int {
+            if ($a['score'] !== $b['score']) {
+                return $b['score'] <=> $a['score'];
+            }
+
+            return $a['position'] <=> $b['position'];
+        });
+
+        return array_values(array_map(fn (array $row): int => $row['id'], $scored));
+    }
+
+    /**
+     * @param  list<string>  $tokens
+     */
+    protected function employerJobRelevanceScore(EmployerJob $job, string $phrase, array $tokens): int
+    {
+        return $this->textRelevanceScore(
+            mb_strtolower(trim((string) $job->title)),
+            mb_strtolower(trim((string) ($job->company_name ?? ''))),
+            mb_strtolower($this->skillsText($job->required_skills)),
+            $phrase,
+            $tokens,
+        );
+    }
+
+    /**
+     * @param  list<string>  $tokens
+     */
+    protected function textRelevanceScore(
+        string $title,
+        string $companyName,
+        string $skillsText,
+        string $phrase,
+        array $tokens,
+    ): int {
+        $score = 0;
+
+        if ($phrase !== '' && $title === $phrase) {
+            $score += 1000;
+        } elseif ($phrase !== '' && str_contains($title, $phrase)) {
+            $score += 800;
+        }
+
+        if ($phrase !== '' && $companyName !== '' && str_contains($companyName, $phrase)) {
+            $score += 120;
+        }
+
+        if ($phrase !== '' && $skillsText !== '' && str_contains($skillsText, $phrase)) {
+            $score += 100;
+        }
+
+        if ($tokens !== []) {
+            $titleHits = 0;
+            foreach ($tokens as $token) {
+                if (str_contains($title, $token)) {
+                    $titleHits++;
+                }
+            }
+
+            if ($titleHits === count($tokens)) {
+                $score += 500;
+            } else {
+                $score += $titleHits * 40;
+            }
+        }
+
+        return $score;
     }
 
     /**
