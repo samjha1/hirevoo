@@ -143,6 +143,12 @@ return [
      */
     'employer_salary_min_floor_inr' => (int) env('EMPLOYER_SALARY_MIN_FLOOR_INR', 150_000),
 
+    /** Employer accounts used for bulk CSV/catalog jobs (listed after real employer posts). */
+    'catalog_employer_emails' => array_values(array_filter(array_map(
+        static fn (string $email): string => strtolower(trim($email)),
+        explode(',', (string) env('HIREVO_CATALOG_EMPLOYER_EMAILS', 'catalog-employer@hirevo.com'))
+    ))),
+
     /**
      * Grouped preset skills & certifications for employer job posts (multi-select checkboxes).
      */

@@ -521,7 +521,7 @@
                             </span>
                         </div>
                         <div class="ed-job-row__count">
-                            <strong>{{ $job->applications_count }}</strong>
+                            <strong>{{ $job->displayApplicationsCount() }}</strong>
                             <span>apps</span>
                         </div>
                     </a>

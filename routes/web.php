@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Employer\ApplicationController as EmployerApplicationController;
 use App\Http\Controllers\Employer\DashboardController as EmployerDashboardController;
 use App\Http\Controllers\Employer\JobController as EmployerJobController;
+use App\Http\Controllers\Employer\JobImportController as EmployerJobImportController;
 use App\Http\Controllers\Employer\ProfileController as EmployerProfileController;
 use App\Http\Controllers\Employer\PlansController as EmployerPlansController;
 use App\Http\Controllers\Employer\PlanCheckoutController as EmployerPlanCheckoutController;
@@ -117,6 +118,9 @@ Route::middleware(['auth', 'candidate.onboarding'])->group(function () {
             ->middleware('employer.profile.complete')
             ->name('dashboard');
         Route::post('/jobs/generate-description', [EmployerJobController::class, 'generateDescription'])->name('jobs.generate-description');
+        Route::get('/jobs/import', [EmployerJobImportController::class, 'show'])->name('jobs.import');
+        Route::post('/jobs/import', [EmployerJobImportController::class, 'store'])->name('jobs.import.store');
+        Route::get('/jobs/import/template', [EmployerJobImportController::class, 'downloadTemplate'])->name('jobs.import.template');
         Route::get('/jobs/{job}/applications', [EmployerApplicationController::class, 'index'])->name('jobs.applications')->scopeBindings();
         Route::patch('/applications/{application}/status', [EmployerApplicationController::class, 'updateStatus'])->name('applications.status')->scopeBindings();
         // ATS / Pipeline tracking (Kanban-style stages)

@@ -821,7 +821,7 @@ class ResumeAnalysisService
                 $skillsStr = implode(', ', array_slice(array_values(array_filter(array_map(function ($s) {
                     return is_string($s) ? trim($s) : '';
                 }, $req), fn ($s) => $s !== '')), 0, 14));
-                $co = (string) ($job->user->referrerProfile?->company_name ?? $job->company_name ?? '');
+                $co = $job->displayCompanyName();
                 $payload[] = [
                     'id' => (int) $job->id,
                     'title' => (string) ($job->title ?? ''),

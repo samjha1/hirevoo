@@ -71,7 +71,7 @@
                 <div class="employer-job-card-actions">
                     <div class="text-lg-end mb-2">
                         <span class="employer-job-applied-label">Applications</span>
-                        <strong class="employer-job-applied-count d-block d-lg-inline">{{ $job->applications_count }}</strong>
+                        <strong class="employer-job-applied-count d-block d-lg-inline">{{ $job->displayApplicationsCount() }}</strong>
                     </div>
                     <div class="d-flex flex-wrap gap-2 align-items-center justify-content-lg-end">
                         <a href="{{ route('employer.jobs.applications', $job) }}" class="btn btn-primary btn-sm">View applications</a>

@@ -252,7 +252,21 @@ class JobCatalogService
             });
         }
 
-        return array_merge($subscribed, $regular);
+        $ordered = array_merge($subscribed, $regular);
+        $catalogEmails = config('hirevo.catalog_employer_emails', []);
+        $native = [];
+        $catalog = [];
+
+        foreach ($ordered as $id) {
+            $job = $jobs->get($id);
+            if ($job !== null && $job->isCatalogListing()) {
+                $catalog[] = $id;
+            } else {
+                $native[] = $id;
+            }
+        }
+
+        return array_merge($native, $catalog);
     }
 
     /**

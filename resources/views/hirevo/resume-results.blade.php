@@ -726,7 +726,7 @@
                             @php
                                 $item        = $entry['payload'];
                                 $job         = $item['job'];
-                                $companyName = $job->user->referrerProfile?->company_name ?? $job->company_name ?? 'Company';
+                                $companyName = $job->displayCompanyName();
                             @endphp
                             <article class="rr-job-card kind-employer" data-kind="employer" style="animation-delay:{{ $delay }}s">
                                 <div class="rr-job-card-head">

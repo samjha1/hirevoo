@@ -1,6 +1,6 @@
 @php
     $jobMatchScores = $jobMatchScores ?? [];
-    $companyName = $job->user->referrerProfile?->company_name ?? $job->company_name ?? 'Company';
+    $companyName = $job->displayCompanyName();
     $initialRaw = trim($companyName);
     $initial = $initialRaw !== '' ? strtoupper(mb_substr($initialRaw, 0, 1)) : '?';
     $jobTypeLabels = [
@@ -50,6 +50,9 @@
                         @endif
                         @if($job->experience_years !== null && $job->experience_years !== '')
                             <span class="jo-meta-pill">{{ (int) $job->experience_years === 0 ? 'Fresher friendly' : ((int) $job->experience_years . '+ yrs exp.') }}</span>
+                        @endif
+                        @if($job->displayApplicationsCount() > 0)
+                            <span class="jo-meta-pill">{{ number_format($job->displayApplicationsCount()) }} applied</span>
                         @endif
                     </div>
 

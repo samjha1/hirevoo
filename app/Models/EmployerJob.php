@@ -23,6 +23,7 @@ class EmployerJob extends Model
         'is_night_shift',
         'description',
         'apply_link',
+        'display_applications_count',
         'location',
         'work_location_type',
         'pay_type',
@@ -42,6 +43,7 @@ class EmployerJob extends Model
         'salary_min' => 'integer',
         'salary_max' => 'integer',
         'experience_years' => 'integer',
+        'display_applications_count' => 'integer',
     ];
 
     public static function humanizeLocationBoundaries(string $text): string
@@ -165,6 +167,37 @@ class EmployerJob extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(EmployerJobApplication::class, 'employer_job_id');
+    }
+
+    public function displayApplicationsCount(): int
+    {
+        if ($this->display_applications_count !== null && $this->display_applications_count > 0) {
+            return (int) $this->display_applications_count;
+        }
+
+        $real = $this->applications_count ?? $this->applications()->count();
+
+        return (int) $real;
+    }
+
+    public function displayCompanyName(): string
+    {
+        $name = trim((string) ($this->company_name ?? ''));
+        if ($name !== '') {
+            return $name;
+        }
+
+        return trim((string) ($this->user?->referrerProfile?->company_name ?? '')) ?: 'Company';
+    }
+
+    public function isCatalogListing(): bool
+    {
+        $email = strtolower(trim((string) ($this->user?->email ?? '')));
+        if ($email === '') {
+            return false;
+        }
+
+        return in_array($email, config('hirevo.catalog_employer_emails', []), true);
     }
 
     public static function boot()

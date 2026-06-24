@@ -945,6 +945,19 @@
     .jo-job-list .jo-job-card-wrap .jo-job-card { margin-bottom: 0 !important; }
     .jo-job-list > .jo-animate-in,
     .jo-job-list > .jo-card-enter { margin: 0; }
+    .jo-list-section-title {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--jo-muted);
+        margin: 0.5rem 0 0.15rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--jo-line);
+    }
+    .jo-list-section-title:first-child {
+        margin-top: 0;
+    }
 
     .jo-job-card-layout {
         display: grid;
@@ -1670,7 +1683,27 @@
                     </div>
 
                     <div class="jo-job-list" id="jo-job-list">
+                        @php
+                            $shownPostedJobsHeader = false;
+                            $shownGenericJobsHeader = false;
+                        @endphp
                         @forelse($jobs as $job)
+                            @php
+                                $employerJob = null;
+                                if (is_array($job) && ($job['type'] ?? '') === 'employer') {
+                                    $employerJob = $job['model'];
+                                } elseif (is_object($job) && $job instanceof \App\Models\EmployerJob) {
+                                    $employerJob = $job;
+                                }
+                            @endphp
+                            @if($employerJob && ! $employerJob->isCatalogListing() && ! $shownPostedJobsHeader)
+                                @php $shownPostedJobsHeader = true; @endphp
+                                <h2 class="jo-list-section-title">Our posted jobs</h2>
+                            @endif
+                            @if($employerJob && $employerJob->isCatalogListing() && ! $shownGenericJobsHeader)
+                                @php $shownGenericJobsHeader = true; @endphp
+                                <h2 class="jo-list-section-title">More job openings</h2>
+                            @endif
                             <div class="jo-animate-in" style="animation-delay: {{ min(0.03 * $loop->iteration, 0.24) }}s;">
                                 @if(is_array($job) && ($job['type'] ?? '') === 'goal')
                                     @include('hirevo.partials.job-goal-opening-card', ['role' => $job['model'], 'appliedGoalIds' => $appliedGoalIds ?? []])
@@ -1805,5 +1838,13 @@
         }
     });
 })();
+@if(session('external_apply_link'))
+(function () {
+    var url = @json(session('external_apply_link'));
+    if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+})();
+@endif
 </script>
 @endpush

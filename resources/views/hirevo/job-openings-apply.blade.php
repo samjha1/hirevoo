@@ -23,7 +23,7 @@
                                 $jobTypeLabels = ['full_time' => 'Full Time', 'part_time' => 'Part Time', 'contract' => 'Contract', 'internship' => 'Internship', 'temporary' => 'Temporary', 'volunteer' => 'Volunteer', 'other' => 'Other'];
                                 $workLabels = ['office' => 'Work from Office', 'remote' => 'Work from Home', 'hybrid' => 'Hybrid'];
                                 $payTypeLabels = ['fixed' => 'Fixed', 'hourly' => 'Hourly', 'negotiable' => 'Negotiable', 'not_disclosed' => 'Not disclosed', 'other' => 'Other'];
-                                $companyDisplay = $job->company_name ?: ($job->user->referrerProfile?->company_name ?? 'Company');
+                                $companyDisplay = $job->displayCompanyName();
                                 $requiredSkillsList = is_array($job->required_skills) ? array_values(array_filter($job->required_skills, fn ($s) => $s !== null && $s !== '')) : [];
                                 $salaryDisplay = null;
                                 if (($job->pay_type ?? '') !== 'not_disclosed') {
@@ -111,16 +111,6 @@
                         <div class="card-body p-4 p-lg-5">
                             <h5 class="fw-600 mb-1">Apply for this job</h5>
                             <p class="text-muted small mb-4">Fill in your details. Add a resume so the employer can view your CV.</p>
-
-                            @if(!empty($job->apply_link))
-                                <div class="alert alert-info d-flex align-items-start gap-2 mb-4" role="alert">
-                                    <i class="uil uil-info-circle fs-18 mt-1"></i>
-                                    <div class="small">
-                                        <div class="fw-600">You’ll be redirected after submission</div>
-                                        <div class="opacity-75">After you submit, we’ll save your application on Hirevo and redirect you to the employer’s website to finish the application.</div>
-                                    </div>
-                                </div>
-                            @endif
 
                             <form action="{{ route('job-openings.apply.store', $job) }}" method="POST">
                                 @csrf
@@ -305,3 +295,19 @@
         </div>
     </section>
 @endsection
+
+@if(!empty($job->apply_link))
+@push('scripts')
+<script>
+(function () {
+    var applyLink = @json($job->apply_link);
+    var form = document.querySelector('form[action*="apply"]');
+    if (!form || !applyLink) return;
+
+    form.addEventListener('submit', function () {
+        window.open(applyLink, '_blank', 'noopener,noreferrer');
+    });
+})();
+</script>
+@endpush
+@endif

@@ -214,7 +214,7 @@
                                     @if($row['kind'] === 'employer')
                                         @php
                                             $job = $row['job'];
-                                            $co = $job->user->referrerProfile?->company_name ?? $job->company_name ?? 'Company';
+                                            $co = $job->displayCompanyName();
                                             $coInitial = strtoupper(substr($co, 0, 1));
                                         @endphp
                                         <div class="d-flex align-items-start gap-2 mb-2">

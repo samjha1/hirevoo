@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employer;
 use App\Http\Controllers\Controller;
 use App\Models\EmployerJob;
 use App\Services\GptService;
+use App\Support\EmployerJobPayload;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -121,44 +122,19 @@ class JobController extends Controller
             'joining_fee_required'=> ['required', 'in:0,1'],
         ]);
 
-        $location = $this->buildJobLocationPayload($validated);
-        $hasLocationValue = $this->jobLocationHasValue($location);
-        $salaryAmount = null;
-        if (isset($validated['salary_min']) || isset($validated['salary_max'])) {
-            $min = $validated['salary_min'] ?? null;
-            $max = $validated['salary_max'] ?? null;
-            if ($min !== null && $max !== null) {
-                $salaryAmount = $min . '-' . $max;
-            } elseif ($min !== null) {
-                $salaryAmount = (string) $min;
-            } elseif ($max !== null) {
-                $salaryAmount = (string) $max;
-            }
-        }
-        $requiredSkills = $this->normalizeSkillsInput($validated['required_skills'] ?? null);
+        $location = EmployerJobPayload::buildLocationPayload($validated);
+        $hasLocationValue = EmployerJobPayload::locationHasValue($location);
+        $requiredSkills = EmployerJobPayload::normalizeSkillsInput($validated['required_skills'] ?? null);
         $requiredSkillsJson = ! empty($requiredSkills) ? json_encode($requiredSkills, JSON_UNESCAPED_UNICODE) : null;
 
         $profile->decrement('credits');
-        $user->employerJobs()->create([
-            'company_name'         => $profile->company_name ?? null,
-            'job_department'       => $validated['job_department'],
-            'required_skills'      => $requiredSkillsJson,
-            'title'               => $validated['title'],
-            'description'         => $validated['description'] ?? null,
-            'apply_link'          => isset($validated['apply_link']) && $validated['apply_link'] !== '' ? $validated['apply_link'] : null,
-            'location'            => $hasLocationValue ? json_encode($location, JSON_UNESCAPED_UNICODE) : null,
-            'status'              => $validated['status'] ?? 'active',
-            'job_type'            => $validated['job_type'],
-            'is_night_shift'      => ! empty($request->boolean('is_night_shift')),
-            'work_location_type'  => $validated['work_location_type'],
-            'pay_type'            => $validated['pay_type'],
-            'salary_min'          => $validated['salary_min'] ?? null,
-            'salary_max'          => $validated['salary_max'] ?? null,
-            'salary_amount'       => $salaryAmount,
-            'experience_years'    => $validated['experience_years'] ?? null,
-            'perks'               => $validated['perks'] ?? null,
-            'joining_fee_required'=> (bool) $validated['joining_fee_required'],
-        ]);
+        $user->employerJobs()->create(array_merge(
+            EmployerJobPayload::buildAttributesFromValidated($validated, $profile->company_name ?? null),
+            [
+                'required_skills' => $requiredSkillsJson,
+                'location' => $hasLocationValue ? json_encode($location, JSON_UNESCAPED_UNICODE) : null,
+            ]
+        ));
 
         return redirect()->route('employer.jobs.index')->with('success', 'Job posted successfully. 1 credit used.');
     }
@@ -236,42 +212,20 @@ class JobController extends Controller
             'joining_fee_required' => ['nullable', 'in:0,1'],
         ]);
 
-        $location = $this->buildJobLocationPayload($validated);
-        $hasLocationValue = $this->jobLocationHasValue($location);
-        $salaryAmount = null;
-        if (isset($validated['salary_min']) || isset($validated['salary_max'])) {
-            $min = $validated['salary_min'] ?? null;
-            $max = $validated['salary_max'] ?? null;
-            if ($min !== null && $max !== null) {
-                $salaryAmount = $min . '-' . $max;
-            } elseif ($min !== null) {
-                $salaryAmount = (string) $min;
-            } elseif ($max !== null) {
-                $salaryAmount = (string) $max;
-            }
-        }
-        $requiredSkills = $this->normalizeSkillsInput($validated['required_skills'] ?? null);
+        $location = EmployerJobPayload::buildLocationPayload($validated);
+        $hasLocationValue = EmployerJobPayload::locationHasValue($location);
+        $requiredSkills = EmployerJobPayload::normalizeSkillsInput($validated['required_skills'] ?? null);
         $requiredSkillsJson = ! empty($requiredSkills) ? json_encode($requiredSkills, JSON_UNESCAPED_UNICODE) : null;
 
-        $job->update([
-            'job_department'       => $validated['job_department'] ?? $job->job_department,
-            'required_skills'      => $requiredSkillsJson,
-            'title'                => $validated['title'],
-            'description'          => $validated['description'] ?? null,
-            'apply_link'           => array_key_exists('apply_link', $validated) && $validated['apply_link'] !== '' ? $validated['apply_link'] : null,
-            'location'             => $hasLocationValue ? json_encode($location, JSON_UNESCAPED_UNICODE) : null,
-            'status'               => $validated['status'],
-            'job_type'             => $validated['job_type'] ?? null,
-            'is_night_shift'       => ! empty($request->boolean('is_night_shift')),
-            'work_location_type'   => $validated['work_location_type'] ?? null,
-            'pay_type'             => $validated['pay_type'] ?? null,
-            'salary_min'           => $validated['salary_min'] ?? null,
-            'salary_max'           => $validated['salary_max'] ?? null,
-            'salary_amount'        => $salaryAmount,
-            'experience_years'     => $validated['experience_years'] ?? null,
-            'perks'                => $validated['perks'] ?? null,
-            'joining_fee_required'  => isset($validated['joining_fee_required']) ? (bool) $validated['joining_fee_required'] : $job->joining_fee_required,
-        ]);
+        $payload = EmployerJobPayload::buildAttributesFromValidated($validated);
+        $job->update(array_merge($payload, [
+            'required_skills' => $requiredSkillsJson,
+            'location' => $hasLocationValue ? json_encode($location, JSON_UNESCAPED_UNICODE) : null,
+            'is_night_shift' => ! empty($request->boolean('is_night_shift')),
+            'joining_fee_required' => isset($validated['joining_fee_required'])
+                ? (bool) $validated['joining_fee_required']
+                : $job->joining_fee_required,
+        ]));
 
         return redirect()->route('employer.jobs.index')->with('success', 'Job updated.');
     }
@@ -427,67 +381,5 @@ class JobController extends Controller
         }
 
         return 'Could not generate a description. Write it below or try again later.';
-    }
-
-    private function normalizeSkillsInput(?string $skills): ?array
-    {
-        if (! is_string($skills) || trim($skills) === '') {
-            return null;
-        }
-
-        $items = preg_split('/[\r\n,;|]+/', $skills) ?: [];
-        $normalized = [];
-        $seen = [];
-        foreach ($items as $item) {
-            $skill = trim((string) $item);
-            if ($skill === '') {
-                continue;
-            }
-            $key = mb_strtolower($skill);
-            if (isset($seen[$key])) {
-                continue;
-            }
-            $seen[$key] = true;
-            $normalized[] = $skill;
-        }
-
-        return count($normalized) > 0 ? array_slice($normalized, 0, 50) : null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $validated
-     * @return array{area: ?string, city: ?string, state: ?string, country: ?string, pincode: ?string, radius_km: ?int}
-     */
-    private function buildJobLocationPayload(array $validated): array
-    {
-        $radius = $validated['location_radius'] ?? null;
-        $radiusKm = $radius !== null && $radius !== '' ? (int) $radius : null;
-        if ($radiusKm !== null && $radiusKm < 1) {
-            $radiusKm = null;
-        }
-
-        return [
-            'area' => $validated['location_area'] ?? null,
-            'city' => $validated['location_city'] ?? null,
-            'state' => $validated['location_state'] ?? null,
-            'country' => $validated['location_country'] ?? null,
-            'pincode' => $validated['location_pincode'] ?? null,
-            'radius_km' => $radiusKm,
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $location
-     */
-    private function jobLocationHasValue(array $location): bool
-    {
-        foreach (['area', 'city', 'state', 'country', 'pincode'] as $key) {
-            $value = $location[$key] ?? null;
-            if ($value !== null && $value !== '') {
-                return true;
-            }
-        }
-
-        return isset($location['radius_km']) && (int) $location['radius_km'] > 0;
     }
 }

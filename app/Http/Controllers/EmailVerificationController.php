@@ -115,18 +115,25 @@ class EmailVerificationController extends Controller
         // Mark OTP as verified
         $emailOtp->update(['verified_at' => now()]);
 
-        // Update referrer profile to approve the account
+        // Approve employer and grant welcome job posting credits
         if ($user->isReferrer() && $user->referrerProfile) {
+            $welcomeCredits = max(0, (int) config('hirevo_plans.employer_approval_credits', 1));
+            $profile = $user->referrerProfile;
             $user->referrerProfile->update([
                 'is_approved' => true,
                 'approved_at' => now(),
                 'company_email_verified' => true,
-                'credits' => 0,
+                'credits' => max((int) $profile->credits, $welcomeCredits),
             ]);
         }
 
+        $welcomeCredits = max(0, (int) config('hirevo_plans.employer_approval_credits', 1));
+        $creditNote = $welcomeCredits === 1
+            ? ' You received 1 free job posting credit.'
+            : ($welcomeCredits > 0 ? " You received {$welcomeCredits} free job posting credits." : '');
+
         return redirect()->route('employer.dashboard')
-            ->with('success', 'Email verified successfully! Your account has been approved.');
+            ->with('success', 'Email verified successfully! Your account has been approved.'.$creditNote);
     }
 
     /**
