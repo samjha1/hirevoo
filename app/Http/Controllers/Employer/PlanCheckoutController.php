@@ -24,7 +24,7 @@ class PlanCheckoutController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        if ($this->checkoutService->checkoutMode() === null) {
+        if ($this->checkoutService->uiCheckoutMode() === null) {
             return response()->json(['message' => 'Online checkout is not available yet.'], 422);
         }
 

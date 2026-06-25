@@ -822,7 +822,6 @@
                 var row = document.querySelector('.tp-candidate-row[data-source="' + source + '"][data-source-id="' + sourceId + '"]');
                 if (data.is_saved) {
                     ensureDownloadButton(row, source, sourceId, false);
-                    applyListModeFilters('saved');
                 } else if (row) {
                     row.querySelectorAll('.tp-download-btn').forEach(function (btn) { btn.remove(); });
                     if (document.getElementById('tp-saved-only')?.checked) {

@@ -148,7 +148,7 @@ class AppServiceProvider extends ServiceProvider
                         $activePlanName = $planConfig['name'] ?? ucfirst($activePlanKey);
                         $billing = $planConfig['billing_period'] ?? '';
                         $planIsLaunch = $activePlanKey === 'hiring-launch'
-                            || in_array($billing, ['one_time_7d', 'launch_7d'], true);
+                            || in_array($billing, ['one_time_7d', 'one_time_30d', 'launch_7d'], true);
                     }
                 }
 

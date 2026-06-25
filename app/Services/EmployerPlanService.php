@@ -167,7 +167,7 @@ class EmployerPlanService
     public function isLaunchPlan(array $planConfig): bool
     {
         return ! empty($planConfig['extras']['is_launch_offer'])
-            || in_array($planConfig['billing_period'] ?? '', ['one_time_7d', 'launch_7d'], true);
+            || in_array($planConfig['billing_period'] ?? '', ['one_time_7d', 'one_time_30d', 'launch_7d'], true);
     }
 
     public function resolveBillingMonths(?int $billingMonths, ?array $planConfig = null): int
@@ -203,6 +203,7 @@ class EmployerPlanService
             $expiresAt = match ($period) {
                 'yearly', 'annual' => $startsAt->copy()->addYear(),
                 'one_time_7d', 'launch_7d' => $startsAt->copy()->addDays(7),
+                'one_time_30d' => $startsAt->copy()->addDays(30),
                 default => $startsAt->copy()->addMonths($months),
             };
         }

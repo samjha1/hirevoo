@@ -23,7 +23,7 @@
     foreach ($plans as $key => $plan) {
         $isLaunch = $key === 'hiring-launch'
             || !empty($plan['extras']['is_launch_offer'])
-            || in_array($plan['billing_period'] ?? '', ['one_time_7d', 'launch_7d'], true);
+            || in_array($plan['billing_period'] ?? '', ['one_time_7d', 'one_time_30d', 'launch_7d'], true);
         if ($isLaunch) {
             $launchPlanKey = $key;
             $launchPlan = $plan;
@@ -123,7 +123,7 @@
                 <div class="bp-panel-head">
                     <div>
                         <h2 class="bp-panel-title">Choose your hiring plan</h2>
-                        <p class="bp-panel-desc">Start with the 7-day Launch Program or pick a subscription plan for 1, 3, 6, or 12 months. Job posting credits are shown in the top bar.</p>
+                        <p class="bp-panel-desc">Start with the Money Back Hiring Program or pick a subscription plan for 1, 3, 6, or 12 months. Job posting credits are shown in the top bar.</p>
                     </div>
                     <button type="button" class="bp-link-btn" data-bp-goto="compare">
                         <i class="mdi mdi-table-large"></i> Full comparison
@@ -133,31 +133,58 @@
                 @if($launchPlan && $launchPlanKey)
                     @php
                         $launchExtras = $launchPlan['extras'] ?? [];
+                        $launchSections = $launchExtras['sections'] ?? [];
+                        $launchStats = $launchExtras['highlight_stats'] ?? [];
+                        $launchIsMoneyBack = !empty($launchExtras['is_money_back_program']);
                         $launchIsCurrent = $context === 'employer' && !empty($currentPlan) && $currentPlan === $launchPlanKey && !empty($hasSubscription);
                         $launchPending = $context === 'employer' && !empty($pendingPayment) && (($pendingPayment->meta['plan_key'] ?? '') === $launchPlanKey);
                     @endphp
-                    <div class="bp-launch-card {{ $launchIsCurrent ? 'bp-launch-card--current' : '' }}">
+                    <div class="bp-launch-card {{ $launchIsMoneyBack ? 'bp-launch-card--moneyback' : '' }} {{ $launchIsCurrent ? 'bp-launch-card--current' : '' }}">
+                        <div class="bp-launch-card__glow"></div>
                         <div class="bp-launch-card__badges">
-                            <span class="bp-launch-card__badge"><i class="mdi mdi-flash"></i> Launch Offer</span>
+                            @if($launchIsMoneyBack)
+                                <span class="bp-launch-card__badge bp-launch-card__badge--promise"><i class="mdi mdi-shield-check"></i> Money Back Promise</span>
+                            @else
+                                <span class="bp-launch-card__badge"><i class="mdi mdi-flash"></i> Launch Offer</span>
+                            @endif
                             @if(!empty($launchExtras['duration']))
                                 <span class="bp-launch-card__badge bp-launch-card__badge--duration"><i class="mdi mdi-calendar-range"></i> {{ $launchExtras['duration'] }}</span>
                             @endif
-                            <span class="bp-launch-card__badge bp-launch-card__badge--new">New companies only</span>
+                            @if($launchIsMoneyBack)
+                                <span class="bp-launch-card__badge bp-launch-card__badge--riskfree"><i class="mdi mdi-lock-check-outline"></i> Risk-free engagement</span>
+                            @else
+                                <span class="bp-launch-card__badge bp-launch-card__badge--new">New companies only</span>
+                            @endif
                         </div>
 
                         <div class="bp-launch-card__grid">
                             <div class="bp-launch-card__main">
-                                <span class="bp-launch-card__tier">{{ $launchPlan['tier'] ?? 'Launch Offer' }}</span>
+                                <span class="bp-launch-card__tier">{{ $launchPlan['tier'] ?? 'Featured Program' }}</span>
                                 <h3 class="bp-launch-card__title">Hirevoo {{ $launchPlan['name'] }}</h3>
                                 <p class="bp-launch-card__tagline">{{ $launchPlan['tagline'] ?? '' }}</p>
 
                                 <div class="bp-launch-card__price">
                                     <span class="bp-launch-card__currency">₹</span>
                                     <span class="bp-launch-card__amount">{{ number_format($launchPlan['price_inr']) }}</span>
-                                    <span class="bp-launch-card__period">{{ $launchPlan['price_sub'] ?? 'one-time' }}</span>
+                                    <span class="bp-launch-card__period">
+                                        {{ $launchPlan['price_sub'] ?? 'one-time' }}
+                                        @if(!empty($launchExtras['gst_note']))
+                                            <em>{{ $launchExtras['gst_note'] }}</em>
+                                        @endif
+                                    </span>
                                 </div>
 
-                                @if(!empty($launchExtras['ideal_for']))
+                                @if(!empty($launchStats))
+                                    <div class="bp-launch-card__stats">
+                                        @foreach($launchStats as $stat)
+                                            <div class="bp-launch-card__stat">
+                                                <span class="bp-launch-card__stat-icon"><i class="mdi {{ $stat['icon'] ?? 'mdi-check-circle-outline' }}"></i></span>
+                                                <span class="bp-launch-card__stat-value">{{ $stat['value'] }}</span>
+                                                <span class="bp-launch-card__stat-label">{{ $stat['label'] }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @elseif(!empty($launchExtras['ideal_for']))
                                     <div class="bp-launch-card__ideal">
                                         <span class="bp-launch-card__ideal-label">Ideal for</span>
                                         <div class="bp-launch-card__ideal-pills">
@@ -174,35 +201,66 @@
                                     @elseif($launchPending)
                                         <button type="button" class="bp-btn bp-btn--pending" disabled><i class="mdi mdi-clock-outline"></i> Payment pending</button>
                                     @elseif($context === 'employer' && empty($launchPlan['custom_price']) && in_array($employerCheckoutMode ?? null, ['cheque', 'razorpay'], true))
-                                        <button type="button" class="bp-btn bp-btn--launch js-plan-checkout" data-plan-key="{{ $launchPlanKey }}" @if(($employerCheckoutMode ?? '') === 'cheque' && empty($isApproved)) disabled title="Available after account approval" @endif>
-                                            {{ $launchPlan['cta'] ?? 'Launch Now' }} <i class="mdi mdi-arrow-right"></i>
+                                        <button type="button" class="bp-btn bp-btn--launch js-plan-checkout" data-plan-key="{{ $launchPlanKey }}" data-billing-months="1" @if(($employerCheckoutMode ?? '') === 'cheque' && empty($isApproved)) disabled title="Available after account approval" @endif>
+                                            {{ $launchPlan['cta'] ?? 'Start Hiring Program' }} <i class="mdi mdi-arrow-right"></i>
                                         </button>
                                     @else
-                                        <a class="bp-btn bp-btn--launch" href="{{ $contactUrl }}?subject=Hirevoo%20Hiring%20Launch%20Program">
-                                            {{ $launchPlan['cta'] ?? 'Launch Now' }} <i class="mdi mdi-arrow-right"></i>
+                                        <a class="bp-btn bp-btn--launch" href="{{ $contactUrl }}?subject=Hirevoo%20Money%20Back%20Hiring%20Program">
+                                            {{ $launchPlan['cta'] ?? 'Start Hiring Program' }} <i class="mdi mdi-arrow-right"></i>
                                         </a>
+                                    @endif
+                                    @if($launchIsMoneyBack)
+                                        <p class="bp-launch-card__cta-note"><i class="mdi mdi-information-outline"></i> No monthly subscription · No placement commission</p>
                                     @endif
                                 </div>
                             </div>
 
                             <div class="bp-launch-card__details">
-                                <div class="bp-launch-card__features">
-                                    <h4>What's included</h4>
-                                    <ul>
-                                        @foreach($launchPlan['features'] ?? [] as $feature)
-                                            <li><i class="mdi mdi-check-circle"></i> {{ $feature }}</li>
+                                @if(!empty($launchExtras['money_back_promise']))
+                                    <div class="bp-launch-card__promise">
+                                        <div class="bp-launch-card__promise-icon"><i class="mdi mdi-shield-star-outline"></i></div>
+                                        <div>
+                                            <h4>Money Back Promise</h4>
+                                            <p>{{ $launchExtras['money_back_promise'] }}</p>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($launchSections))
+                                    <div class="bp-launch-card__sections">
+                                        @foreach($launchSections as $section)
+                                            <div class="bp-launch-section bp-launch-section--{{ $section['accent'] ?? 'teal' }}">
+                                                <h4 class="bp-launch-section__title">
+                                                    <i class="mdi {{ $section['icon'] ?? 'mdi-check-circle-outline' }}"></i>
+                                                    {{ $section['title'] }}
+                                                </h4>
+                                                <ul class="bp-launch-section__list">
+                                                    @foreach($section['items'] ?? [] as $item)
+                                                        <li><i class="mdi mdi-check"></i><span>{{ $item }}</span></li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
                                         @endforeach
-                                    </ul>
-                                </div>
-                                @if(!empty($launchExtras['bonus']))
-                                    <div class="bp-launch-card__bonus">
-                                        <h4><i class="mdi mdi-gift-outline"></i> Bonus</h4>
+                                    </div>
+                                @else
+                                    <div class="bp-launch-card__features">
+                                        <h4>What's included</h4>
                                         <ul>
-                                            @foreach($launchExtras['bonus'] as $bonus)
-                                                <li>{{ $bonus }}</li>
+                                            @foreach($launchPlan['features'] ?? [] as $feature)
+                                                <li><i class="mdi mdi-check-circle"></i> {{ $feature }}</li>
                                             @endforeach
                                         </ul>
                                     </div>
+                                    @if(!empty($launchExtras['bonus']))
+                                        <div class="bp-launch-card__bonus">
+                                            <h4><i class="mdi mdi-gift-outline"></i> Bonus</h4>
+                                            <ul>
+                                                @foreach($launchExtras['bonus'] as $bonus)
+                                                    <li>{{ $bonus }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
                                 @endif
                             </div>
                         </div>
@@ -329,7 +387,7 @@
                             <th class="{{ $colKey === 'hiring-launch' ? 'bp-table__launch' : '' }} {{ ($comparison['popular_column'] ?? '') === $colKey ? 'bp-table__highlight' : '' }}">
                                 {{ $colPlan['name'] ?? ucfirst($colKey) }}
                                 @if($colKey === 'hiring-launch')
-                                    <span class="bp-table__launch-badge">Launch</span>
+                                    <span class="bp-table__launch-badge">Money Back</span>
                                 @elseif(($comparison['popular_column'] ?? '') === $colKey)
                                     <span class="bp-table__badge">Popular</span>
                                 @endif

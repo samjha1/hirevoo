@@ -50,6 +50,27 @@ class EmployerPlanCheckoutService
     }
 
     /**
+     * Checkout UI mode for plan pages (shows Razorpay/cheque flow even before keys are set).
+     */
+    public function uiCheckoutMode(): ?string
+    {
+        if ($this->isChequeMode()) {
+            return 'cheque';
+        }
+
+        if (config('hirevo_plans.checkout.mode', 'razorpay') === 'razorpay') {
+            return 'razorpay';
+        }
+
+        return $this->checkoutMode();
+    }
+
+    public function isOnlineCheckoutAvailable(): bool
+    {
+        return $this->uiCheckoutMode() !== null;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function resolvePurchasablePlan(string $planKey): array

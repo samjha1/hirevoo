@@ -212,10 +212,6 @@
     }
 
     function openCheckout(planKey, billingMonths) {
-        if (!paymentConfigured) {
-            showError('Online payment is not configured yet.');
-            return;
-        }
         storePendingOrder('');
         state.planKey = planKey;
         state.billingMonths = billingMonths || null;
@@ -226,6 +222,10 @@
         if (els.couponCode) els.couponCode.value = '';
         if (!modal) return;
         modal.show();
+        if (!paymentConfigured) {
+            showError('Online payment is not configured yet. Add Razorpay keys in your environment settings.');
+            return;
+        }
         setLoading(true);
         fetchQuote(planKey, null, state.billingMonths)
             .then(function (data) { applyQuote(data); })
