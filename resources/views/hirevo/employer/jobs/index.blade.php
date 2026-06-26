@@ -5,7 +5,6 @@
 @section('header_title', 'All Jobs (' . $counts['all'] . ')')
 
 @section('header_actions')
-    <a href="{{ route('employer.jobs.import') }}" class="btn btn-outline-primary employer-btn-post-job me-2"><i class="mdi mdi-upload me-1"></i>Bulk import</a>
     <a href="{{ route('employer.jobs.create') }}" class="btn btn-success employer-btn-post-job"><i class="mdi mdi-plus me-1"></i>Post a new job</a>
 @endsection
 

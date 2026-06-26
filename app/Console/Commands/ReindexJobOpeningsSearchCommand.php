@@ -12,6 +12,7 @@ class ReindexJobOpeningsSearchCommand extends Command
 {
     protected $signature = 'hirevo:search-reindex
                             {--force : Delete and recreate the talent pool index (after mapping upgrades)}
+                            {--jobs-only : Reindex only job openings (employer jobs + job goals)}
                             {--talent-only : Reindex only the employer talent pool}';
 
     protected $description = 'Reindex job openings and employer talent pool for Elasticsearch search';
@@ -35,6 +36,13 @@ class ReindexJobOpeningsSearchCommand extends Command
         }
 
         $talentOnly = (bool) $this->option('talent-only');
+        $jobsOnly = (bool) $this->option('jobs-only');
+
+        if ($talentOnly && $jobsOnly) {
+            $this->error('Use either --jobs-only or --talent-only, not both.');
+
+            return self::FAILURE;
+        }
 
         if (! $talentOnly) {
             $this->info('Ensuring job openings index exists…');
@@ -55,6 +63,12 @@ class ReindexJobOpeningsSearchCommand extends Command
                 $jobCounts['employer_jobs'],
                 $jobCounts['job_roles']
             ));
+        }
+
+        if ($jobsOnly) {
+            $this->info('Reindex complete.');
+
+            return self::SUCCESS;
         }
 
         if ($this->option('force')) {

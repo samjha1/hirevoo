@@ -36,6 +36,9 @@ class EmployerJobImportService
         'posted_days_ago',
     ];
 
+    /** @var list<int> */
+    protected array $importedJobIds = [];
+
     public function __construct(
         protected JobOpeningsSearchService $jobSearch,
     ) {}
@@ -55,6 +58,7 @@ class EmployerJobImportService
         }
 
         $summary = ['imported' => 0, 'skipped' => 0, 'failed' => []];
+        $this->importedJobIds = [];
         $lineNumber = 0;
         $headers = null;
 
@@ -104,6 +108,7 @@ class EmployerJobImportService
     public function importFromArray(array $rows, User $employer, bool $skipDuplicates = false): array
     {
         $summary = ['imported' => 0, 'skipped' => 0, 'failed' => []];
+        $this->importedJobIds = [];
 
         foreach ($rows as $index => $row) {
             $lineNumber = $index + 1;
@@ -190,6 +195,8 @@ class EmployerJobImportService
         EmployerJob::withoutEvents(function () use ($job): void {
             $job->save();
         });
+
+        $this->importedJobIds[] = (int) $job->id;
 
         return 'imported';
     }
@@ -323,6 +330,28 @@ class EmployerJobImportService
     protected function afterImport(): void
     {
         app(JobCatalogService::class)->clearOpeningsCatalogCache();
+        $this->indexImportedJobsForSearch();
+    }
+
+    protected function indexImportedJobsForSearch(): void
+    {
+        if ($this->importedJobIds === [] || ! $this->jobSearch->isEnabled()) {
+            $this->importedJobIds = [];
+
+            return;
+        }
+
+        try {
+            $this->jobSearch->ensureIndex();
+            EmployerJob::query()
+                ->whereIn('id', $this->importedJobIds)
+                ->with('user.referrerProfile')
+                ->each(fn (EmployerJob $job) => $this->jobSearch->indexEmployerJob($job));
+        } catch (\Throwable) {
+            // Best-effort; run hirevo:search-reindex --jobs-only if search still misses jobs.
+        }
+
+        $this->importedJobIds = [];
     }
 
     public function reindexSearchIfEnabled(): void

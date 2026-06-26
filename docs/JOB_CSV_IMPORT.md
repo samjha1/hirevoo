@@ -17,8 +17,10 @@ Open [http://127.0.0.1:8000/job-openings](http://127.0.0.1:8000/job-openings) to
 If Elasticsearch is enabled:
 
 ```bash
-php artisan hirevo:search-reindex
+php artisan hirevo:search-reindex --jobs-only
 ```
+
+Run this after enabling Elasticsearch or whenever older jobs do not appear in keyword search.
 
 ---
 
@@ -160,7 +162,7 @@ View imported jobs: **Employer dashboard** → All Jobs.
 |---------|-----|
 | Import fails on salary | Ensure `salary_min` ≥ 150000 for `fixed` / `negotiable` pay |
 | Jobs not on `/job-openings` | Check `status=active`; clear browser session; re-import triggers cache clear |
-| Search missing jobs | Run `php artisan hirevo:search-reindex` if Elasticsearch enabled |
+| Search missing jobs | Run `php artisan hirevo:search-reindex --jobs-only` on production (indexes all active jobs, including posts from before Elasticsearch) |
 | Duplicate jobs on re-import | Use `--skip-duplicates` or web upload “Skip duplicate rows” |
 | “X applied” not showing | Set `display_applications_count` > 0 in CSV |
 | Wrong company on card | Set `company_name` in CSV (overrides poster profile name on the card) |
