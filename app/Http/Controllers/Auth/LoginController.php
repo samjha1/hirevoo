@@ -81,11 +81,19 @@ class LoginController extends Controller
         ])->onlyInput('email');
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): RedirectResponse
     {
-        Auth::logout();
+        if (Auth::check()) {
+            Auth::logout();
+        }
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect(route('home'));
+
+        $redirect = $request->query('role') === 'referrer' || $request->input('role') === 'referrer'
+            ? redirect()->route('login', ['role' => 'referrer'])
+            : redirect()->route('home');
+
+        return $redirect->with('success', 'You have been signed out.');
     }
 }

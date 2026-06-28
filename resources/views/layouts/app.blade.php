@@ -211,7 +211,7 @@
                                     @endif
                                 @endif
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></li>
+                                <li><a class="dropdown-item" href="{{ route('logout') }}">Logout</a></li>
                             </ul>
                         </li>
                         @endguest
@@ -219,7 +219,6 @@
                 </div>
             </div>
         </nav>
-        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
         <!-- Navbar End -->
 
         @guest

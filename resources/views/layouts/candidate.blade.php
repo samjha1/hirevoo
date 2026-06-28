@@ -102,13 +102,10 @@
             </div>
 
             <div class="cp-sidebar-footer">
-                <form action="{{ route('logout') }}" method="POST" class="mb-0">
-                    @csrf
-                    <button type="submit" class="cp-nav-link cp-nav-link--logout w-100 border-0 bg-transparent text-start">
-                        <i class="mdi mdi-logout"></i>
-                        <span>Log out</span>
-                    </button>
-                </form>
+                <a href="{{ route('logout') }}" class="cp-nav-link cp-nav-link--logout d-flex align-items-center text-decoration-none">
+                    <i class="mdi mdi-logout"></i>
+                    <span>Log out</span>
+                </a>
             </div>
         </aside>
 

@@ -51,7 +51,7 @@ Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkReques
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:5,1')->name('password.email');
 Route::get('/reset-password/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->middleware('throttle:10,1')->name('password.update');
-Route::post('/sign-out', [LoginController::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], '/sign-out', [LoginController::class, 'logout'])->name('logout');
 Route::get('/sign-up', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/sign-up', [RegisterController::class, 'register'])->middleware('throttle:10,1');
 

@@ -1022,12 +1022,9 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
-                                        <i class="mdi mdi-logout" style="font-size:1rem;"></i> Logout
-                                    </button>
-                                </form>
+                                <a class="dropdown-item text-danger d-flex align-items-center gap-2" href="{{ route('logout', ['role' => 'referrer']) }}">
+                                    <i class="mdi mdi-logout" style="font-size:1rem;"></i> Logout
+                                </a>
                             </li>
                         </ul>
                     </div>

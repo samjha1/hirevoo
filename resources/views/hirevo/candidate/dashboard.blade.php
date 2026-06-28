@@ -73,13 +73,10 @@
         </span>
     </a>
 
-    <form action="{{ route('logout') }}" method="POST" class="d-inline mb-0">
-        @csrf
-        <button type="submit" class="cp-btn cp-btn--outline" title="Log out">
-            <i class="mdi mdi-logout"></i>
-            <span class="d-none d-md-inline">Log out</span>
-        </button>
-    </form>
+    <a href="{{ route('logout') }}" class="cp-btn cp-btn--outline text-decoration-none" title="Log out">
+        <i class="mdi mdi-logout"></i>
+        <span class="d-none d-md-inline">Log out</span>
+    </a>
 @endsection
 
 @section('content')
