@@ -58,8 +58,8 @@ class ReferrerProfile extends Model
             return asset($this->profile_photo);
         }
 
-        // Private S3 bucket: raw URLs return Access Denied — use a presigned URL for <img src>.
-        if (StoredFile::uploadsDisk() === 's3' && StoredFile::exists($this->profile_photo)) {
+        // Private S3 bucket: presigned URL when available; app proxy route when AWS is down.
+        if (StoredFile::looksLikeS3Stored($this->profile_photo)) {
             return StoredFile::signedUrl($this->profile_photo)
                 ?? route('employer.profile.photo', ['v' => $this->updated_at?->getTimestamp() ?? 0]);
         }

@@ -45,13 +45,27 @@ class StoredFile
         try {
             $path = $file->store($directory, ['disk' => $disk]);
         } catch (\Throwable $e) {
-            Log::error('StoredFile upload failed', [
+            Log::warning('StoredFile upload failed', [
                 'disk' => $disk,
                 'directory' => $directory,
                 'error' => $e->getMessage(),
             ]);
 
-            return false;
+            if ($disk !== 's3') {
+                return false;
+            }
+
+            try {
+                $path = $file->store($directory, ['disk' => 'local']);
+                $disk = 'local';
+            } catch (\Throwable $fallbackError) {
+                Log::error('StoredFile local upload fallback failed', [
+                    'directory' => $directory,
+                    'error' => $fallbackError->getMessage(),
+                ]);
+
+                return false;
+            }
         }
 
         if ($path === false) {
@@ -154,19 +168,78 @@ class StoredFile
         return filter_var(config('filesystems.disks.s3.use_signed_urls', true), FILTER_VALIDATE_BOOL);
     }
 
+    /**
+     * Whether a DB value refers to S3 (no network call — safe when AWS is down).
+     */
+    public static function looksLikeS3Stored(?string $stored): bool
+    {
+        if (! filled($stored)) {
+            return false;
+        }
+
+        if (self::isAbsoluteUrl($stored)) {
+            $bucket = (string) config('filesystems.disks.s3.bucket');
+
+            return $bucket !== '' && str_contains($stored, $bucket);
+        }
+
+        if (str_starts_with($stored, 'uploads/') || str_starts_with($stored, 'profile-photos/')) {
+            return false;
+        }
+
+        if (self::isLegacyLocalPath($stored)) {
+            return false;
+        }
+
+        return self::uploadsDisk() === 's3' && self::resolveStorageKey($stored) !== null;
+    }
+
+    /**
+     * S3 HeadObject can fail when AWS is down or credentials are invalid.
+     */
+    protected static function s3ObjectExists(string $key): bool
+    {
+        try {
+            return Storage::disk('s3')->exists($key);
+        } catch (\Throwable $e) {
+            Log::warning('StoredFile S3 exists check failed', [
+                'key' => $key,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    protected static function s3Get(string $key): ?string
+    {
+        try {
+            return Storage::disk('s3')->get($key);
+        } catch (\Throwable $e) {
+            Log::warning('StoredFile S3 read failed', [
+                'key' => $key,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    protected static function s3Delete(string $key): void
+    {
+        try {
+            Storage::disk('s3')->delete($key);
+        } catch (\Throwable $e) {
+            Log::warning('StoredFile S3 delete failed', [
+                'key' => $key,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     public static function isS3Stored(string $stored): bool
     {
-        if (self::uploadsDisk() !== 's3') {
-            return false;
-        }
-
-        if (str_starts_with($stored, 'uploads/')) {
-            return false;
-        }
-
-        $key = self::resolveStorageKey($stored);
-
-        return $key !== null && Storage::disk('s3')->exists($key);
+        return self::looksLikeS3Stored($stored);
     }
 
     public static function signedUrl(string $stored, ?int $minutes = null): ?string
@@ -198,9 +271,9 @@ class StoredFile
     /**
      * Stream an image for &lt;img src&gt; via the app (works with private S3 buckets).
      *
-     * @return StreamedResponse|BinaryFileResponse
+     * @return StreamedResponse|BinaryFileResponse|\Illuminate\Http\Response
      */
-    public static function imageResponse(string $stored, string $fallbackMime = 'image/jpeg'): StreamedResponse|BinaryFileResponse
+    public static function imageResponse(string $stored, string $fallbackMime = 'image/jpeg'): StreamedResponse|BinaryFileResponse|\Illuminate\Http\Response
     {
         if (str_starts_with($stored, 'uploads/')) {
             $path = public_path($stored);
@@ -215,7 +288,12 @@ class StoredFile
         }
 
         $key = self::resolveStorageKey($stored);
-        if ($key === null || ! Storage::disk('s3')->exists($key)) {
+        if ($key === null) {
+            abort(404);
+        }
+
+        $contents = self::s3Get($key);
+        if ($contents === null || $contents === '') {
             abort(404);
         }
 
@@ -226,9 +304,7 @@ class StoredFile
             $mime = self::mimeFromPath($key) ?? $mime;
         }
 
-        return response()->stream(function () use ($key): void {
-            echo Storage::disk('s3')->get($key);
-        }, 200, [
+        return response($contents, 200, [
             'Content-Type' => $mime,
             'Cache-Control' => 'private, max-age=3600',
         ]);
@@ -280,19 +356,7 @@ class StoredFile
 
     public static function isStoredOnS3(?string $stored): bool
     {
-        if (! filled($stored)) {
-            return false;
-        }
-
-        if (self::isAbsoluteUrl($stored)) {
-            $bucket = (string) config('filesystems.disks.s3.bucket');
-
-            return $bucket !== '' && str_contains($stored, $bucket);
-        }
-
-        $key = self::resolveStorageKey($stored);
-
-        return $key !== null && Storage::disk('s3')->exists($key);
+        return self::looksLikeS3Stored($stored);
     }
 
     public static function exists(?string $stored): bool
@@ -309,14 +373,18 @@ class StoredFile
             return Storage::disk('public')->exists($stored);
         }
 
-        if (self::isStoredOnS3($stored)) {
+        if (self::looksLikeS3Stored($stored)) {
             $key = self::resolveStorageKey($stored);
 
-            return $key !== null && Storage::disk('s3')->exists($key);
+            return $key !== null && self::s3ObjectExists($key);
         }
 
         // Legacy Hostinger / server disk (storage/app/resumes/…)
-        return Storage::disk('local')->exists($stored);
+        try {
+            return Storage::disk('local')->exists($stored);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public static function delete(?string $stored): void
@@ -325,10 +393,10 @@ class StoredFile
             return;
         }
 
-        if (self::isStoredOnS3($stored)) {
+        if (self::looksLikeS3Stored($stored)) {
             $key = self::resolveStorageKey($stored);
-            if ($key !== null && Storage::disk('s3')->exists($key)) {
-                Storage::disk('s3')->delete($key);
+            if ($key !== null) {
+                self::s3Delete($key);
             }
 
             return;
@@ -361,14 +429,10 @@ class StoredFile
             return null;
         }
 
-        if (self::isStoredOnS3($stored)) {
+        if (self::looksLikeS3Stored($stored)) {
             $key = self::resolveStorageKey($stored);
             if ($key !== null) {
-                try {
-                    $contents = Storage::disk('s3')->get($key);
-                } catch (\Throwable) {
-                    return null;
-                }
+                $contents = self::s3Get($key);
 
                 if ($contents !== null && $contents !== '') {
                     $tmp = tempnam(sys_get_temp_dir(), 'hirevo_');

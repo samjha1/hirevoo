@@ -175,7 +175,7 @@ class CandidateProfile extends Model
             return asset($this->profile_photo_path);
         }
 
-        if (StoredFile::uploadsDisk() === 's3' && StoredFile::exists($this->profile_photo_path)) {
+        if (StoredFile::looksLikeS3Stored($this->profile_photo_path)) {
             return StoredFile::signedUrl($this->profile_photo_path)
                 ?? route('profile.photo', ['v' => $this->updated_at?->getTimestamp() ?? 0]);
         }
