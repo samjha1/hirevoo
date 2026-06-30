@@ -107,7 +107,7 @@ class ProfileController extends Controller
             $storedKey = StoredFile::storeUploadedFile($request->file('profile_photo'), 'employer-profiles');
             if ($storedKey === false) {
                 return redirect()->route('employer.profile')
-                    ->withErrors(['profile_photo' => 'Failed to upload photo to AWS S3. Please try again.'])
+                    ->withErrors(['profile_photo' => 'Failed to upload photo. Please try again.'])
                     ->with('success', 'Other profile details were saved.');
             }
             $profile->profile_photo = $storedKey;

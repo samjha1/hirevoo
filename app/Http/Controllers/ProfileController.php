@@ -195,7 +195,7 @@ class ProfileController extends Controller
         if ($request->hasFile('profile_photo')) {
             $newPath = StoredFile::storeUploadedFile($request->file('profile_photo'), 'profile-photos');
             if ($newPath === false) {
-                return redirect()->route('profile')->withErrors(['profile_photo' => 'Failed to upload photo to AWS S3. Please try again.']);
+                return redirect()->route('profile')->withErrors(['profile_photo' => 'Failed to upload photo. Please try again.']);
             }
             if ($existing?->profile_photo_path) {
                 StoredFile::delete($existing->profile_photo_path);

@@ -41,10 +41,7 @@ class ReferrerProfile extends Model
 
     public function setProfilePhotoAttribute(?string $value): void
     {
-        if ($value !== null && ! StoredFile::isAbsoluteUrl($value) && ! str_starts_with($value, 'uploads/')) {
-            $value = StoredFile::databaseValueFromStoragePath($value);
-        }
-
+        // storeUploadedFile() already returns the correct DB value (S3 URL or local path).
         $this->attributes['profile_photo'] = $value;
     }
 

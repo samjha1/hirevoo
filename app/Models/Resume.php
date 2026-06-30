@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Support\StoredFile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -31,16 +30,10 @@ class Resume extends Model
     }
 
     /**
-     * New uploads: full AWS URL. Legacy Hostinger rows keep resumes/… paths unchanged.
+     * storeUploadedFile() returns a full S3 URL or a local path (resumes/…).
      */
     public function setFilePathAttribute(?string $value): void
     {
-        if ($value !== null
-            && ! StoredFile::isAbsoluteUrl($value)
-            && ! StoredFile::isLegacyLocalPath($value)) {
-            $value = StoredFile::databaseValueFromStoragePath($value);
-        }
-
         $this->attributes['file_path'] = $value;
     }
 

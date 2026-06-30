@@ -35,15 +35,51 @@ class StoredFile
     }
 
     /**
-     * Store an uploaded file on S3 (when configured) and return the value for the database.
-     * S3: full AWS URL. Local: relative path.
+     * Store an uploaded file. Uses S3 when configured; falls back to server storage if AWS is unavailable.
+     * S3 success: full AWS URL in DB. Local fallback: relative path (resumes/…, employer-profiles/…, etc.).
      */
     public static function storeUploadedFile(UploadedFile $file, string $directory): string|false
     {
-        $disk = self::uploadsDisk();
+        $primaryDisk = self::uploadsDisk();
+        $disks = [$primaryDisk];
 
+        if ($primaryDisk === 's3') {
+            $disks[] = self::localFallbackDiskForDirectory($directory);
+        }
+
+        foreach ($disks as $index => $disk) {
+            if ($index > 0 && $disk === $primaryDisk) {
+                continue;
+            }
+
+            $path = self::putUploadedFile($file, $directory, $disk);
+            if ($path !== false) {
+                if ($index > 0) {
+                    Log::info('StoredFile upload used local fallback', [
+                        'directory' => $directory,
+                        'disk' => $disk,
+                        'path' => $path,
+                    ]);
+                }
+
+                return self::databaseValueFromStoragePath($path, $disk);
+            }
+        }
+
+        return false;
+    }
+
+    protected static function localFallbackDiskForDirectory(string $directory): string
+    {
+        return str_starts_with($directory, 'profile-photos') ? 'public' : 'local';
+    }
+
+    protected static function putUploadedFile(UploadedFile $file, string $directory, string $disk): string|false
+    {
         try {
             $path = $file->store($directory, ['disk' => $disk]);
+
+            return $path !== false ? $path : false;
         } catch (\Throwable $e) {
             Log::warning('StoredFile upload failed', [
                 'disk' => $disk,
@@ -51,28 +87,8 @@ class StoredFile
                 'error' => $e->getMessage(),
             ]);
 
-            if ($disk !== 's3') {
-                return false;
-            }
-
-            try {
-                $path = $file->store($directory, ['disk' => 'local']);
-                $disk = 'local';
-            } catch (\Throwable $fallbackError) {
-                Log::error('StoredFile local upload fallback failed', [
-                    'directory' => $directory,
-                    'error' => $fallbackError->getMessage(),
-                ]);
-
-                return false;
-            }
-        }
-
-        if ($path === false) {
             return false;
         }
-
-        return self::databaseValueFromStoragePath($path, $disk);
     }
 
     /**
@@ -141,7 +157,7 @@ class StoredFile
             return asset($stored);
         }
 
-        if (self::uploadsDisk() === 's3') {
+        if (self::uploadsDisk() === 's3' && self::looksLikeS3Stored($stored)) {
             $key = self::resolveStorageKey($stored);
             if ($key !== null) {
                 if (self::shouldUseSignedUrls()) {
@@ -169,29 +185,65 @@ class StoredFile
     }
 
     /**
-     * Whether a DB value refers to S3 (no network call — safe when AWS is down).
+     * Whether a DB value is a full S3 URL (no network call). Relative paths are always local storage.
      */
     public static function looksLikeS3Stored(?string $stored): bool
     {
-        if (! filled($stored)) {
+        if (! filled($stored) || ! self::isAbsoluteUrl($stored)) {
             return false;
         }
 
+        $bucket = (string) config('filesystems.disks.s3.bucket');
+
+        return $bucket !== '' && str_contains($stored, $bucket);
+    }
+
+    protected static function localStoragePath(string $stored): ?string
+    {
         if (self::isAbsoluteUrl($stored)) {
-            $bucket = (string) config('filesystems.disks.s3.bucket');
-
-            return $bucket !== '' && str_contains($stored, $bucket);
+            return null;
         }
 
-        if (str_starts_with($stored, 'uploads/') || str_starts_with($stored, 'profile-photos/')) {
+        if (str_starts_with($stored, 'uploads/')) {
+            $path = public_path($stored);
+
+            return is_readable($path) ? $path : null;
+        }
+
+        if (str_starts_with($stored, 'profile-photos/')) {
+            $path = Storage::disk('public')->path($stored);
+
+            return is_readable($path) ? $path : null;
+        }
+
+        $path = storage_path('app/' . ltrim($stored, '/'));
+
+        return is_readable($path) ? $path : null;
+    }
+
+    protected static function localStorageExists(string $stored): bool
+    {
+        if (self::isAbsoluteUrl($stored)) {
             return false;
         }
 
-        if (self::isLegacyLocalPath($stored)) {
-            return false;
+        if (str_starts_with($stored, 'uploads/')) {
+            return is_file(public_path($stored));
         }
 
-        return self::uploadsDisk() === 's3' && self::resolveStorageKey($stored) !== null;
+        if (str_starts_with($stored, 'profile-photos/')) {
+            try {
+                return Storage::disk('public')->exists($stored);
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        try {
+            return Storage::disk('local')->exists($stored);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -287,6 +339,18 @@ class StoredFile
             ]);
         }
 
+        $localPath = self::localStoragePath($stored);
+        if ($localPath !== null) {
+            return response()->file($localPath, [
+                'Content-Type' => self::mimeFromPath($localPath) ?? $fallbackMime,
+                'Cache-Control' => 'private, max-age=3600',
+            ]);
+        }
+
+        if (! self::looksLikeS3Stored($stored)) {
+            abort(404);
+        }
+
         $key = self::resolveStorageKey($stored);
         if ($key === null) {
             abort(404);
@@ -365,12 +429,8 @@ class StoredFile
             return false;
         }
 
-        if (str_starts_with($stored, 'uploads/')) {
-            return is_file(public_path($stored));
-        }
-
-        if (str_starts_with($stored, 'profile-photos/')) {
-            return Storage::disk('public')->exists($stored);
+        if (self::localStorageExists($stored)) {
+            return true;
         }
 
         if (self::looksLikeS3Stored($stored)) {
@@ -379,12 +439,7 @@ class StoredFile
             return $key !== null && self::s3ObjectExists($key);
         }
 
-        // Legacy Hostinger / server disk (storage/app/resumes/…)
-        try {
-            return Storage::disk('local')->exists($stored);
-        } catch (\Throwable) {
-            return false;
-        }
+        return false;
     }
 
     public static function delete(?string $stored): void
@@ -412,12 +467,20 @@ class StoredFile
         }
 
         if (str_starts_with($stored, 'profile-photos/')) {
-            Storage::disk('public')->delete($stored);
+            try {
+                Storage::disk('public')->delete($stored);
+            } catch (\Throwable) {
+                // ignore
+            }
 
             return;
         }
 
-        Storage::disk('local')->delete($stored);
+        try {
+            Storage::disk('local')->delete($stored);
+        } catch (\Throwable) {
+            // ignore
+        }
     }
 
     /**
@@ -427,6 +490,11 @@ class StoredFile
     {
         if (! filled($stored)) {
             return null;
+        }
+
+        $localPath = self::localStoragePath($stored);
+        if ($localPath !== null) {
+            return $localPath;
         }
 
         if (self::looksLikeS3Stored($stored)) {
@@ -445,21 +513,7 @@ class StoredFile
             }
         }
 
-        if (str_starts_with($stored, 'uploads/')) {
-            $path = public_path($stored);
-
-            return is_readable($path) ? $path : null;
-        }
-
-        if (str_starts_with($stored, 'profile-photos/')) {
-            $path = Storage::disk('public')->path($stored);
-
-            return is_readable($path) ? $path : null;
-        }
-
-        $path = storage_path('app/' . ltrim($stored, '/'));
-
-        return is_readable($path) ? $path : null;
+        return null;
     }
 
     public static function objectKeyFromUrl(string $url): ?string
@@ -487,7 +541,7 @@ class StoredFile
      */
     public static function inlineResponse(string $stored, string $mime, string $filename): BinaryFileResponse|RedirectResponse
     {
-        if (self::isStoredOnS3($stored)) {
+        if (self::looksLikeS3Stored($stored)) {
             return self::browserRedirect($stored);
         }
 
@@ -507,7 +561,7 @@ class StoredFile
      */
     public static function downloadResponse(string $stored, string $filename, string $mime): BinaryFileResponse|RedirectResponse|StreamedResponse
     {
-        if (self::isStoredOnS3($stored)) {
+        if (self::looksLikeS3Stored($stored)) {
             return self::browserRedirect($stored);
         }
 

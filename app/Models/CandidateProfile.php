@@ -158,10 +158,7 @@ class CandidateProfile extends Model
 
     public function setProfilePhotoPathAttribute(?string $value): void
     {
-        if ($value !== null && ! StoredFile::isAbsoluteUrl($value) && ! str_starts_with($value, 'uploads/')) {
-            $value = StoredFile::databaseValueFromStoragePath($value);
-        }
-
+        // storeUploadedFile() already returns the correct DB value (S3 URL or local path).
         $this->attributes['profile_photo_path'] = $value;
     }
 
@@ -180,7 +177,8 @@ class CandidateProfile extends Model
                 ?? route('profile.photo', ['v' => $this->updated_at?->getTimestamp() ?? 0]);
         }
 
-        return StoredFile::url($this->profile_photo_path);
+        return StoredFile::url($this->profile_photo_path)
+            ?? route('profile.photo', ['v' => $this->updated_at?->getTimestamp() ?? 0]);
     }
 
     /**
